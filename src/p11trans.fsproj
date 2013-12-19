@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>10.0.0</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{678153EF-F518-462C-A13B-613308143968}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>p11trans</RootNamespace>
+    <AssemblyName>p11trans</AssemblyName>
+    <BuildOrder>
+      <BuildOrder>
+        <String>AssemblyInfo.fs</String>
+        <String>utility.fs</String>
+        <String>intermediate.fs</String>
+        <String>pdp11Instruction.fs</String>
+        <String>pdp11Pseudo.fs</String>
+        <String>readPdp11as.fs</String>
+        <String>ackExpression.fs</String>
+        <String>i8086AddressResolve.fs</String>
+        <String>ackInstructionText.fs</String>
+        <String>ackPseudo.fs</String>
+        <String>sysent.fs</String>
+        <String>ackInstruction.fs</String>
+        <String>ackTempMemText.fs</String>
+        <String>transTo8086as.fs</String>
+        <String>main.fs</String>
+      </BuildOrder>
+    </BuildOrder>
+    <ReleaseVersion>0.01</ReleaseVersion>
+    <SynchReleaseVersion>False</SynchReleaseVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <OutputPath>..\bin\Debug</OutputPath>
+    <DefineConstants>DEBUG</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <PlatformTarget>x86</PlatformTarget>
+    <ConsolePause>False</ConsolePause>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <Tailcalls>true</Tailcalls>
+    <Externalconsole>True</Externalconsole>
+    <PlatformTarget>x86</PlatformTarget>
+    <DefineConstants />
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Core" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="utility.fs" />
+    <Compile Include="intermediate.fs" />
+    <Compile Include="pdp11Instruction.fs" />
+    <Compile Include="pdp11Pseudo.fs" />
+    <Compile Include="readPdp11as.fs" />
+    <Compile Include="ackExpression.fs" />
+    <Compile Include="i8086AddressResolve.fs" />
+    <Compile Include="ackInstructionText.fs" />
+    <Compile Include="ackPseudo.fs" />
+    <Compile Include="sysent.fs" />
+    <Compile Include="ackInstruction.fs" />
+    <Compile Include="ackTempMemText.fs" />
+    <Compile Include="transTo8086as.fs" />
+    <Compile Include="main.fs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft F#\v4.0\Microsoft.FSharp.Targets" />
+</Project>
