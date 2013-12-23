@@ -23,7 +23,7 @@ $ mono p11trans.exe -i "mov r0, -(sp) / add r0, (r1)"
          push ax
          mov bx, dx;  add (bx), ax
 ```
-
+　  
 
 * Without the '-i' option, a following word is treated as input file name.
 
@@ -32,7 +32,8 @@ $ mono p11trans.exe -i "mov r0, -(sp) / add r0, (r1)"
 
 ```
 $ mono p11trans.exe write.s
-         .extern _write, cerror
+.extern _write, cerror
+
 _write:
          push bp
          mov bp, sp
