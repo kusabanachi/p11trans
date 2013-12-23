@@ -11,6 +11,7 @@ digraph files {
         node [label="ackInstruction.fs"]; ackInstruction;
         node [label="i8086AddressResolve.fs"]; i8086AddressResolve;
         node [label="ackInstructionText.fs"]; ackInstructionText;
+        node [label="i8086ProcedureStep.fs"]; i8086ProcedureStep;
         node [label="sysent.fs"]; sysent;
         node [label="ackExpression.fs"]; ackExpression;
         node [label="ackTempMemText.fs"]; ackTempMemText;
@@ -38,7 +39,8 @@ digraph files {
             ackInstruction -> i8086AddressResolve;
             ackInstruction -> ackInstructionText;
             ackInstruction -> sysent;
-            ackInstructionText -> i8086AddressResolve;
+            i8086AddressResolve -> i8086ProcedureStep;
+            ackInstructionText -> i8086ProcedureStep;
             { rank=same; ackInstructionText; i8086AddressResolve; }
         }
     }

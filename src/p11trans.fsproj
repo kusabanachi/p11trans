@@ -18,8 +18,9 @@
         <String>pdp11Pseudo.fs</String>
         <String>readPdp11as.fs</String>
         <String>ackExpression.fs</String>
-        <String>i8086AddressResolve.fs</String>
+        <String>i8086ProcedureStep.fs</String>
         <String>ackInstructionText.fs</String>
+        <String>i8086AddressResolve.fs</String>
         <String>ackPseudo.fs</String>
         <String>sysent.fs</String>
         <String>ackInstruction.fs</String>
@@ -64,8 +65,9 @@
     <Compile Include="pdp11Pseudo.fs" />
     <Compile Include="readPdp11as.fs" />
     <Compile Include="ackExpression.fs" />
-    <Compile Include="i8086AddressResolve.fs" />
+    <Compile Include="i8086ProcedureStep.fs" />
     <Compile Include="ackInstructionText.fs" />
+    <Compile Include="i8086AddressResolve.fs" />
     <Compile Include="ackPseudo.fs" />
     <Compile Include="sysent.fs" />
     <Compile Include="ackInstruction.fs" />

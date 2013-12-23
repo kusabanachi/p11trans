@@ -6,7 +6,7 @@ module p11trans.ackInstructionText
 open p11trans.intermediate
 open p11trans.utility
 open p11trans.ackExpression
-open p11trans.i8086AddressResolve
+open p11trans.i8086ProcedureStep
 
 
 // get a register text.
