@@ -113,4 +113,16 @@ type statementElement =
     | Expression  of expr           // expression statement
 
 
+// intermediate type of label and statements (not comment part)
+type labelAndStatements = {
+    Label: string;
+    Statement: statementElement option;
+    }
+
+
+// intermediate type of line of code
+type lineOfIntermediateCode = {
+    NotComment: labelAndStatements list;
+    Comment: string option;
+    }
 

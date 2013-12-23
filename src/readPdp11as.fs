@@ -30,8 +30,8 @@ let clipLabels str =
     match str with
     | RegexMatch pattern rMatch ->
         let labels = rMatch.Groups.[1].Value
-        let exLabel = rMatch.Groups.[2].Value
-        (labels, exLabel)
+        let notLabel = rMatch.Groups.[2].Value
+        (labels, notLabel)
     | _ ->
         ("", str)
 
@@ -107,17 +107,18 @@ let readExpression str =
 
 
 // read one statement.
-// string -> string * statementElement option
+// string -> labelAndStatements
 let readStatement src =
     let ordo taskA taskB = if taskA <> None then taskA else taskB
-    let (labels, exLabel) = clipLabels src
-    let statement = 
-        readAssignment exLabel
-        |> ordo <| readString exLabel
-        |> ordo <| readInstruction exLabel
-        |> ordo <| readPseudo exLabel
-        |> ordo <| readExpression exLabel
-    (labels, statement)
+    let (label, notLabel) = clipLabels src
+    let statement =
+        readAssignment notLabel
+        |> ordo <| readString notLabel
+        |> ordo <| readInstruction notLabel
+        |> ordo <| readPseudo notLabel
+        |> ordo <| readExpression notLabel
+    { labelAndStatements.Label = label;
+                         Statement = statement; }
 
 
 // split a line into some statements.
@@ -129,16 +130,17 @@ let splitIntoStatements (lineStr:string) =
 
 // read a line of pdp11 assembly code.
 // output is "(label * 'Some statementElement') list * 'Some comment'"
-// string -> (string * statementElement option) list * string option
+// string -> lineOfIntermediateCode
 let readOneLine lineStr =
-    let (commentStr, exCommentStr) = clipComment lineStr
-    let statementStrs = splitIntoStatements exCommentStr
-    let statements = List.map readStatement statementStrs
-    (statements, commentStr)
+    let (commentStr, notCommentStr) = clipComment lineStr
+    let notCommentList = splitIntoStatements notCommentStr
+    let notComment = List.map readStatement notCommentList
+    { lineOfIntermediateCode.NotComment = notComment;
+                             Comment = commentStr; }
 
 
 // read some lines of pdp11 assembly code text
-// string list -> ((string * statementElement option) list * string option) list
+// string list -> lineOfIntermediateCode list
 let readPdp11as asm =
     List.map readOneLine asm
 

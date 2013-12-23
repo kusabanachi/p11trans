@@ -66,8 +66,8 @@ let getStatementText = function
 
 // translate a string of statement part to i8086 string.
 // index is order of statement in a text line. it have an effect on indent.
-// int -> string * statementElement option -> string
-let transStatement index ((label:string), statement) =
+// int -> labelAndStatements -> string
+let transStatement index { Label = label; Statement = statement; } =
     let statementText = getStatementText statement
     let labelText = label
     let isPseudoTextWithoutLabel =
@@ -81,23 +81,22 @@ let transStatement index ((label:string), statement) =
         if index = 0 then
             sprintf "%-8s %s" label statementText
         else
-            sprintf "%s%s" label statementText 
+            sprintf "%s%s" label statementText
     else
         label
 
 
 // translate a line of intermediate expression to i8086 assembly code.
-// (string * statementElement option) list * string option -> string
-let transOneLine (exComment, comment) =
-    let stList = List.mapi transStatement exComment
+// lineOfIntermediateCode -> string
+let transOneLine { NotComment = notComment; Comment = comment; } =
+    let stList = List.mapi transStatement notComment
     let stTexts = String.concat ";  " stList
     concatComment stTexts comment
 
 
 // translate some lines of intermediate expression to i8086 assembly code.
-// ((string * statementElement option) list * string option) list -> string list
+// lineOfIntermediateCode list -> string list
 let transTo8086Asm intermediate =
     let outTextLines = List.map transOneLine intermediate
     resolveTempMemData outTextLines intermediate
-
 

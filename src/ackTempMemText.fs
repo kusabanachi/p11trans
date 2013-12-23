@@ -13,16 +13,16 @@ let isThereTempMem textList =
 
 
 // get last section from the information of intermediate expression.
-// ((string * statementElement option) list * string option) list -> statementElement option
+// lineOfIntermediateCode list -> statementElement option
 let getLastSection intermediate =
-    let getSectionPseudo (_, statement) =
+    let getSectionPseudo { Statement = statement; } =
         match statement with
         | Some(Pseudo(SectText)) | Some(Pseudo(SectData)) | Some(Pseudo(SectBss))
             -> statement
         | _
             -> None
     List.tryPick
-        (fun (exComm,_) -> (List.tryPick getSectionPseudo (List.rev exComm)))
+        (fun { NotComment = notComm; } -> (List.tryPick getSectionPseudo (List.rev notComm)))
         (List.rev intermediate)
 
 
@@ -41,7 +41,7 @@ let getTempMemText =
 
 // resolve temp memory's data declaration.
 // string list
-//     -> ((string * statementElement option) list * string option) list
+//     -> lineOfIntermediateCode list
 //     -> string list
 let resolveTempMemData outTextLines intermediate =
     if isThereTempMem outTextLines then
