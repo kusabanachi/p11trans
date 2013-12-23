@@ -17,9 +17,9 @@ p11trans
 * '/' は改行として扱います。
 
 ```
-$ mono p11trans.exe -i "mov #4, r0"
+$ mono p11trans.exe -i 'mov $4, r0'
          mov ax, #4
-$ mono p11trans.exe -i "mov r0, -(sp) / add r0, (r1)"
+$ mono p11trans.exe -i 'mov r0, -(sp) / add r0, (r1)'
          push ax
          mov bx, dx;  add (bx), ax
 ```
