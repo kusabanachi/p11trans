@@ -60,6 +60,6 @@ http://www.emu8086.com/assembly_language_tutorial_assembler_reference/8086_instr
 * 8086版V6のABI（仮） - 七誌の開発日記  
 http://7shi.hateblo.jp/entry/2013/07/29/180614  
 トランスレータ作成のきっかけの勉強会でお世話になっている七誌さんのブログです。  
-トランスレータのベースとなるABIや、アドレス指にて必要な変換等が記されています。
+トランスレータのベースとなるABIや、アドレスの指定で必要な変換等が記されています。
 
 
