@@ -1,0 +1,48 @@
+digraph files {
+
+    graph [rankdir=LR compound=true labeljust=l];
+    {
+        node [label="main.fs"]; main;
+        node [label="readPdp11as.fs"]; readPdp11as;
+        node [label="pdp11Instruction.fs"]; pdp11Instruction;
+        node [label="pdp11Pseudo.fs"]; pdp11Pseudo;
+        node [label="transTo8086as.fs"]; transTo8086as;
+        node [label="ackPseudo.fs"]; ackPseudo;
+        node [label="ackInstruction.fs"]; ackInstruction;
+        node [label="i8086AddressResolve.fs"]; i8086AddressResolve;
+        node [label="ackInstructionText.fs"]; ackInstructionText;
+        node [label="sysent.fs"]; sysent;
+        node [label="ackExpression.fs"]; ackExpression;
+        node [label="ackTempMemText.fs"]; ackTempMemText;
+        node [label="intermediate.fs"]; intermediate;
+        //node [label="utility.fs"]; utility;
+    }
+
+    main -> readPdp11as;
+    subgraph cluster_0 {
+        label="read PDP-11 assembly code";
+        readPdp11as -> pdp11Instruction;
+        readPdp11as -> pdp11Pseudo;
+    }
+
+    main -> transTo8086as;
+    subgraph cluster_1 {
+        label="translate to 8086 ACK assembly code";
+        transTo8086as -> ackInstruction;
+        transTo8086as -> ackPseudo;
+        transTo8086as -> ackExpression;
+        transTo8086as -> ackTempMemText;
+
+        subgraph cluster_2 {
+            label="ACK Instruction";
+            ackInstruction -> i8086AddressResolve;
+            ackInstruction -> ackInstructionText;
+            ackInstruction -> sysent;
+            ackInstructionText -> i8086AddressResolve;
+            { rank=same; ackInstructionText; i8086AddressResolve; }
+        }
+    }
+
+    pdp11Instruction -> intermediate [ltail=cluster_0];
+    i8086AddressResolve -> intermediate [ltail=cluster_1];
+}

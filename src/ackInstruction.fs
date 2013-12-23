@@ -5,7 +5,7 @@ module p11trans.ackInstruction
 
 open p11trans.utility
 open p11trans.intermediate
-open i8086AddressResolve
+open p11trans.i8086AddressResolve
 
 
 // the number used for system call
