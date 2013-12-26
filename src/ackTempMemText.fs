@@ -35,8 +35,7 @@ let getDataSectionText =
 // get temp memory's data declaration text.
 // string
 let getTempMemText =
-    let tempMemExpr = Expr(tempValMem)
-    "         .data2 " + ackExpression.getExpressionStr tempMemExpr
+    sprintf "%-8s %s" (tempValMem + ":") ".data2 0"
 
 
 // resolve temp memory's data declaration.
