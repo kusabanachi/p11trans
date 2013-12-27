@@ -101,9 +101,9 @@ let moveValueToReg inAddr outReg =
             "mov " + ureg + ", " + ireg
               +!!+ "mov " + ureg + ", " + index + (getDfrStr ureg)
               +!!+ "mov " + oreg + ", " + (getDfrStr ureg)
-    | Rel(e) | RelDfr(e) ->
+    | Rel(e) | Abs(e) ->
         "mov " + oreg + ", " + (getExprStr e)
-    | Abs(e) ->
+    | RelDfr(e) ->
         "mov " + ureg + ", " + (getExprStr e)
           +!!+ "mov " + oreg + ", " + (getDfrStr ureg)
     | Imm(e) ->
@@ -141,10 +141,10 @@ let moveValueToMem addr mem =
               +!!+ "mov " + ureg + ", " + index + (getDfrStr ureg)
               +!!+ "mov " + ureg + ", " + (getDfrStr ureg)
               +!!+ "mov " + mem + ", " + ureg
-    | Rel(e) | RelDfr(e) ->
+    | Rel(e) | Abs(e) ->
         "mov " + ureg + ", " + (getExprStr e)
           +!!+ "mov " + mem + ", " + ureg
-    | Abs(e) ->
+    | RelDfr(e) ->
         "mov " + ureg + ", " + (getExprStr e)
           +!!+ "mov " + ureg + ", " + (getDfrStr ureg)
           +!!+ "mov " + mem + ", " + ureg
@@ -182,10 +182,10 @@ let moveRefToReg inAddr outReg =
             ("mov " + ureg + ", " + ireg
                +!!+ "mov " + oreg + ", " + index + (getDfrStr ureg),
              Dfr(outReg))
-    | Rel(e) | RelDfr(e) ->
+    | Rel(e) | Abs(e) ->
         ("mov " + oreg + ", " + (getExprImm e),
          Dfr(outReg))
-    | Abs(e) ->
+    | RelDfr(e) ->
         ("mov " + oreg + ", " + (getExprStr e),
          Dfr(outReg))
     | _ ->
@@ -203,14 +203,14 @@ let moveRefToRegFromMem inAddr outReg mem =
 
     match inAddr with
     | IncDfr(_,_) | DecDfr(_,_) | Dfr(_)
-    | Rel(_) | RelDfr(_) ->
+    | Rel(_) | Abs(_) ->
         ("mov " + oreg + ", " + mem,
          Dfr(outReg))
     | IdxDfr(_,e) ->
         ("mov " + oreg + ", " + mem,
          IdxDfr(outReg,e))
     | IncDDfr(_,_) | DecDDfr(_,_) | DDfr(_) | IdxDDfr(_,_)
-    | Abs(_) ->
+    | RelDfr(_) ->
         ("mov " + ureg + ", " + mem
            +!!+ "mov " + oreg + ", " + index + (getDfrStr ureg),
          Dfr(outReg))
@@ -228,7 +228,7 @@ let getAddrOperandText addr =
         let regStr = getRegStr r
         let index = getMemIndexStr addr
         index + (getDfrStr regStr)
-    | Rel(e) | RelDfr(e) ->
+    | Rel(e) | Abs(e) ->
         getExprStr e
     | Imm(e) ->
         getExprImm e
@@ -290,9 +290,9 @@ let pushFromAddr addr =
             "mov " + ureg + ", " + reg
               +!!+ "mov " + ureg + ", " + index + (getDfrStr ureg)
               +!!+ "push " + (getDfrStr ureg)
-    | Rel(e) | RelDfr(e) ->
+    | Rel(e) | Abs(e) ->
         "push " + (getExprStr e)
-    | Abs(e) ->
+    | RelDfr(e) ->
         "mov " + ureg + ", " + (getExprStr e)
           +!!+ "push " + (getDfrStr ureg)
     | Imm(e) ->
@@ -326,9 +326,9 @@ let popToAddr addr =
             "mov " + ureg + ", " + reg
               +!!+ "mov " + ureg + ", " + index + (getDfrStr ureg)
               +!!+ "pop " + (getDfrStr ureg)
-    | Rel(e) | RelDfr(e) ->
+    | Rel(e) | Abs(e) ->
         "pop " + (getExprStr e)
-    | Abs(e) ->
+    | RelDfr(e) ->
         "mov " + ureg + ", " + (getExprStr e)
           +!!+ "pop " + (getDfrStr ureg)
     | _ ->

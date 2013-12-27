@@ -13,7 +13,7 @@ open p11trans.intermediate
 let isAccessibleAddress = function
     | IncDfr(r,_) | DecDfr(r,_) | IdxDfr(r, _) | Dfr(r)
         when r = R3 || r = R4 || r = R5 || r = Util -> true
-    | Register(_) | Rel(_) | RelDfr(_) | Imm(_) -> true
+    | Register(_) | Rel(_) | Imm(_) | Abs(_) -> true
     | _ -> false
 
 
