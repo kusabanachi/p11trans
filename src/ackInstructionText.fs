@@ -598,7 +598,7 @@ let transformStep (codeList, opcode, elemList) step =
         let code = popValueToReg dest Util
         (code::codeList,
          opcode,
-         (Src, Register(Util))::elemList)
+         (Dest, Register(Util))::elemList)
     | _ ->
         failwithf "Unimplemented step"
 
