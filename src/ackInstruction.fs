@@ -6,6 +6,7 @@ module p11trans.ackInstruction
 open p11trans.utility
 open p11trans.intermediate
 open p11trans.i8086AddressResolve
+open p11trans.i8086AddressResolveForByteInstr
 
 
 // the number used for system call
@@ -51,10 +52,24 @@ let moveCode code src dest =
         failwithf "Failed to resolve address - %s" codeStr
 
 
-// get ACK i8086 code text. the code is with two address argument and not store result.
+// get ACK i8086 code text. the code has two address arguments and doesn't store result.
 // string -> addr -> addr -> string
 let twoAddrCodeWithoutStoring code src dest =
     match twoAddressResolveWithoutStoring.getProcedure code dest src with
+    | Some procedure ->
+        let codeList = ackInstructionText.transformTwoAddrProcedureToText
+                           procedure code dest src
+        String.concat ";  " codeList
+    | _ ->
+        let codeStr = sprintf "(%s  %s, %s)" code (dest.ToString()) (src.ToString())
+        failwithf "Failed to resolve address - %s" codeStr
+
+
+// get ACK i8086 code text of byte instruction.
+// the code has two addresses of opeands.
+// string -> addr -> addr -> string
+let twoAddrByteCode code src dest =
+    match twoAddressResolveForByteInstruction.getProcedure code dest src with
     | Some procedure ->
         let codeList = ackInstructionText.transformTwoAddrProcedureToText
                            procedure code dest src
@@ -77,9 +92,9 @@ let syscallCode code = function
 let rec getInstructionText = function
     // flag code
     | FSet(flags) ->
-        if flags = [Cf] then "clc" else "Failed.."
-    | FClr(flags) ->
         if flags = [Cf] then "stc" else "Failed.."
+    | FClr(flags) ->
+        if flags = [Cf] then "clc" else "Failed.."
 
     // branch code
     | BR(addr) -> oneAddrCode "jmp" addr
@@ -124,9 +139,9 @@ let rec getInstructionText = function
 
     // single operand code
     | CLR(addr) -> twoAddrCode "and" (Imm(Expr("0"))) addr
-    //| CLRB(addr) -> twoAddrCode "andb" (Imm(Expr("0"))) addr
+    | CLRB(addr) -> twoAddrByteCode "andb" (Imm(Expr("0"))) addr
     | COM(addr) -> twoAddrCode "xor" (Imm(Expr("177777"))) addr
-    //| COMB(addr) -> twoAddrCode "xorb" (Imm(Expr("377"))) addr
+    | COMB(addr) -> twoAddrByteCode "xorb" (Imm(Expr("377"))) addr
     | INC(addr) -> oneAddrCode "inc" addr
     //| INCB(addr) -> oneAddrCode "incb" addr
     | DEC(addr) -> oneAddrCode "dec" addr
@@ -134,17 +149,17 @@ let rec getInstructionText = function
     | NEG(addr) -> oneAddrCode "neg" addr
     //| NEGB(addr) -> oneAddrCode "negb" addr
     | ADC(addr) -> twoAddrCode "adc" (Imm(Expr("0"))) addr
-    //| ADCB(addr) -> twoAddrCode "adcb" (Imm(Expr("0"))) addr
+    | ADCB(addr) -> twoAddrByteCode "adcb" (Imm(Expr("0"))) addr
     | SBC(addr) -> twoAddrCode "sbb" (Imm(Expr("0"))) addr
-    //| SBCB(addr) -> twoAddrCode "sbbb" (Imm(Expr("0"))) addr
+    | SBCB(addr) -> twoAddrByteCode "sbbb" (Imm(Expr("0"))) addr
     | ROR(addr) -> twoAddrCode "rcr" (Imm(Expr("1"))) addr
-    //| RORB(addr) -> twoAddrCode "rcrb" (Imm(Expr("1"))) addr
+    | RORB(addr) -> twoAddrByteCode "rcrb" (Imm(Expr("1"))) addr
     | ROL(addr) -> twoAddrCode "rcl" (Imm(Expr("1"))) addr
-    //| ROLB(addr) -> twoAddrCode "rclb" (Imm(Expr("1"))) addr
+    | ROLB(addr) -> twoAddrByteCode "rclb" (Imm(Expr("1"))) addr
     | ASR(addr) -> twoAddrCode "sar" (Imm(Expr("1"))) addr
-    //| ASRB(addr) -> twoAddrCode "sarb" (Imm(Expr("1"))) addr
+    | ASRB(addr) -> twoAddrByteCode "sarb" (Imm(Expr("1"))) addr
     | ASL(addr) -> twoAddrCode "sal" (Imm(Expr("1"))) addr
-    //| ASLB(addr) -> twoAddrCode "salb" (Imm(Expr("1"))) addr
+    | ASLB(addr) -> twoAddrByteCode "salb" (Imm(Expr("1"))) addr
     | JMP(addr) -> oneAddrCode "jmp" addr
     | SWAB(addr) ->
         getInstructionText (ROR(addr))
@@ -158,7 +173,7 @@ let rec getInstructionText = function
 
     // double operand code
     | MOV(src, dest) -> moveCode "mov" src dest
-    //| MOVB(src, dest) -> moveCode "movb" src dest
+    | MOVB(src, dest) -> twoAddrByteCode "movb" src dest
     | CMP(src, dest) -> twoAddrCodeWithoutStoring "cmp" dest src
     //| CMPB(src, dest) -> twoAddrCodeWithoutStoring "cmpb" dest src
     | BIT(src, dest) -> twoAddrCodeWithoutStoring "test" src dest
@@ -166,7 +181,7 @@ let rec getInstructionText = function
     //| BIC(src, dest) -> twoAddrCode ""
     //| BICB(src, dest) -> twoAddrCode ""
     | BIS(src, dest) -> twoAddrCode "or" src dest
-    //| BISB(src, dest) -> twoAddrCode "orb" src dest
+    | BISB(src, dest) -> twoAddrByteCode "orb" src dest
     | ADD(src, dest) -> twoAddrCode "add" src dest
     | SUB(src, dest) -> twoAddrCode "sub" src dest
 

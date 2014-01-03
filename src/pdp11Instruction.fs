@@ -187,10 +187,10 @@ let withOpr opr code = adaptArgs code opr
 let flagList (str:string) =
     let codes = str.Split([|'|'|])
     let searchFlags acc code = 
-        let cPattern = "^\s*[cl|se]c\s*$"    // clc or sec
-        let vPattern = "^\s*[cl|se]v\s*$"    // clv or sev
-        let zPattern = "^\s*[cl|se]z\s*$"    // clz or sez
-        let nPattern = "^\s*[cl|se]n\s*$"    // cln or sen
+        let cPattern = "^\s*(cl|se)c\s*$"    // clc or sec
+        let vPattern = "^\s*(cl|se)v\s*$"    // clv or sev
+        let zPattern = "^\s*(cl|se)z\s*$"    // clz or sez
+        let nPattern = "^\s*(cl|se)n\s*$"    // cln or sen
         match code with
         | RegexMatch cPattern rMatch -> Cf :: acc
         | RegexMatch vPattern rMatch -> Vf :: acc

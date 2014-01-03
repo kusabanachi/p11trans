@@ -23,6 +23,17 @@ let getRegStr = function
     | Util -> "bx"
 
 
+// get a lower 8bit register text.
+// reg -> string
+let getLow8bitRegStr = function
+    | R0 -> "al"
+    | R1 -> "dl"
+    | R2 -> "cl"
+    | Util -> "bl"
+    | _ ->
+        failwithf "Invalid address"
+
+
 // text of memory, which is temp space to store value.
 // string
 let tempValMem = "tmpMem"
@@ -250,6 +261,73 @@ let calcWithDestAndSrc opcode dest src =
     opcode + " " + getAddrOperandText dest + ", " + getAddrOperandText src
 
 
+// get address text of byte instruction's operand.
+// addr -> string
+let getByteAddrOperandText addr =
+    match addr with
+    | Register(r) ->
+        getLow8bitRegStr r
+    | IncDfr(r,_) | DecDfr(r,_) | Dfr(r) | IdxDfr(r,_) ->
+        let regStr = getRegStr r
+        let index = getMemIndexStr addr
+        index + (getDfrStr regStr)
+    | Rel(e) | Abs(e) ->
+        getExprStr e
+    | Imm(e) ->
+        getExprImm e
+    | _ ->
+        failwithf "Invalid address"
+
+
+// get instruction text,
+// that byte calculate with dest and src operand.
+// string -> addr -> addr -> string
+let byteCalcWithDestAndSrc opcode dest src =
+    opcode + " " + getByteAddrOperandText dest
+           + ", " + getByteAddrOperandText src
+
+
+// get instruction text,
+// that exchange ax regsiter's value for value of address.
+// addr -> string
+let exchangeAxRegForValue addr =
+    let index = getMemIndexStr addr
+    let ureg = getRegStr Util
+
+    match addr with
+    | IncDfr(r,_) | DecDfr(r,_) | IdxDfr(r,_) | Dfr(r) ->
+        let areg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            "xchg ax, " + index + (getDfrStr areg)
+        else
+            "mov " + ureg + ", " + areg
+              +!!+ "xchg ax, " + index + (getDfrStr ureg)
+    | IncDDfr(r,_) | DecDDfr(r,_) | DDfr(r) | IdxDDfr(r,_) ->
+        let areg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            "mov " + ureg + ", " + index + (getDfrStr areg)
+              +!!+ "xchg ax, " + (getDfrStr ureg)
+        else
+            "mov " + ureg + ", " + areg
+              +!!+ "mov " + ureg + ", " + index + (getDfrStr ureg)
+              +!!+ "xchg ax, " + (getDfrStr ureg)
+    | Rel(e) | Abs(e) ->
+        "xchg ax, " + (getExprStr e)
+    | RelDfr(e) ->
+        "mov " + ureg + ", " + (getExprStr e)
+          +!!+ "xchg ax, " + (getDfrStr ureg)
+    | Imm(e) ->
+        "xchg ax, " + (getExprImm e)
+    | Register(r) ->
+        let areg = getRegStr r
+        "xchg ax, " + areg
+
+
+// get instruction text, that convert al's byte into ax's word.
+// string
+let convertAxByteIntoWord = "cbw"
+
+
 // get instruction text,
 // that store register's value to temp memory.
 // addr -> string
@@ -444,6 +522,16 @@ let searchDestElem elemList =
     let (_,addr) = List.find isDestOperand elemList
     addr
 
+// remove dest element from list
+// (addrTag * addr) list -> (addrTag * addr) list
+let removeDestAxReg elemList =
+    let rec rmDestAx list =
+        match list with
+        | [] -> []
+        | (Dest, Register(R0))::xs -> xs
+        | x::xs -> x::rmDestAx xs
+    rmDestAx elemList
+
 
 // transform a procedure step to ACK i8086 instruction text.
 // string list * string * (addrTag * addr) list
@@ -513,6 +601,29 @@ let transformStep (codeList, opcode, elemList) step =
         (code::codeList,
          opcode,
          (Result, dest)::elemList)
+    | ByteBinaryCalc(OAddr, OAddr) ->
+        let dest = searchDestElem elemList
+        let src = searchSrcElem elemList
+        let code = byteCalcWithDestAndSrc opcode dest src
+        (code::codeList,
+         opcode,
+         (Result, dest)::elemList)
+    | XChgAxForDestVal ->
+        let dest = searchDestElem elemList
+        let code = exchangeAxRegForValue dest
+        (code::codeList,
+         opcode,
+         (Dest, Register(R0))::elemList)
+    | ReXChgAxForDestVal ->
+        let elemList' = removeDestAxReg elemList
+        let dest = searchDestElem elemList'
+        let code = exchangeAxRegForValue dest
+        (code::codeList,
+         opcode,
+         elemList')
+    | ConvertAxByteIntoWord ->
+        let code = convertAxByteIntoWord
+        (code::codeList, opcode, elemList)
     | StoreSrcReg ->
         let src = searchElem OrgSrc elemList
         let code = storeRegToTempMem src

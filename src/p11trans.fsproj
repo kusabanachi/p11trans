@@ -21,6 +21,7 @@
         <String>i8086ProcedureStep.fs</String>
         <String>ackInstructionText.fs</String>
         <String>i8086AddressResolve.fs</String>
+        <String>i8086AddressResolveForByteInstr.fs</String>
         <String>ackPseudo.fs</String>
         <String>sysent.fs</String>
         <String>ackInstruction.fs</String>
@@ -68,6 +69,7 @@
     <Compile Include="i8086ProcedureStep.fs" />
     <Compile Include="ackInstructionText.fs" />
     <Compile Include="i8086AddressResolve.fs" />
+    <Compile Include="i8086AddressResolveForByteInstr.fs" />
     <Compile Include="ackPseudo.fs" />
     <Compile Include="sysent.fs" />
     <Compile Include="ackInstruction.fs" />
