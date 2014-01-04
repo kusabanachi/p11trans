@@ -23,6 +23,7 @@ type procedureStep =
     | MoveDestRef_toUtilReg_fromTempMem
     | UnaryCalc of operand
     | BinaryCalc of operand * operand
+    | ByteUnaryCalc of operand
     | ByteBinaryCalc of operand * operand
     | XChgAxForDestVal
     | ReXChgAxForDestVal
@@ -72,6 +73,15 @@ let isWritableRegister = function
 let isMemAddr = function
     | Register(_) | Imm(_) -> false
     | _ -> true
+
+
+// return if the address is register or not.
+// addr -> bool
+let isRegister = function
+    | Register(_) ->
+        true
+    | _ ->
+        false
 
 
 

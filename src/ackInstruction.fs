@@ -79,6 +79,20 @@ let twoAddrByteCode code src dest =
         failwithf "Failed to resolve address - %s" codeStr
 
 
+// get ACK i8086 code text of byte instruction.
+// the code has one address of opeand.
+// string -> addr -> string
+let oneAddrByteCode code addr =
+    match oneAddressResolveForByteInstruction.getProcedure code addr with
+    | Some procedure ->
+        let codeList = ackInstructionText.transformOneAddrProcedureToText
+                           procedure code addr
+        String.concat ";  " codeList
+    | _ ->
+        let codeStr = sprintf "(%s  %s)" code (addr.ToString())
+        failwithf "Failed to resolve address - %s" codeStr
+
+
 // get ACK i8086 system call text.
 // string -> expr -> string
 let syscallCode code = function
@@ -143,11 +157,11 @@ let rec getInstructionText = function
     | COM(addr) -> twoAddrCode "xor" (Imm(Expr("177777"))) addr
     | COMB(addr) -> twoAddrByteCode "xorb" (Imm(Expr("377"))) addr
     | INC(addr) -> oneAddrCode "inc" addr
-    //| INCB(addr) -> oneAddrCode "incb" addr
+    | INCB(addr) -> oneAddrByteCode "incb" addr
     | DEC(addr) -> oneAddrCode "dec" addr
-    //| DECB(addr) -> oneAddrCode "decb" addr
+    | DECB(addr) -> oneAddrByteCode "decb" addr
     | NEG(addr) -> oneAddrCode "neg" addr
-    //| NEGB(addr) -> oneAddrCode "negb" addr
+    | NEGB(addr) -> oneAddrByteCode "negb" addr
     | ADC(addr) -> twoAddrCode "adc" (Imm(Expr("0"))) addr
     | ADCB(addr) -> twoAddrByteCode "adcb" (Imm(Expr("0"))) addr
     | SBC(addr) -> twoAddrCode "sbb" (Imm(Expr("0"))) addr

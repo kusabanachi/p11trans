@@ -25,14 +25,6 @@ module twoAddressResolveForByteInstruction =
         | _ ->
             false
 
-    // return if the address is register or not.
-    // addr -> bool
-    let private isRegister = function
-        | Register(_) ->
-            true
-        | _ ->
-            false
-
 
     // the procedureStep of byte calculation and sign extension.
     // procedureStep list
@@ -103,6 +95,38 @@ module twoAddressResolveForByteInstruction =
     // 'a -> addr -> addr -> procedureStep list option
     let getProcedure code dest src =
         let procedure = getProcedureImple dest src
+        Some(procedure)
+
+
+// resolve i8086's one address operation of byte instruction.
+module oneAddressResolveForByteInstruction =
+
+    // the procedureStep of byte calculation and sign extension.
+    // procedureStep list
+    let private stepsOfCalcWithSignExtn =
+        [ByteUnaryCalc(OAddr); ConvertAxByteIntoWord]
+
+
+    // get steps of procedure for i8086's one address operation
+    // of byte instruction.
+    // 'a -> addr -> procedureStep list option
+    let getProcedure code dest =
+        let procedure =
+            if dest = Register(R0) then
+                stepsOfCalcWithSignExtn
+            elif isRegister dest then
+                [
+                [XChgAxForDestVal]
+                stepsOfCalcWithSignExtn
+                [ReXChgAxForDestVal]
+                ] |> List.concat
+            elif isAccessibleAddress dest then
+                [ByteUnaryCalc(OAddr)]  |> incDecCheck (Dest, dest)
+            else
+                [
+                [MoveDestRef_toUtilReg] |> incDecCheck (Dest, dest)
+                [ByteUnaryCalc(OAddr)]
+                ] |> List.concat
         Some(procedure)
 
 

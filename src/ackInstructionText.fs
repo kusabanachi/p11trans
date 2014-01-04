@@ -280,6 +280,13 @@ let getByteAddrOperandText addr =
 
 
 // get instruction text,
+// that byte calculate with a dest operand.
+// string -> addr -> string
+let byteCalcWithDest opcode dest =
+    opcode + " " + getByteAddrOperandText dest
+
+
+// get instruction text,
 // that byte calculate with dest and src operand.
 // string -> addr -> addr -> string
 let byteCalcWithDestAndSrc opcode dest src =
@@ -601,6 +608,10 @@ let transformStep (codeList, opcode, elemList) step =
         (code::codeList,
          opcode,
          (Result, dest)::elemList)
+    | ByteUnaryCalc(OAddr) ->
+        let dest = searchDestElem elemList
+        let code = byteCalcWithDest opcode dest
+        (code::codeList, opcode, elemList)
     | ByteBinaryCalc(OAddr, OAddr) ->
         let dest = searchDestElem elemList
         let src = searchSrcElem elemList
