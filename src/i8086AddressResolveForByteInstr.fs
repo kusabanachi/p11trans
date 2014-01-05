@@ -55,7 +55,7 @@ module twoAddressResolveForByteInstruction =
                 stepsOfCalcWithSignExtn
                 ] |> List.concat
         elif isRegister dest then
-            if isByteAddressable src then
+            if isByteAddressable src && src <> Register(R0) then
                 [
                 stepsOfExchangeAndCalcWithSignExtn  |> incDecCheck (Src, src)
                 ] |> List.concat
