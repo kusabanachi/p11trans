@@ -248,16 +248,16 @@ let getAddrOperandText addr =
 
 
 // get instruction text,
-// that calculate with a dest operand.
+// that calculate with a argument.
 // string -> addr -> string
-let calcWithDest opcode dest =
+let calcWithOneArg opcode dest =
     opcode + " " + getAddrOperandText dest
 
 
 // get instruction text,
-// that calculate with dest and src operand.
+// that calculate with two arguments.
 // string -> addr -> addr -> string
-let calcWithDestAndSrc opcode dest src =
+let calcWithTwoArgs opcode dest src =
     opcode + " " + getAddrOperandText dest + ", " + getAddrOperandText src
 
 
@@ -280,16 +280,16 @@ let getByteAddrOperandText addr =
 
 
 // get instruction text,
-// that byte calculate with a dest operand.
+// that byte calculate with a argument.
 // string -> addr -> string
-let byteCalcWithDest opcode dest =
+let byteCalcWithOneArg opcode dest =
     opcode + " " + getByteAddrOperandText dest
 
 
 // get instruction text,
-// that byte calculate with dest and src operand.
+// that byte calculate with two arguments.
 // string -> addr -> addr -> string
-let byteCalcWithDestAndSrc opcode dest src =
+let byteCalcWithTwoArgs opcode dest src =
     opcode + " " + getByteAddrOperandText dest
            + ", " + getByteAddrOperandText src
 
@@ -597,25 +597,39 @@ let transformStep (codeList, opcode, elemList) step =
         (code::codeList,
          opcode,
          (Dest, destAddr)::elemList)
-    | UnaryCalc(OAddr) ->
+    | UnaryCalc(ODest) ->
         let dest = searchDestElem elemList
-        let code = calcWithDest opcode dest
+        let code = calcWithOneArg opcode dest
         (code::codeList, opcode, elemList)
-    | BinaryCalc(OAddr, OAddr) ->
+    | BinaryCalc(ODest, OSrc) ->
         let dest = searchDestElem elemList
         let src = searchSrcElem elemList
-        let code = calcWithDestAndSrc opcode dest src
+        let code = calcWithTwoArgs opcode dest src
         (code::codeList,
          opcode,
          (Result, dest)::elemList)
-    | ByteUnaryCalc(OAddr) ->
+    | BinaryCalc(OSrc, ODest) ->
+        let src = searchSrcElem elemList
         let dest = searchDestElem elemList
-        let code = byteCalcWithDest opcode dest
+        let code = calcWithTwoArgs opcode src dest
+        (code::codeList,
+         opcode,
+         (Result, dest)::elemList)
+    | ByteUnaryCalc(ODest) ->
+        let dest = searchDestElem elemList
+        let code = byteCalcWithOneArg opcode dest
         (code::codeList, opcode, elemList)
-    | ByteBinaryCalc(OAddr, OAddr) ->
+    | ByteBinaryCalc(ODest, OSrc) ->
         let dest = searchDestElem elemList
         let src = searchSrcElem elemList
-        let code = byteCalcWithDestAndSrc opcode dest src
+        let code = byteCalcWithTwoArgs opcode dest src
+        (code::codeList,
+         opcode,
+         (Result, dest)::elemList)
+    | ByteBinaryCalc(OSrc, ODest) ->
+        let src = searchSrcElem elemList
+        let dest = searchDestElem elemList
+        let code = byteCalcWithTwoArgs opcode src dest
         (code::codeList,
          opcode,
          (Result, dest)::elemList)

@@ -93,6 +93,20 @@ let oneAddrByteCode code addr =
         failwithf "Failed to resolve address - %s" codeStr
 
 
+// get ACK i8086 code text of byte instruction.
+// the code has two address arguments and doesn't store result.
+// string -> addr -> addr -> string
+let twoAddrByteCodeWithoutStoring code src dest =
+    match twoAddressResolveForByteInstructionWithoutStoring.getProcedure code dest src with
+    | Some procedure ->
+        let codeList = ackInstructionText.transformTwoAddrProcedureToText
+                           procedure code dest src
+        String.concat ";  " codeList
+    | _ ->
+        let codeStr = sprintf "(%s  %s, %s)" code (dest.ToString()) (src.ToString())
+        failwithf "Failed to resolve address - %s" codeStr
+
+
 // get ACK i8086 system call text.
 // string -> expr -> string
 let syscallCode code = function
@@ -182,16 +196,16 @@ let rec getInstructionText = function
           +!!+ getInstructionText (ROR(addr))
     | TST(addr) ->
         twoAddrCodeWithoutStoring "test" (Imm(Expr("177777"))) addr
-    //| TSTB(addr) ->
-    //    twoAddrCodeWithoutStoring "testb" (Imm(Expr("377"))) addr
+    | TSTB(addr) ->
+        twoAddrByteCodeWithoutStoring "testb" (Imm(Expr("377"))) addr
 
     // double operand code
     | MOV(src, dest) -> moveCode "mov" src dest
     | MOVB(src, dest) -> twoAddrByteCode "movb" src dest
-    | CMP(src, dest) -> twoAddrCodeWithoutStoring "cmp" dest src
-    //| CMPB(src, dest) -> twoAddrCodeWithoutStoring "cmpb" dest src
+    | CMP(src, dest) -> twoAddrCodeWithoutStoring "cmp" src dest
+    | CMPB(src, dest) -> twoAddrByteCodeWithoutStoring "cmpb" src dest
     | BIT(src, dest) -> twoAddrCodeWithoutStoring "test" src dest
-    //| BITB(src, dest) -> twoAddrCodeWithoutStoring "testb" src dest
+    | BITB(src, dest) -> twoAddrByteCodeWithoutStoring "testb" src dest
     //| BIC(src, dest) -> twoAddrCode ""
     //| BICB(src, dest) -> twoAddrCode ""
     | BIS(src, dest) -> twoAddrCode "or" src dest

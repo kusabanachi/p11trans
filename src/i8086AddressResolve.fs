@@ -29,14 +29,14 @@ module twoAddressResolve =
         | DestIsAccessible ->
             [
             [MoveSrcVal_toUtilReg]     |> incDecCheck (Src, src)
-            [BinaryCalc(OAddr, OAddr)] |> incDecCheck (Dest, dest)
+            [BinaryCalc(ODest, OSrc)]  |> incDecCheck (Dest, dest)
             ] |> List.concat
         | SrcIsWritableRegister ->
             [
             [StoreSrcReg]              |> incDecCheck (Src, src)
             [MoveSrcVal_toSrcReg]
             [MoveDestRef_toUtilReg]    |> incDecCheck (Dest, dest)
-            [BinaryCalc(OAddr, OAddr)]
+            [BinaryCalc(ODest, OSrc)]
             [RestoreSrcReg]
             ] |> List.concat
         | DestIsWritableRegister ->
@@ -44,14 +44,14 @@ module twoAddressResolve =
             [StoreDestReg]             |> incDecCheck (Dest, dest)
             [MoveSrcVal_toDestReg]     |> incDecCheck (Src, src)
             [MoveDestRef_toUtilReg_fromTempMem]
-            [BinaryCalc(OAddr, OAddr)]
+            [BinaryCalc(ODest, OSrc)]
             [RestoreDestReg]
             ] |> List.concat
         | _ ->
             [
             [MoveSrcVal_toTempMem]     |> incDecCheck (Src, src)
             [MoveDestVal_toUtilReg]    |> incDecCheck (Dest, dest)
-            [BinaryCalc(OAddr, OAddr)]
+            [BinaryCalc(ODest, OSrc)]
             [PushResult]
             [MoveDestRef_toUtilReg]
             [PopToDest]
@@ -65,19 +65,19 @@ module twoAddressResolve =
         elif not (isAccessibleAddress dest) then
             [
             [MoveDestRef_toUtilReg]    |> incDecCheck (Dest, dest)
-            [BinaryCalc(OAddr, OAddr)]
+            [BinaryCalc(ODest, OSrc)]
             ] |> List.concat
         elif not (isAccessibleAddress src) then
             [
             [MoveSrcRef_toUtilReg]     |> incDecCheck (Src, src)
-            [BinaryCalc(OAddr, OAddr)]
+            [BinaryCalc(ODest, OSrc)]
             ] |> List.concat
         elif isMemAddr dest then
-            [BinaryCalc(OAddr, OAddr)] |> incDecCheck (Dest, dest)
+            [BinaryCalc(ODest, OSrc)]  |> incDecCheck (Dest, dest)
         elif isMemAddr src then
-            [BinaryCalc(OAddr, OAddr)] |> incDecCheck (Src, src)
+            [BinaryCalc(ODest, OSrc)]  |> incDecCheck (Src, src)
         else
-            [BinaryCalc(OAddr, OAddr)]
+            [BinaryCalc(ODest, OSrc)]
 
     // entry of getting steps of procedure for i8086's two address operation.
     // 'a -> addr -> addr -> procedureStep list option
@@ -97,10 +97,10 @@ module oneAddressResolve =
             if not (isAccessibleAddress dest) then
                 [
                 [MoveDestRef_toUtilReg] |> incDecCheck (Dest, dest)
-                [UnaryCalc(OAddr)]
+                [UnaryCalc(ODest)]
                 ] |> List.concat
             else
-                [UnaryCalc(OAddr)]      |> incDecCheck (Dest, dest)
+                [UnaryCalc(ODest)]      |> incDecCheck (Dest, dest)
         Some(procedure)
 
 
@@ -135,7 +135,7 @@ module moveAddressResolve =
         | DestIsAccessible ->
             [
             [MoveSrcVal_toUtilReg]     |> incDecCheck (Src, src)
-            [BinaryCalc(OAddr, OAddr)] |> incDecCheck (Dest, dest)
+            [BinaryCalc(ODest, OSrc)]  |> incDecCheck (Dest, dest)
             ] |> List.concat
         | DestIsNotStack ->
             [
@@ -147,7 +147,7 @@ module moveAddressResolve =
             [StoreSrcReg]              |> incDecCheck (Src, src)
             [MoveSrcVal_toSrcReg]
             [MoveDestRef_toUtilReg]    |> incDecCheck (Dest, dest)
-            [BinaryCalc(OAddr, OAddr)]
+            [BinaryCalc(ODest, OSrc)]
             [RestoreSrcReg]
             ] |> List.concat
         | _ ->
@@ -167,19 +167,19 @@ module moveAddressResolve =
         elif not (isAccessibleAddress dest) then
             [
             [MoveDestRef_toUtilReg]    |> incDecCheck (Dest, dest)
-            [BinaryCalc(OAddr, OAddr)]
+            [BinaryCalc(ODest, OSrc)]
             ] |> List.concat
         elif not (isAccessibleAddress src) then
             [
             [MoveSrcRef_toUtilReg]     |> incDecCheck (Src, src)
-            [BinaryCalc(OAddr, OAddr)]
+            [BinaryCalc(ODest, OSrc)]
             ] |> List.concat
         elif isMemAddr dest then
-            [BinaryCalc(OAddr, OAddr)] |> incDecCheck (Dest, dest)
+            [BinaryCalc(ODest, OSrc)]  |> incDecCheck (Dest, dest)
         elif isMemAddr src then
-            [BinaryCalc(OAddr, OAddr)] |> incDecCheck (Src, src)
+            [BinaryCalc(ODest, OSrc)]  |> incDecCheck (Src, src)
         else
-            [BinaryCalc(OAddr, OAddr)]
+            [BinaryCalc(ODest, OSrc)]
 
 
     // entry of getting steps of procedure for i8086's move address operation.
@@ -222,18 +222,18 @@ module twoAddressResolveWithoutStoring =
         | DestIsAccessible ->
             [
             [MoveSrcVal_toUtilReg]     |> incDecCheck (Src, src)
-            [BinaryCalc(OAddr, OAddr)] |> incDecCheck (Dest, dest)
+            [BinaryCalc(OSrc, ODest)]  |> incDecCheck (Dest, dest)
             ] |> List.concat
         | SrcIsAccessible ->
             [
             [MoveDestVal_toUtilReg]    |> incDecCheck (Dest, dest)
-            [BinaryCalc(OAddr, OAddr)] |> incDecCheck (Src, src)
+            [BinaryCalc(OSrc, ODest)]  |> incDecCheck (Src, src)
             ] |> List.concat
         | _ ->
             [
             [MoveSrcVal_toTempMem]     |> incDecCheck (Src, src)
             [MoveDestVal_toUtilReg]    |> incDecCheck (Dest, dest)
-            [BinaryCalc(OAddr, OAddr)]
+            [BinaryCalc(OSrc, ODest)]
             ] |> List.concat
 
 
@@ -246,19 +246,19 @@ module twoAddressResolveWithoutStoring =
         elif not (isAccessibleAddress dest) then
             [
             [MoveDestRef_toUtilReg]    |> incDecCheck (Dest, dest)
-            [BinaryCalc(OAddr, OAddr)]
+            [BinaryCalc(OSrc, ODest)]
             ] |> List.concat
         elif not (isAccessibleAddress src) then
             [
             [MoveSrcRef_toUtilReg]     |> incDecCheck (Src, src)
-            [BinaryCalc(OAddr, OAddr)]
+            [BinaryCalc(OSrc, ODest)]
             ] |> List.concat
         elif isMemAddr dest then
-            [BinaryCalc(OAddr, OAddr)] |> incDecCheck (Dest, dest)
+            [BinaryCalc(OSrc, ODest)]  |> incDecCheck (Dest, dest)
         elif isMemAddr src then
-            [BinaryCalc(OAddr, OAddr)] |> incDecCheck (Src, src)
+            [BinaryCalc(OSrc, ODest)]  |> incDecCheck (Src, src)
         else
-            [BinaryCalc(OAddr, OAddr)]
+            [BinaryCalc(OSrc, ODest)]
 
     // entry of getting steps of procedure for i8086's two address operation,
     // which doesn't store result.

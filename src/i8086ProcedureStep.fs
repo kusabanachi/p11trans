@@ -7,9 +7,8 @@ open p11trans.intermediate
 
 // kind of operand
 type operand =
-    | OReg
-    | OAddr
-    | OExpr
+    | ODest
+    | OSrc
 
 // type of step of procedure
 type procedureStep =
