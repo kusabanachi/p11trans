@@ -8,20 +8,42 @@ open p11trans.utility
 open p11trans.intermediate
 
 
+// return if the address is using the register or not.
+// addr -> reg -> bool
+let isUsingTheReg addr reg =
+    match addr with
+    | Register(reg)
+    | IncDfr(reg,_) | DecDfr(reg,_) | IdxDfr(reg,_) | Dfr(reg)
+    | IncDDfr(reg,_) | DecDDfr(reg,_) | IdxDDfr(reg,_) | DDfr(reg) ->
+        true
+    | _ ->
+        false
+
+
+// get free register, which is not used by the two addresses.
+// addr -> addr -> reg
+let getFreeReg addr1 addr2 =
+    let isNotUsedReg reg =
+        not (isUsingTheReg addr1 reg || isUsingTheReg addr2 reg)
+
+    if isNotUsedReg R0 then
+        R0
+    elif isNotUsedReg R1 then
+        R1
+    else
+        R2
+
+
 // resolve i8086's two addresses operation.
 module twoAddressResolve =
 
     // a case of that both src and dest are memory address
     // addr -> addr -> procedureStep list
     let private getMemToMemProcedure dest src =
-        let (| DestIsAccessible | SrcIsWritableRegister
-              | DestIsWritableRegister | Other |) (dest, src) =
+        let (| DestIsAccessible
+              | Other |) (dest, src) =
             if isAccessibleAddress dest then
                 DestIsAccessible
-            elif isWritableRegister src then
-                SrcIsWritableRegister
-            elif isWritableRegister dest then
-                DestIsWritableRegister
             else
                 Other
 
@@ -31,30 +53,14 @@ module twoAddressResolve =
             [MoveSrcVal_toUtilReg]     |> incDecCheck (Src, src)
             [BinaryCalc(ODest, OSrc)]  |> incDecCheck (Dest, dest)
             ] |> List.concat
-        | SrcIsWritableRegister ->
-            [
-            [StoreSrcReg]              |> incDecCheck (Src, src)
-            [MoveSrcVal_toSrcReg]
-            [MoveDestRef_toUtilReg]    |> incDecCheck (Dest, dest)
-            [BinaryCalc(ODest, OSrc)]
-            [RestoreSrcReg]
-            ] |> List.concat
-        | DestIsWritableRegister ->
-            [
-            [StoreDestReg]             |> incDecCheck (Dest, dest)
-            [MoveSrcVal_toDestReg]     |> incDecCheck (Src, src)
-            [MoveDestRef_toUtilReg_fromTempMem]
-            [BinaryCalc(ODest, OSrc)]
-            [RestoreDestReg]
-            ] |> List.concat
         | _ ->
+            let freeReg = getFreeReg src dest
             [
-            [MoveSrcVal_toTempMem]     |> incDecCheck (Src, src)
-            [MoveDestVal_toUtilReg]    |> incDecCheck (Dest, dest)
+            [StoreRegVal(freeReg)]
+            [MoveSrcVal_toReg(freeReg)]  |> incDecCheck (Src, src)
+            [MoveDestRef_toUtilReg]      |> incDecCheck (Dest, dest)
             [BinaryCalc(ODest, OSrc)]
-            [PushResult]
-            [MoveDestRef_toUtilReg]
-            [PopToDest]
+            [RestoreRegVal(freeReg)]
             ] |> List.concat
 
     // get steps of procedure for i8086's two address operation.
@@ -120,14 +126,13 @@ module moveAddressResolve =
     // a case of that both src and dest are memory address
     // addr -> addr -> procedureStep list
     let private getMemToMemProcedure dest src =
-        let (| DestIsAccessible | DestIsNotStack
-              | SrcIsWritableRegister | Other |) (dest, src) =
+        let (| DestIsAccessible
+              | DestIsNotStack
+               | Other |) (dest, src) =
             if isAccessibleAddress dest then
                 DestIsAccessible
             elif isNotSpAddr dest then
                 DestIsNotStack
-            elif isWritableRegister src then
-                SrcIsWritableRegister
             else
                 Other
 
@@ -142,20 +147,14 @@ module moveAddressResolve =
             [PushSrcVal]               |> incDecCheck (Src, src)
             [PopToDest]                |> incDecCheck (Dest, dest)
             ] |> List.concat
-        | SrcIsWritableRegister ->
-            [
-            [StoreSrcReg]              |> incDecCheck (Src, src)
-            [MoveSrcVal_toSrcReg]
-            [MoveDestRef_toUtilReg]    |> incDecCheck (Dest, dest)
-            [BinaryCalc(ODest, OSrc)]
-            [RestoreSrcReg]
-            ] |> List.concat
         | _ ->
+            let freeReg = getFreeReg src dest
             [
-            [StoreDestReg]             |> incDecCheck (Dest, dest)
-            [PushSrcVal]               |> incDecCheck (Src, src)
-            [MoveDestRef_toUtilReg_fromTempMem]
-            [PopToDest]
+            [StoreRegVal(freeReg)]
+            [MoveSrcVal_toReg(freeReg)]  |> incDecCheck (Src, src)
+            [MoveDestRef_toUtilReg]      |> incDecCheck (Dest, dest)
+            [BinaryCalc(ODest, OSrc)]
+            [RestoreRegVal(freeReg)]
             ] |> List.concat
 
 

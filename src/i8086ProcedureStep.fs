@@ -13,13 +13,13 @@ type operand =
 // type of step of procedure
 type procedureStep =
     | MoveSrcVal_toUtilReg
-    | MoveSrcVal_toSrcReg
-    | MoveSrcVal_toDestReg
+    | MoveSrcVal_toReg of reg
     | MoveSrcVal_toTempMem
     | MoveSrcRef_toUtilReg
     | MoveDestVal_toUtilReg
     | MoveDestRef_toUtilReg
-    | MoveDestRef_toUtilReg_fromTempMem
+    | StoreRegVal of reg
+    | RestoreRegVal of reg
     | UnaryCalc of operand
     | BinaryCalc of operand * operand
     | ByteUnaryCalc of operand
@@ -27,20 +27,14 @@ type procedureStep =
     | XChgAxForDestVal
     | ReXChgAxForDestVal
     | ConvertAxByteIntoWord
-    | StoreSrcReg
-    | RestoreSrcReg
-    | StoreDestReg
-    | RestoreDestReg
-    | PushResult
-    | PopToDest
     | PushSrcVal
+    | PopToDest
     | IncrementSrcReg of int
     | DecrementSrcReg of int
     | IncrementDestReg of int
     | DecrementDestReg of int
-    | IncrementStoreMem of int
     | PopSrcVal_toUtilReg
-    | PopSrcVal_toDestReg
+    | PopSrcVal_toReg of reg
     | PopSrcVal_toTempMem
     | PopSrcRef_toUtilReg
     | PopDestRef_toUtilReg
@@ -55,15 +49,6 @@ let isAccessibleAddress = function
     | IncDfr(r,_) | DecDfr(r,_) | IdxDfr(r, _) | Dfr(r)
         when r = R3 || r = R4 || r = R5 || r = Util -> true
     | Register(_) | Rel(_) | Imm(_) | Abs(_) -> true
-    | _ -> false
-
-
-// return if the address is writable register or not.
-// addr -> bool
-let isWritableRegister = function
-    | IncDfr(r,_) | DecDfr(r,_) | IdxDfr(r,_) | Dfr(r)
-    | IncDDfr(r,_) | DecDDfr(r,_) | DDfr(r) | IdxDDfr(r,_)
-        when r <> SP && r <> PC -> true
     | _ -> false
 
 
@@ -101,7 +86,7 @@ let incDecCheck (target, addr) (stepList:procedureStep list) =
         if addr = IncDfr(SP, 2) || addr = IncDDfr(SP, 2) then
             match step with
             | MoveSrcVal_toUtilReg  -> Some(PopSrcVal_toUtilReg)
-            | MoveSrcVal_toDestReg  -> Some(PopSrcVal_toDestReg)
+            | MoveSrcVal_toReg(reg) -> Some(PopSrcVal_toReg(reg))
             | MoveSrcVal_toTempMem  -> Some(PopSrcVal_toTempMem)
             | MoveSrcRef_toUtilReg when addr = IncDDfr(SP,2)
                                     -> Some(PopSrcRef_toUtilReg)
@@ -119,18 +104,13 @@ let incDecCheck (target, addr) (stepList:procedureStep list) =
         let stepHead = stepList.Head
         let stepTail = stepList.Tail
 
-        match stepHead with
-        | StoreSrcReg
-        | StoreDestReg ->
-            stepHead :: IncrementStoreMem(incNum) :: stepTail
-        | _ ->
-            let popCodeOption = changeToPopStep stepHead addr
-            if popCodeOption.IsSome then
-                popCodeOption.Value :: stepTail
-            elif target = Src then
-                stepList @ [IncrementSrcReg(incNum)]
-            else
-                stepList @ [IncrementDestReg(incNum)]
+        let popCodeOption = changeToPopStep stepHead addr
+        if popCodeOption.IsSome then
+            popCodeOption.Value :: stepTail
+        elif target = Src then
+            stepList @ [IncrementSrcReg(incNum)]
+        else
+            stepList @ [IncrementDestReg(incNum)]
 
     | DecDfr(_,decNum) | DecDDfr(_,decNum) ->
         if target = Src then

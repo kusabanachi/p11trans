@@ -64,12 +64,6 @@ let getRegOfAddr = function
         failwithf "%A is not Register Address" x
 
 
-// get a register text of address.
-// addr -> string
-let getRegStrOfAddr addr =
-    getRegStr (getRegOfAddr addr)
-
-
 // get a memory index value's text of address
 // addr -> string
 let getMemIndexStr = function
@@ -203,32 +197,6 @@ let moveRefToReg inAddr outReg =
         failwithf "Invalid address"
 
 
-// get instruction text,
-// that move value's reference from memory to register.
-// return instruction text and address of the reference.
-// addr -> reg -> string -> string * addr
-let moveRefToRegFromMem inAddr outReg mem =
-    let index = getMemIndexStr inAddr
-    let oreg = getRegStr outReg
-    let ureg = getRegStr Util
-
-    match inAddr with
-    | IncDfr(_,_) | DecDfr(_,_) | Dfr(_)
-    | Rel(_) | Abs(_) ->
-        ("mov " + oreg + ", " + mem,
-         Dfr(outReg))
-    | IdxDfr(_,e) ->
-        ("mov " + oreg + ", " + mem,
-         IdxDfr(outReg,e))
-    | IncDDfr(_,_) | DecDDfr(_,_) | DDfr(_) | IdxDDfr(_,_)
-    | RelDfr(_) ->
-        ("mov " + ureg + ", " + mem
-           +!!+ "mov " + oreg + ", " + index + (getDfrStr ureg),
-         Dfr(outReg))
-    | _ ->
-        failwithf "Invalid address"
-
-
 // get address text of instruction's operand.
 // addr -> string
 let getAddrOperandText addr =
@@ -337,16 +305,16 @@ let convertAxByteIntoWord = "cbw"
 
 // get instruction text,
 // that store register's value to temp memory.
-// addr -> string
-let storeRegToTempMem addr =
-    "mov " + tempValMem + ", " + (getRegStrOfAddr addr)
+// reg -> string
+let storeRegToTempMem reg =
+    "mov " + tempValMem + ", " + (getRegStr reg)
 
 
 // get instruction text,
 // that restore register's value from temp memory.
-// addr -> string
-let restoreRegFromTempMem addr =
-    "mov " + (getRegStrOfAddr addr) + ", " + tempValMem
+// reg -> string
+let restoreRegFromTempMem reg =
+    "mov " + (getRegStr reg) + ", " + tempValMem
 
 
 // get instruction text,
@@ -433,13 +401,6 @@ let incrementAddr addr incNum =
 
 
 // get instruction text,
-// that increment value at memory.
-// string -> int -> string
-let incrementMem mem incNum =
-    "add " + mem + ", #" + incNum.ToString()
-
-
-// get instruction text,
 // that decrement register of address.
 // addr -> int -> string
 let decrementAddr addr decNum =
@@ -501,7 +462,6 @@ type addrTag =
     | OrgDest
     | Src
     | Dest
-    | Result
 
 
 // search a element from list
@@ -552,21 +512,12 @@ let transformStep (codeList, opcode, elemList) step =
         (code::codeList,
          opcode,
          (Src, Register(Util))::elemList)
-    | MoveSrcVal_toSrcReg ->
-        let src = searchElem OrgSrc elemList
-        let srcReg = getRegOfAddr src
-        let code = moveValueToReg src srcReg
-        (code::codeList,
-         opcode,
-         (Src, Register(srcReg))::elemList)
-    | MoveSrcVal_toDestReg ->
+    | MoveSrcVal_toReg(reg) ->
         let src = searchSrcElem elemList
-        let dest = searchElem OrgDest elemList
-        let destReg = getRegOfAddr dest
-        let code = moveValueToReg src destReg
+        let code = moveValueToReg src reg
         (code::codeList,
          opcode,
-         (Src, Register(destReg))::elemList)
+         (Src, Register(reg))::elemList)
     | MoveSrcVal_toTempMem ->
         let src = searchSrcElem elemList
         let code = moveValueToMem src tempValMem
@@ -591,12 +542,12 @@ let transformStep (codeList, opcode, elemList) step =
         (code::codeList,
          opcode,
          (Dest, destAddr)::elemList)
-    | MoveDestRef_toUtilReg_fromTempMem ->
-        let dest = searchElem OrgDest elemList
-        let (code, destAddr) = moveRefToRegFromMem dest Util tempValMem
-        (code::codeList,
-         opcode,
-         (Dest, destAddr)::elemList)
+    | StoreRegVal(reg) ->
+        let code = storeRegToTempMem reg
+        (code::codeList, opcode, elemList)
+    | RestoreRegVal(reg) ->
+        let code = restoreRegFromTempMem reg
+        (code::codeList, opcode, elemList)
     | UnaryCalc(ODest) ->
         let dest = searchDestElem elemList
         let code = calcWithOneArg opcode dest
@@ -605,16 +556,12 @@ let transformStep (codeList, opcode, elemList) step =
         let dest = searchDestElem elemList
         let src = searchSrcElem elemList
         let code = calcWithTwoArgs opcode dest src
-        (code::codeList,
-         opcode,
-         (Result, dest)::elemList)
+        (code::codeList, opcode, elemList)
     | BinaryCalc(OSrc, ODest) ->
         let src = searchSrcElem elemList
         let dest = searchDestElem elemList
         let code = calcWithTwoArgs opcode src dest
-        (code::codeList,
-         opcode,
-         (Result, dest)::elemList)
+        (code::codeList, opcode, elemList)
     | ByteUnaryCalc(ODest) ->
         let dest = searchDestElem elemList
         let code = byteCalcWithOneArg opcode dest
@@ -623,16 +570,12 @@ let transformStep (codeList, opcode, elemList) step =
         let dest = searchDestElem elemList
         let src = searchSrcElem elemList
         let code = byteCalcWithTwoArgs opcode dest src
-        (code::codeList,
-         opcode,
-         (Result, dest)::elemList)
+        (code::codeList, opcode, elemList)
     | ByteBinaryCalc(OSrc, ODest) ->
         let src = searchSrcElem elemList
         let dest = searchDestElem elemList
         let code = byteCalcWithTwoArgs opcode src dest
-        (code::codeList,
-         opcode,
-         (Result, dest)::elemList)
+        (code::codeList, opcode, elemList)
     | XChgAxForDestVal ->
         let dest = searchDestElem elemList
         let code = exchangeAxRegForValue dest
@@ -649,33 +592,13 @@ let transformStep (codeList, opcode, elemList) step =
     | ConvertAxByteIntoWord ->
         let code = convertAxByteIntoWord
         (code::codeList, opcode, elemList)
-    | StoreSrcReg ->
-        let src = searchElem OrgSrc elemList
-        let code = storeRegToTempMem src
-        (code::codeList, opcode, elemList)
-    | RestoreSrcReg ->
-        let src = searchElem OrgSrc elemList
-        let code = restoreRegFromTempMem src
-        (code::codeList, opcode, elemList)
-    | StoreDestReg ->
-        let dest = searchElem OrgDest elemList
-        let code = storeRegToTempMem dest
-        (code::codeList, opcode, elemList)
-    | RestoreDestReg ->
-        let dest = searchElem OrgDest elemList
-        let code = restoreRegFromTempMem dest
-        (code::codeList, opcode, elemList)
-    | PushResult ->
-        let result = searchElem Result elemList
-        let code = pushFromAddr result
+    | PushSrcVal ->
+        let src = searchSrcElem elemList
+        let code = pushFromAddr src
         (code::codeList, opcode, elemList)
     | PopToDest ->
         let dest = searchDestElem elemList
         let code = popToAddr dest
-        (code::codeList, opcode, elemList)
-    | PushSrcVal ->
-        let src = searchSrcElem elemList
-        let code = pushFromAddr src
         (code::codeList, opcode, elemList)
     | IncrementSrcReg(incNum) ->
         let src = searchElem OrgSrc elemList
@@ -693,9 +616,6 @@ let transformStep (codeList, opcode, elemList) step =
         let dest = searchElem OrgDest elemList
         let code = decrementAddr dest decNum
         (code::codeList, opcode, elemList)
-    | IncrementStoreMem(incNum) ->
-        let code = incrementMem tempValMem incNum
-        (code::codeList, opcode, elemList)
 
     | PopSrcVal_toUtilReg ->
         let src = searchSrcElem elemList
@@ -703,14 +623,12 @@ let transformStep (codeList, opcode, elemList) step =
         (code::codeList,
          opcode,
          (Src, Register(Util))::elemList)
-    | PopSrcVal_toDestReg ->
+    | PopSrcVal_toReg(reg) ->
         let src = searchSrcElem elemList
-        let dest = searchElem OrgDest elemList
-        let destReg = getRegOfAddr dest
-        let code = popValueToReg src destReg
+        let code = popValueToReg src reg
         (code::codeList,
          opcode,
-         (Src, Register(destReg))::elemList)
+         (Src, Register(reg))::elemList)
     | PopSrcVal_toTempMem ->
         let src = searchSrcElem elemList
         let code = popValueToMem src tempValMem
