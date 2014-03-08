@@ -38,8 +38,8 @@ let getFreeReg addr1 addr2 =
 module twoAddressResolve =
 
     // a case of that both src and dest are memory address
-    // addr -> addr -> procedureStep list
-    let private getMemToMemProcedure dest src =
+    // string -> addr -> addr -> procedureStep list
+    let private getMemToMemProcedure code dest src =
         let (| DestIsAccessible
               | Other |) (dest, src) =
             if isAccessibleAddress dest then
@@ -50,45 +50,45 @@ module twoAddressResolve =
         match (dest, src) with
         | DestIsAccessible ->
             [
-            [MoveSrcVal_toUtilReg]     |> incDecCheck (Src, src)
-            [BinaryCalc(ODest, OSrc)]  |> incDecCheck (Dest, dest)
+            [MoveSrcVal_toUtilReg]           |> incDecCheck (Src, src)
+            [BinaryCalc(code, ODest, OSrc)]  |> incDecCheck (Dest, dest)
             ] |> List.concat
         | _ ->
             let freeReg = getFreeReg src dest
             [
             [StoreRegVal(freeReg)]
-            [MoveSrcVal_toReg(freeReg)]  |> incDecCheck (Src, src)
-            [MoveDestRef_toUtilReg]      |> incDecCheck (Dest, dest)
-            [BinaryCalc(ODest, OSrc)]
+            [MoveSrcVal_toReg(freeReg)]      |> incDecCheck (Src, src)
+            [MoveDestRef_toUtilReg]          |> incDecCheck (Dest, dest)
+            [BinaryCalc(code, ODest, OSrc)]
             [RestoreRegVal(freeReg)]
             ] |> List.concat
 
     // get steps of procedure for i8086's two address operation.
-    // addr -> addr -> procedureStep list
-    let private getProcedureImple dest src =
+    // string -> addr -> addr -> procedureStep list
+    let private getProcedureImple code dest src =
         if isMemAddr dest && isMemAddr src then
-            getMemToMemProcedure dest src
+            getMemToMemProcedure code dest src
         elif not (isAccessibleAddress dest) then
             [
-            [MoveDestRef_toUtilReg]    |> incDecCheck (Dest, dest)
-            [BinaryCalc(ODest, OSrc)]
+            [MoveDestRef_toUtilReg]          |> incDecCheck (Dest, dest)
+            [BinaryCalc(code, ODest, OSrc)]
             ] |> List.concat
         elif not (isAccessibleAddress src) then
             [
-            [MoveSrcRef_toUtilReg]     |> incDecCheck (Src, src)
-            [BinaryCalc(ODest, OSrc)]
+            [MoveSrcRef_toUtilReg]           |> incDecCheck (Src, src)
+            [BinaryCalc(code, ODest, OSrc)]
             ] |> List.concat
         elif isMemAddr dest then
-            [BinaryCalc(ODest, OSrc)]  |> incDecCheck (Dest, dest)
+            [BinaryCalc(code, ODest, OSrc)]  |> incDecCheck (Dest, dest)
         elif isMemAddr src then
-            [BinaryCalc(ODest, OSrc)]  |> incDecCheck (Src, src)
+            [BinaryCalc(code, ODest, OSrc)]  |> incDecCheck (Src, src)
         else
-            [BinaryCalc(ODest, OSrc)]
+            [BinaryCalc(code, ODest, OSrc)]
 
     // entry of getting steps of procedure for i8086's two address operation.
-    // 'a -> addr -> addr -> procedureStep list option
+    // string -> addr -> addr -> procedureStep list option
     let getProcedure code dest src =
-        let procedure = getProcedureImple dest src
+        let procedure = getProcedureImple code dest src
         Some(procedure)
 
 
@@ -97,16 +97,16 @@ module twoAddressResolve =
 module oneAddressResolve =
 
     // get steps of procedure for i8086's one address operation.
-    // 'a -> addr -> procedureStep list option
+    // string -> addr -> procedureStep list option
     let getProcedure code dest =
         let procedure =
             if not (isAccessibleAddress dest) then
                 [
-                [MoveDestRef_toUtilReg] |> incDecCheck (Dest, dest)
-                [UnaryCalc(ODest)]
+                [MoveDestRef_toUtilReg]       |> incDecCheck (Dest, dest)
+                [UnaryCalc(code, ODest)]
                 ] |> List.concat
             else
-                [UnaryCalc(ODest)]      |> incDecCheck (Dest, dest)
+                [UnaryCalc(code, ODest)]      |> incDecCheck (Dest, dest)
         Some(procedure)
 
 
@@ -124,8 +124,8 @@ module moveAddressResolve =
         | _ -> true
 
     // a case of that both src and dest are memory address
-    // addr -> addr -> procedureStep list
-    let private getMemToMemProcedure dest src =
+    // string -> addr -> addr -> procedureStep list
+    let private getMemToMemProcedure code dest src =
         let (| DestIsAccessible
               | DestIsNotStack
                | Other |) (dest, src) =
@@ -139,8 +139,8 @@ module moveAddressResolve =
         match (dest, src) with
         | DestIsAccessible ->
             [
-            [MoveSrcVal_toUtilReg]     |> incDecCheck (Src, src)
-            [BinaryCalc(ODest, OSrc)]  |> incDecCheck (Dest, dest)
+            [MoveSrcVal_toUtilReg]           |> incDecCheck (Src, src)
+            [BinaryCalc(code, ODest, OSrc)]  |> incDecCheck (Dest, dest)
             ] |> List.concat
         | DestIsNotStack ->
             [
@@ -153,51 +153,51 @@ module moveAddressResolve =
             [StoreRegVal(freeReg)]
             [MoveSrcVal_toReg(freeReg)]  |> incDecCheck (Src, src)
             [MoveDestRef_toUtilReg]      |> incDecCheck (Dest, dest)
-            [BinaryCalc(ODest, OSrc)]
+            [BinaryCalc(code, ODest, OSrc)]
             [RestoreRegVal(freeReg)]
             ] |> List.concat
 
 
     // get steps of procedure for i8086's move address operation.
-    // addr -> addr -> procedureStep list
-    let private getNotStackProcedure dest src =
+    // string -> addr -> addr -> procedureStep list
+    let private getNotStackProcedure code dest src =
         if isMemAddr dest && isMemAddr src then
-            getMemToMemProcedure dest src
+            getMemToMemProcedure code dest src
         elif not (isAccessibleAddress dest) then
             [
-            [MoveDestRef_toUtilReg]    |> incDecCheck (Dest, dest)
-            [BinaryCalc(ODest, OSrc)]
+            [MoveDestRef_toUtilReg]          |> incDecCheck (Dest, dest)
+            [BinaryCalc(code, ODest, OSrc)]
             ] |> List.concat
         elif not (isAccessibleAddress src) then
             [
-            [MoveSrcRef_toUtilReg]     |> incDecCheck (Src, src)
-            [BinaryCalc(ODest, OSrc)]
+            [MoveSrcRef_toUtilReg]           |> incDecCheck (Src, src)
+            [BinaryCalc(code, ODest, OSrc)]
             ] |> List.concat
         elif isMemAddr dest then
-            [BinaryCalc(ODest, OSrc)]  |> incDecCheck (Dest, dest)
+            [BinaryCalc(code, ODest, OSrc)]  |> incDecCheck (Dest, dest)
         elif isMemAddr src then
-            [BinaryCalc(ODest, OSrc)]  |> incDecCheck (Src, src)
+            [BinaryCalc(code, ODest, OSrc)]  |> incDecCheck (Src, src)
         else
-            [BinaryCalc(ODest, OSrc)]
+            [BinaryCalc(code, ODest, OSrc)]
 
 
     // entry of getting steps of procedure for i8086's move address operation.
     // apply push or pop steps, if it is available.
-    // 'a -> addr -> addr -> procedureStep list option
+    // string -> addr -> addr -> procedureStep list option
     let getProcedure code dest src =
         let procedure =
             match (dest, src) with
             | (DecDfr(SP, 2), _) ->
-                [PushSrcVal]           |> incDecCheck (Src, src)
+                [PushSrcVal]                 |> incDecCheck (Src, src)
             | (Dfr(SP), _) ->
                 [
                 [IncrementDestReg(2)]
-                [PushSrcVal]           |> incDecCheck (Src, src)
+                [PushSrcVal]                 |> incDecCheck (Src, src)
                 ] |> List.concat
             | (_, IncDfr(SP, 2)) ->
-                [PopToDest]            |> incDecCheck (Dest, dest)
+                [PopToDest]                  |> incDecCheck (Dest, dest)
             | _ ->
-                getNotStackProcedure dest src
+                getNotStackProcedure code dest src
         Some(procedure)
 
 
@@ -206,8 +206,8 @@ module moveAddressResolve =
 module twoAddressResolveWithoutStoring =
 
     // a case of that both src and dest are memory address
-    // addr -> addr -> procedureStep list
-    let private getMemToMemProcedure dest src =
+    // string -> addr -> addr -> procedureStep list
+    let private getMemToMemProcedure code dest src =
         let (| DestIsAccessible | SrcIsAccessible
               | Other |) (dest, src) =
             if isAccessibleAddress dest then
@@ -220,49 +220,49 @@ module twoAddressResolveWithoutStoring =
         match (dest, src) with
         | DestIsAccessible ->
             [
-            [MoveSrcVal_toUtilReg]     |> incDecCheck (Src, src)
-            [BinaryCalc(OSrc, ODest)]  |> incDecCheck (Dest, dest)
+            [MoveSrcVal_toUtilReg]           |> incDecCheck (Src, src)
+            [BinaryCalc(code, OSrc, ODest)]  |> incDecCheck (Dest, dest)
             ] |> List.concat
         | SrcIsAccessible ->
             [
-            [MoveDestVal_toUtilReg]    |> incDecCheck (Dest, dest)
-            [BinaryCalc(OSrc, ODest)]  |> incDecCheck (Src, src)
+            [MoveDestVal_toUtilReg]          |> incDecCheck (Dest, dest)
+            [BinaryCalc(code, OSrc, ODest)]  |> incDecCheck (Src, src)
             ] |> List.concat
         | _ ->
             [
-            [MoveSrcVal_toTempMem]     |> incDecCheck (Src, src)
-            [MoveDestVal_toUtilReg]    |> incDecCheck (Dest, dest)
-            [BinaryCalc(OSrc, ODest)]
+            [MoveSrcVal_toTempMem]           |> incDecCheck (Src, src)
+            [MoveDestVal_toUtilReg]          |> incDecCheck (Dest, dest)
+            [BinaryCalc(code, OSrc, ODest)]
             ] |> List.concat
 
 
     // get steps of procedure for i8086's two address operation,
     // which doesn't store result.
-    // addr -> addr -> procedureStep list
-    let private getProcedureImple dest src =
+    // string -> addr -> addr -> procedureStep list
+    let private getProcedureImple code dest src =
         if isMemAddr dest && isMemAddr src then
-            getMemToMemProcedure dest src
+            getMemToMemProcedure code dest src
         elif not (isAccessibleAddress dest) then
             [
-            [MoveDestRef_toUtilReg]    |> incDecCheck (Dest, dest)
-            [BinaryCalc(OSrc, ODest)]
+            [MoveDestRef_toUtilReg]          |> incDecCheck (Dest, dest)
+            [BinaryCalc(code, OSrc, ODest)]
             ] |> List.concat
         elif not (isAccessibleAddress src) then
             [
-            [MoveSrcRef_toUtilReg]     |> incDecCheck (Src, src)
-            [BinaryCalc(OSrc, ODest)]
+            [MoveSrcRef_toUtilReg]           |> incDecCheck (Src, src)
+            [BinaryCalc(code, OSrc, ODest)]
             ] |> List.concat
         elif isMemAddr dest then
-            [BinaryCalc(OSrc, ODest)]  |> incDecCheck (Dest, dest)
+            [BinaryCalc(code, OSrc, ODest)]  |> incDecCheck (Dest, dest)
         elif isMemAddr src then
-            [BinaryCalc(OSrc, ODest)]  |> incDecCheck (Src, src)
+            [BinaryCalc(code, OSrc, ODest)]  |> incDecCheck (Src, src)
         else
-            [BinaryCalc(OSrc, ODest)]
+            [BinaryCalc(code, OSrc, ODest)]
 
     // entry of getting steps of procedure for i8086's two address operation,
     // which doesn't store result.
-    // 'a -> addr -> addr -> procedureStep list option
+    // string -> addr -> addr -> procedureStep list option
     let getProcedure code dest src =
-        let procedure = getProcedureImple dest src
+        let procedure = getProcedureImple code dest src
         Some(procedure)
 

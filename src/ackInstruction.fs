@@ -19,7 +19,7 @@ let twoAddrCode code src dest =
     match twoAddressResolve.getProcedure code dest src with
     | Some procedure ->
         let codeList = ackInstructionText.transformTwoAddrProcedureToText
-                           procedure code dest src
+                           procedure dest src
         String.concat ";  " codeList
     | _ ->
         let codeStr = sprintf "(%s  %s, %s)" code (dest.ToString()) (src.ToString())
@@ -32,7 +32,7 @@ let oneAddrCode code addr =
     match oneAddressResolve.getProcedure code addr with
     | Some procedure ->
         let codeList = ackInstructionText.transformOneAddrProcedureToText
-                           procedure code addr
+                           procedure addr
         String.concat ";  " codeList
     | _ ->
         let codeStr = sprintf "(%s  %s)" code (addr.ToString())
@@ -45,7 +45,7 @@ let moveCode code src dest =
     match moveAddressResolve.getProcedure code dest src with
     | Some procedure ->
         let codeList = ackInstructionText.transformTwoAddrProcedureToText
-                           procedure code dest src
+                           procedure dest src
         String.concat ";  " codeList
     | _ ->
         let codeStr = sprintf "(%s  %s, %s)" code (dest.ToString()) (src.ToString())
@@ -58,7 +58,7 @@ let twoAddrCodeWithoutStoring code src dest =
     match twoAddressResolveWithoutStoring.getProcedure code dest src with
     | Some procedure ->
         let codeList = ackInstructionText.transformTwoAddrProcedureToText
-                           procedure code dest src
+                           procedure dest src
         String.concat ";  " codeList
     | _ ->
         let codeStr = sprintf "(%s  %s, %s)" code (dest.ToString()) (src.ToString())
@@ -72,7 +72,7 @@ let twoAddrByteCode code src dest =
     match twoAddressResolveForByteInstruction.getProcedure code dest src with
     | Some procedure ->
         let codeList = ackInstructionText.transformTwoAddrProcedureToText
-                           procedure code dest src
+                           procedure dest src
         String.concat ";  " codeList
     | _ ->
         let codeStr = sprintf "(%s  %s, %s)" code (dest.ToString()) (src.ToString())
@@ -86,7 +86,7 @@ let oneAddrByteCode code addr =
     match oneAddressResolveForByteInstruction.getProcedure code addr with
     | Some procedure ->
         let codeList = ackInstructionText.transformOneAddrProcedureToText
-                           procedure code addr
+                           procedure addr
         String.concat ";  " codeList
     | _ ->
         let codeStr = sprintf "(%s  %s)" code (addr.ToString())
@@ -100,7 +100,7 @@ let twoAddrByteCodeWithoutStoring code src dest =
     match twoAddressResolveForByteInstructionWithoutStoring.getProcedure code dest src with
     | Some procedure ->
         let codeList = ackInstructionText.transformTwoAddrProcedureToText
-                           procedure code dest src
+                           procedure dest src
         String.concat ";  " codeList
     | _ ->
         let codeStr = sprintf "(%s  %s, %s)" code (dest.ToString()) (src.ToString())

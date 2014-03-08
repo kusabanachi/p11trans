@@ -20,10 +20,10 @@ type procedureStep =
     | MoveDestRef_toUtilReg
     | StoreRegVal of reg
     | RestoreRegVal of reg
-    | UnaryCalc of operand
-    | BinaryCalc of operand * operand
-    | ByteUnaryCalc of operand
-    | ByteBinaryCalc of operand * operand
+    | UnaryCalc of string * operand
+    | BinaryCalc of string * operand * operand
+    | ByteUnaryCalc of string * operand
+    | ByteBinaryCalc of string * operand * operand
     | XChgAxForDestVal
     | ReXChgAxForDestVal
     | ConvertAxByteIntoWord

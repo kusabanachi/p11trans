@@ -501,180 +501,152 @@ let removeDestAxReg elemList =
 
 
 // transform a procedure step to ACK i8086 instruction text.
-// string list * string * (addrTag * addr) list
+// string list * (addrTag * addr) list
 //     -> procedureStep
-//     -> string list * string * (addrTag * addr) list
-let transformStep (codeList, opcode, elemList) step =
+//     -> string list * (addrTag * addr) list
+let transformStep (codeList, elemList) step =
     match step with
     | MoveSrcVal_toUtilReg ->
         let src = searchSrcElem elemList
         let code = moveValueToReg src Util
-        (code::codeList,
-         opcode,
-         (Src, Register(Util))::elemList)
+        (code::codeList, (Src, Register(Util))::elemList)
     | MoveSrcVal_toReg(reg) ->
         let src = searchSrcElem elemList
         let code = moveValueToReg src reg
-        (code::codeList,
-         opcode,
-         (Src, Register(reg))::elemList)
+        (code::codeList, (Src, Register(reg))::elemList)
     | MoveSrcVal_toTempMem ->
         let src = searchSrcElem elemList
         let code = moveValueToMem src tempValMem
-        (code::codeList,
-         opcode,
-         (Src, Rel(Expr(tempValMem)))::elemList)
+        (code::codeList, (Src, Rel(Expr(tempValMem)))::elemList)
     | MoveSrcRef_toUtilReg ->
         let src = searchElem OrgSrc elemList
         let (code, srcAddr) = moveRefToReg src Util
-        (code::codeList,
-         opcode,
-         (Src, srcAddr)::elemList)
+        (code::codeList, (Src, srcAddr)::elemList)
     | MoveDestVal_toUtilReg ->
         let dest = searchDestElem elemList
         let code = moveValueToReg dest Util
-        (code::codeList,
-         opcode,
-         (Dest, Register(Util))::elemList)
+        (code::codeList, (Dest, Register(Util))::elemList)
     | MoveDestRef_toUtilReg ->
         let dest = searchElem OrgDest elemList
         let (code, destAddr) = moveRefToReg dest Util
-        (code::codeList,
-         opcode,
-         (Dest, destAddr)::elemList)
+        (code::codeList, (Dest, destAddr)::elemList)
     | StoreRegVal(reg) ->
         let code = storeRegToTempMem reg
-        (code::codeList, opcode, elemList)
+        (code::codeList, elemList)
     | RestoreRegVal(reg) ->
         let code = restoreRegFromTempMem reg
-        (code::codeList, opcode, elemList)
-    | UnaryCalc(ODest) ->
+        (code::codeList, elemList)
+    | UnaryCalc(opcode, ODest) ->
         let dest = searchDestElem elemList
         let code = calcWithOneArg opcode dest
-        (code::codeList, opcode, elemList)
-    | BinaryCalc(ODest, OSrc) ->
+        (code::codeList, elemList)
+    | BinaryCalc(opcode, ODest, OSrc) ->
         let dest = searchDestElem elemList
         let src = searchSrcElem elemList
         let code = calcWithTwoArgs opcode dest src
-        (code::codeList, opcode, elemList)
-    | BinaryCalc(OSrc, ODest) ->
+        (code::codeList, elemList)
+    | BinaryCalc(opcode, OSrc, ODest) ->
         let src = searchSrcElem elemList
         let dest = searchDestElem elemList
         let code = calcWithTwoArgs opcode src dest
-        (code::codeList, opcode, elemList)
-    | ByteUnaryCalc(ODest) ->
+        (code::codeList, elemList)
+    | ByteUnaryCalc(opcode, ODest) ->
         let dest = searchDestElem elemList
         let code = byteCalcWithOneArg opcode dest
-        (code::codeList, opcode, elemList)
-    | ByteBinaryCalc(ODest, OSrc) ->
+        (code::codeList, elemList)
+    | ByteBinaryCalc(opcode, ODest, OSrc) ->
         let dest = searchDestElem elemList
         let src = searchSrcElem elemList
         let code = byteCalcWithTwoArgs opcode dest src
-        (code::codeList, opcode, elemList)
-    | ByteBinaryCalc(OSrc, ODest) ->
+        (code::codeList, elemList)
+    | ByteBinaryCalc(opcode, OSrc, ODest) ->
         let src = searchSrcElem elemList
         let dest = searchDestElem elemList
         let code = byteCalcWithTwoArgs opcode src dest
-        (code::codeList, opcode, elemList)
+        (code::codeList, elemList)
     | XChgAxForDestVal ->
         let dest = searchDestElem elemList
         let code = exchangeAxRegForValue dest
-        (code::codeList,
-         opcode,
-         (Dest, Register(R0))::elemList)
+        (code::codeList, (Dest, Register(R0))::elemList)
     | ReXChgAxForDestVal ->
         let elemList' = removeDestAxReg elemList
         let dest = searchDestElem elemList'
         let code = exchangeAxRegForValue dest
-        (code::codeList,
-         opcode,
-         elemList')
+        (code::codeList, elemList')
     | ConvertAxByteIntoWord ->
         let code = convertAxByteIntoWord
-        (code::codeList, opcode, elemList)
+        (code::codeList, elemList)
     | PushSrcVal ->
         let src = searchSrcElem elemList
         let code = pushFromAddr src
-        (code::codeList, opcode, elemList)
+        (code::codeList, elemList)
     | PopToDest ->
         let dest = searchDestElem elemList
         let code = popToAddr dest
-        (code::codeList, opcode, elemList)
+        (code::codeList, elemList)
     | IncrementSrcReg(incNum) ->
         let src = searchElem OrgSrc elemList
         let code = incrementAddr src incNum
-        (code::codeList, opcode, elemList)
+        (code::codeList, elemList)
     | DecrementSrcReg(decNum) ->
         let src = searchElem OrgSrc elemList
         let code = decrementAddr src decNum
-        (code::codeList, opcode, elemList)
+        (code::codeList, elemList)
     | IncrementDestReg(incNum) ->
         let dest = searchElem OrgDest elemList
         let code = incrementAddr dest incNum
-        (code::codeList, opcode, elemList)
+        (code::codeList, elemList)
     | DecrementDestReg(decNum) ->
         let dest = searchElem OrgDest elemList
         let code = decrementAddr dest decNum
-        (code::codeList, opcode, elemList)
+        (code::codeList, elemList)
 
     | PopSrcVal_toUtilReg ->
         let src = searchSrcElem elemList
         let code = popValueToReg src Util
-        (code::codeList,
-         opcode,
-         (Src, Register(Util))::elemList)
+        (code::codeList, (Src, Register(Util))::elemList)
     | PopSrcVal_toReg(reg) ->
         let src = searchSrcElem elemList
         let code = popValueToReg src reg
-        (code::codeList,
-         opcode,
-         (Src, Register(reg))::elemList)
+        (code::codeList, (Src, Register(reg))::elemList)
     | PopSrcVal_toTempMem ->
         let src = searchSrcElem elemList
         let code = popValueToMem src tempValMem
-        (code::codeList,
-         opcode,
-         (Src, Rel(Expr(tempValMem)))::elemList)
+        (code::codeList, (Src, Rel(Expr(tempValMem)))::elemList)
     | PopSrcRef_toUtilReg ->
         let src = searchElem OrgSrc elemList
         let (code, srcAddr) = popRefToReg src Util
-        (code::codeList,
-         opcode,
-         (Src, srcAddr)::elemList)
+        (code::codeList, (Src, srcAddr)::elemList)
     | PopDestRef_toUtilReg ->
         let dest = searchElem OrgDest elemList
         let (code, destAddr) = popRefToReg dest Util
-        (code::codeList,
-         opcode,
-         (Dest, destAddr)::elemList)
+        (code::codeList, (Dest, destAddr)::elemList)
     | PopDestVal_toUtilReg ->
         let dest = searchDestElem elemList
         let code = popValueToReg dest Util
-        (code::codeList,
-         opcode,
-         (Dest, Register(Util))::elemList)
+        (code::codeList, (Dest, Register(Util))::elemList)
     | _ ->
         failwithf "Unimplemented step"
 
 
 // transform procedure of code which has two addresses of operands
 // to ACK i8086 instruction text.
-// procedureStep list -> string -> addr -> addr -> string list
-let transformTwoAddrProcedureToText procedure code dest src =
-    let (codeList,_,_) =
+// procedureStep list -> addr -> addr -> string list
+let transformTwoAddrProcedureToText procedure dest src =
+    let (codeList,_) =
         List.fold transformStep
-                  ([], code, [(OrgDest, dest); (OrgSrc, src)])
+                  ([], [(OrgDest, dest); (OrgSrc, src)])
                   procedure
     List.rev codeList
 
 
 // transform procedure of code which has one address of operand
 // to ACK i8086 instruction text.
-// procedureStep list -> string -> addr -> string list
-let transformOneAddrProcedureToText procedure code dest =
-    let (codeList,_,_) =
+// procedureStep list -> addr -> string list
+let transformOneAddrProcedureToText procedure dest =
+    let (codeList,_) =
         List.fold transformStep
-                  ([], code, [(OrgDest, dest)])
+                  ([], [(OrgDest, dest)])
                   procedure
     List.rev codeList
 
