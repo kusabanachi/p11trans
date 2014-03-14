@@ -266,3 +266,63 @@ module twoAddressResolveWithoutStoring =
         let procedure = getProcedureImple code dest src
         Some(procedure)
 
+
+
+// resolve i8086's sxt address operation.
+module sxtAddressResolve =
+
+    // temporary label name.
+    // string
+    let private tempLabelName = "8"
+
+    // return if the address is increment operand or not.
+    // addr -> bool
+    let private isIncrementAddr = function
+        | IncDfr(_,_) | IncDDfr(_,_)
+            -> true
+        | _ -> false
+
+    // the procedureStep to clear the dest operand's value.
+    // procedureStep list
+    let private stepsToClearDest =
+        [BinaryCalc("mov", ODest, OImm(Imm(Expr("0"))))]
+
+    // the procedureStep to jump to forward label,
+    // if the negative condition flag is not set.
+    // procedureStep list
+    let private stepsToJumpToLabelIfNotNegCondition =
+        [UnaryCalc("jns", OImm(Rel(Expr(tempLabelName + "f"))))]
+
+    // the procedureStep to invert the dest operand's value.
+    // procedureStep list
+    let private stepsToInvertDest =
+        [UnaryCalc("not", ODest)]
+
+    // get steps of procedure for i8086's sxt operation.
+    // addr -> procedureStep list option
+    let getProcedure dest =
+        let procedure =
+            if not (isAccessibleAddress dest) then
+                [
+                [MoveDestRef_toUtilReg]       |> incDecCheck (Dest, dest)
+                stepsToClearDest
+                stepsToJumpToLabelIfNotNegCondition
+                stepsToInvertDest
+                [TempLabel(tempLabelName)]
+                ] |> List.concat
+            elif isIncrementAddr dest then
+                [
+                stepsToClearDest
+                stepsToJumpToLabelIfNotNegCondition
+                stepsToInvertDest
+                [TempLabel(tempLabelName)]    |> incDecCheck (Dest, dest)
+                ] |> List.concat
+            else
+                [
+                stepsToClearDest              |> incDecCheck (Dest, dest)
+                stepsToJumpToLabelIfNotNegCondition
+                stepsToInvertDest
+                [TempLabel(tempLabelName)]
+                ] |> List.concat
+        Some(procedure)
+

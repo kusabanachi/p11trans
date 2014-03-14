@@ -9,6 +9,7 @@ open p11trans.intermediate
 type operand =
     | ODest
     | OSrc
+    | OImm of addr
 
 // type of step of procedure
 type procedureStep =
@@ -46,6 +47,7 @@ type procedureStep =
     | PopSrcRef_toUtilReg
     | PopDestRef_toUtilReg
     | PopDestVal_toUtilReg
+    | TempLabel of string
 
 // procedureStep
 let MoveSrcVal_toUtilReg = MoveSrcVal_toReg Util

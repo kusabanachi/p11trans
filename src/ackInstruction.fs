@@ -115,6 +115,19 @@ let syscallCode code = function
       +!!+ ".data1 " + sysent.getSyscallNumber expr
 
 
+// get ACK i8086 sign-extend code text.
+// addr -> string
+let sxtCode dest =
+    match sxtAddressResolve.getProcedure dest with
+    | Some procedure ->
+        let codeList = ackInstructionText.transformOneAddrProcedureToText
+                           procedure dest
+        String.concat ";  " codeList
+    | _ ->
+        let codeStr = sprintf "(sxt  %s)" (dest.ToString())
+        failwithf "Failed to resolve address - %s" codeStr
+
+
 // get ACK i8086 instruction text.
 // code -> string
 let rec getInstructionText = function
@@ -235,7 +248,7 @@ let rec getInstructionText = function
     //| MUL(addr, reg) ->
     //| DIV(addr, reg) ->
     //| XOR(reg, addr) -> "xor"
-    //| SXT(addr) ->
+    | SXT(addr) -> sxtCode addr
     //| MARK(expr)
     //| SOB(reg, expr) ->
 

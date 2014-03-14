@@ -842,9 +842,16 @@ let transformStep (codeList, elemList) step =
         let dest = searchDestElem elemList
         let code = calcWithOneArg opcode dest
         (code::codeList, elemList)
+    | UnaryCalc(opcode, OImm(dest)) ->
+        let code = calcWithOneArg opcode dest
+        (code::codeList, elemList)
     | BinaryCalc(opcode, ODest, OSrc) ->
         let dest = searchDestElem elemList
         let src = searchSrcElem elemList
+        let code = calcWithTwoArgs opcode dest src
+        (code::codeList, elemList)
+    | BinaryCalc(opcode, ODest, OImm(src)) ->
+        let dest = searchDestElem elemList
         let code = calcWithTwoArgs opcode dest src
         (code::codeList, elemList)
     | BinaryCalc(opcode, OSrc, ODest) ->
@@ -915,6 +922,9 @@ let transformStep (codeList, elemList) step =
         let dest = searchDestElem elemList
         let code = popValueToReg dest Util
         (code::codeList, (Dest, Register(Util))::elemList)
+    | TempLabel(labelName) ->
+        let code = labelName + ":"
+        (code::codeList, elemList)
     | _ ->
         failwithf "Unimplemented step"
 
