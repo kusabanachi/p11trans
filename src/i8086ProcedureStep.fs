@@ -12,12 +12,22 @@ type operand =
 
 // type of step of procedure
 type procedureStep =
-    | MoveSrcVal_toUtilReg
     | MoveSrcVal_toReg of reg
     | MoveSrcVal_toTempMem
     | MoveSrcRef_toUtilReg
     | MoveDestVal_toUtilReg
     | MoveDestRef_toUtilReg
+    | PushSrcVal
+    | PopToDest
+
+    | MoveSrcVal_toReg_withIncDec of reg
+    | MoveSrcVal_toTempMem_withIncDec
+    | MoveSrcRef_toUtilReg_withIncDec
+    | MoveDestVal_toUtilReg_withIncDec
+    | MoveDestRef_toUtilReg_withIncDec
+    | PushSrcVal_withIncDec
+    | PopToDest_withIncDec
+
     | StoreRegVal of reg
     | RestoreRegVal of reg
     | UnaryCalc of string * operand
@@ -27,18 +37,19 @@ type procedureStep =
     | XChgAxForDestVal
     | ReXChgAxForDestVal
     | ConvertAxByteIntoWord
-    | PushSrcVal
-    | PopToDest
     | IncrementSrcReg of int
     | DecrementSrcReg of int
     | IncrementDestReg of int
     | DecrementDestReg of int
-    | PopSrcVal_toUtilReg
     | PopSrcVal_toReg of reg
     | PopSrcVal_toTempMem
     | PopSrcRef_toUtilReg
     | PopDestRef_toUtilReg
     | PopDestVal_toUtilReg
+
+// procedureStep
+let MoveSrcVal_toUtilReg = MoveSrcVal_toReg Util
+let PopSrcVal_toUtilReg = PopSrcVal_toReg Util
 
 
 
@@ -85,13 +96,12 @@ let incDecCheck (target, addr) (stepList:procedureStep list) =
     let changeToPopStep step addr =
         if addr = IncDfr(SP, 2) || addr = IncDDfr(SP, 2) then
             match step with
-            | MoveSrcVal_toUtilReg  -> Some(PopSrcVal_toUtilReg)
             | MoveSrcVal_toReg(reg) -> Some(PopSrcVal_toReg(reg))
             | MoveSrcVal_toTempMem  -> Some(PopSrcVal_toTempMem)
             | MoveSrcRef_toUtilReg when addr = IncDDfr(SP,2)
                                     -> Some(PopSrcRef_toUtilReg)
             | MoveSrcRef_toUtilReg when addr = IncDfr(SP,2)
-                                    -> Some(PopSrcVal_toUtilReg)
+                                    -> Some(PopSrcVal_toReg(Util))
             | MoveDestRef_toUtilReg when addr = IncDDfr(SP,2)
                                     -> Some(PopDestRef_toUtilReg)
             | MoveDestVal_toUtilReg -> Some(PopDestVal_toUtilReg)
@@ -99,24 +109,50 @@ let incDecCheck (target, addr) (stepList:procedureStep list) =
         else
             None
 
-    match addr with
-    | IncDfr(_, incNum) | IncDDfr(_, incNum) ->
-        let stepHead = stepList.Head
-        let stepTail = stepList.Tail
+    // if it's properly, change the step to move and (in|de)crement the address.
+    let changeToMoveWithIncDecStep step =
+        match step with
+        | MoveSrcVal_toReg(reg) -> Some(MoveSrcVal_toReg_withIncDec(reg))
+        | MoveSrcVal_toTempMem  -> Some(MoveSrcVal_toTempMem_withIncDec)
+        | MoveSrcRef_toUtilReg  -> Some(MoveSrcRef_toUtilReg_withIncDec)
+        | MoveDestVal_toUtilReg -> Some(MoveDestVal_toUtilReg_withIncDec)
+        | MoveDestRef_toUtilReg -> Some(MoveDestRef_toUtilReg_withIncDec)
+        | PushSrcVal            -> Some(PushSrcVal_withIncDec)
+        | PopToDest             -> Some(PopToDest_withIncDec)
+        | _ -> None
 
+    // append (in|de)crement step to steps.
+    let appendAloneIncDecStep stepList target addr =
+        match addr with
+        | IncDfr(_, num) | IncDDfr(_, num) ->
+            if target = Src then
+                stepList @ [IncrementSrcReg(num)]
+            else
+                stepList @ [IncrementDestReg(num)]
+        | DecDfr(_, num) | DecDDfr(_, num) ->
+            if target = Src then
+                DecrementSrcReg(num) :: stepList
+            else
+                DecrementDestReg(num) :: stepList
+        | _ ->
+            stepList
+
+
+    let stepHead = stepList.Head
+    let stepTail = stepList.Tail
+
+    match addr with
+    | IncDfr(_, num) | IncDDfr(_, num)
+    | DecDfr(_, num) | DecDDfr(_, num) ->
         let popCodeOption = changeToPopStep stepHead addr
         if popCodeOption.IsSome then
             popCodeOption.Value :: stepTail
-        elif target = Src then
-            stepList @ [IncrementSrcReg(incNum)]
         else
-            stepList @ [IncrementDestReg(incNum)]
-
-    | DecDfr(_,decNum) | DecDDfr(_,decNum) ->
-        if target = Src then
-            DecrementSrcReg(decNum) :: stepList
-        else
-            DecrementDestReg(decNum) :: stepList
+            let moveCodeOption = changeToMoveWithIncDecStep stepHead
+            if moveCodeOption.IsSome then
+                moveCodeOption.Value :: stepTail
+            else
+                appendAloneIncDecStep stepList target addr
     | _ ->
         stepList
 

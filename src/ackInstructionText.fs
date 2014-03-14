@@ -197,6 +197,352 @@ let moveRefToReg inAddr outReg =
         failwithf "Invalid address"
 
 
+// get instruction text,
+// that push value of address to stack.
+// addr -> string
+let pushFromAddr addr =
+    let index = getMemIndexStr addr
+    let ureg = getRegStr Util
+
+    match addr with
+    | Register(r) ->
+        "push " + (getRegStr r)
+    | IncDfr(r,_) | DecDfr(r,_) | Dfr(r) | IdxDfr(r,_) ->
+        let reg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            "push " + index + (getDfrStr reg)
+        else
+            "mov " + ureg + ", " + reg
+              +!!+ "push " + index + (getDfrStr ureg)
+    | IncDDfr(r,_) | DecDDfr(r,_) | DDfr(r) | IdxDDfr(r,_) ->
+        let reg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            "mov " + ureg + ", " + index + (getDfrStr reg)
+              +!!+ "push " + (getDfrStr ureg)
+        else
+            "mov " + ureg + ", " + reg
+              +!!+ "mov " + ureg + ", " + index + (getDfrStr ureg)
+              +!!+ "push " + (getDfrStr ureg)
+    | Rel(e) | Abs(e) ->
+        "push " + (getExprStr e)
+    | RelDfr(e) ->
+        "mov " + ureg + ", " + (getExprStr e)
+          +!!+ "push " + (getDfrStr ureg)
+    | Imm(e) ->
+        "mov " + ureg + ", " + (getExprImm e)
+          +!!+ "push " + ureg
+
+
+// get instruction text,
+// that pop value from stack to address.
+// addr -> string
+let popToAddr addr =
+    let index = getMemIndexStr addr
+    let ureg = getRegStr Util
+
+    match addr with
+    | Register(r) ->
+        "pop " + (getRegStr r)
+    | IncDfr(r,_) | DecDfr(r,_) | Dfr(r) | IdxDfr(r,_) ->
+        let reg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            "pop " + index + (getDfrStr reg)
+        else
+            "mov " + ureg + ", " + reg
+              +!!+ "pop " + index + (getDfrStr ureg)
+    | IncDDfr(r,_) | DecDDfr(r,_) | DDfr(r) | IdxDDfr(r,_) ->
+        let reg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            "mov " + ureg + ", " + index + (getDfrStr reg)
+              +!!+ "pop " + (getDfrStr ureg)
+        else
+            "mov " + ureg + ", " + reg
+              +!!+ "mov " + ureg + ", " + index + (getDfrStr ureg)
+              +!!+ "pop " + (getDfrStr ureg)
+    | Rel(e) | Abs(e) ->
+        "pop " + (getExprStr e)
+    | RelDfr(e) ->
+        "mov " + ureg + ", " + (getExprStr e)
+          +!!+ "pop " + (getDfrStr ureg)
+    | _ ->
+        failwithf "Invalid address"
+
+
+// get instruction text,
+// that move value of address to specified register with auto (in|de)crement.
+// addr -> reg -> string
+let moveValueToReg_withIncDec inAddr outReg =
+    let oreg = getRegStr outReg
+    let ureg = getRegStr Util
+
+    match inAddr with
+    | IncDfr(r, incNum) ->
+        let ireg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            "mov " + oreg + ", " + (getDfrStr ireg)
+              +!!+ "lea " + ireg + ", " + incNum.ToString() + (getDfrStr ireg)
+        else
+            "mov " + ureg + ", " + ireg
+              +!!+ "lea " + ireg + ", " + incNum.ToString() + (getDfrStr ureg)
+              +!!+ "mov " + oreg + ", " + (getDfrStr ureg)
+    | IncDDfr(r, incNum) ->
+        let ireg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            "mov " + ureg + ", " + (getDfrStr ireg)
+              +!!+ "mov " + oreg + ", " + (getDfrStr ureg)
+              +!!+ "lea " + ireg + ", " + incNum.ToString() + (getDfrStr ireg)
+        else
+            "mov " + ureg + ", " + ireg
+              +!!+ "lea " + ireg + ", " + incNum.ToString() + (getDfrStr ureg)
+              +!!+ "mov " + ureg + ", " + (getDfrStr ureg)
+              +!!+ "mov " + oreg + ", " + (getDfrStr ureg)
+    | DecDfr(r, decNum) ->
+        let ireg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            "lea " + ireg + ", " + (-decNum).ToString() + (getDfrStr ireg)
+              +!!+ "mov " + oreg + ", " + (getDfrStr ireg)
+        else
+            "mov " + ureg + ", " + ireg
+              +!!+ "lea " + ireg + ", " + (-decNum).ToString() + (getDfrStr ureg)
+              +!!+ "mov " + oreg + ", " + (-decNum).ToString() + (getDfrStr ureg)
+    | DecDDfr(r, decNum) ->
+        let ireg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            "lea " + ireg + ", " + (-decNum).ToString() + (getDfrStr ireg)
+              +!!+ "mov " + ureg + ", " + (getDfrStr ireg)
+              +!!+ "mov " + oreg + ", " + (getDfrStr ureg)
+        else
+            "mov " + ureg + ", " + ireg
+              +!!+ "lea " + ireg + ", " + (-decNum).ToString() + (getDfrStr ureg)
+              +!!+ "mov " + ureg + ", " + (-decNum).ToString() + (getDfrStr ureg)
+              +!!+ "mov " + oreg + ", " + (getDfrStr ureg)
+    | _ ->
+        failwithf "Invalid address"
+
+
+// get instruction text,
+// that move value of address to specified memory with auto (in|de)crement.
+// addr -> string -> string
+let moveValueToMem_withIncDec addr mem =
+    let ureg = getRegStr Util
+
+    match addr with
+    | IncDfr(r, incNum) ->
+        let reg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            "mov " + ureg + ", " + (getDfrStr reg)
+              +!!+ "mov " + mem + ", " + ureg
+              +!!+ "lea " + reg + ", " + incNum.ToString() + (getDfrStr reg)
+        else
+            "mov " + ureg + ", " + reg
+              +!!+ "lea " + reg + ", " + incNum.ToString() + (getDfrStr ureg)
+              +!!+ "mov " + ureg + ", " + (getDfrStr ureg)
+              +!!+ "mov " + mem + ", " + ureg
+    | IncDDfr(r, incNum) ->
+        let reg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            "mov " + ureg + ", " + (getDfrStr reg)
+              +!!+ "mov " + ureg + ", " + (getDfrStr ureg)
+              +!!+ "mov " + mem + ", " + ureg
+              +!!+ "lea " + reg + ", " + incNum.ToString() + (getDfrStr reg)
+        else
+            "mov " + ureg + ", " + reg
+              +!!+ "lea " + reg + ", " + incNum.ToString() + (getDfrStr ureg)
+              +!!+ "mov " + ureg + ", " + (getDfrStr ureg)
+              +!!+ "mov " + ureg + ", " + (getDfrStr ureg)
+              +!!+ "mov " + mem + ", " + ureg
+    | DecDfr(r, decNum) ->
+        let reg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            "lea " + reg + ", " + (-decNum).ToString() + (getDfrStr reg)
+              +!!+ "mov " + ureg + ", " + (getDfrStr reg)
+              +!!+ "mov " + mem + ", " + ureg
+        else
+            "mov " + ureg + ", " + reg
+              +!!+ "lea " + reg + ", " + (-decNum).ToString() + (getDfrStr ureg)
+              +!!+ "mov " + ureg + ", " + (-decNum).ToString() + (getDfrStr ureg)
+              +!!+ "mov " + mem + ", " + ureg
+    | DecDDfr(r, decNum) ->
+        let reg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            "lea " + reg + ", " + (-decNum).ToString() + (getDfrStr reg)
+              +!!+ "mov " + ureg + ", " + (getDfrStr reg)
+              +!!+ "mov " + ureg + ", " + (getDfrStr ureg)
+              +!!+ "mov " + mem + ", " + ureg
+        else
+            "mov " + ureg + ", " + reg
+              +!!+ "lea " + reg + ", " + (-decNum).ToString() + (getDfrStr ureg)
+              +!!+ "mov " + ureg + ", " + (-decNum).ToString() + (getDfrStr ureg)
+              +!!+ "mov " + ureg + ", " + (getDfrStr ureg)
+              +!!+ "mov " + mem + ", " + ureg
+    | _ ->
+        failwithf "Invalid address"
+
+
+// get instruction text,
+// that move value's reference to specified register with auto (in|de)crement.
+// return instruction text and address of the reference.
+// addr -> reg -> string * addr
+let moveRefToReg_withIncDec inAddr outReg =
+    let oreg = getRegStr outReg
+    let ureg = getRegStr Util
+
+    match inAddr with
+    | IncDfr(r, incNum) ->
+        let ireg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            ("mov " + oreg + ", " + ireg
+               +!!+ "lea " + ireg + ", " + incNum.ToString() + (getDfrStr ireg),
+             Dfr(outReg))
+        elif isMemoryAccessibleRegister outReg then
+            ("mov " + oreg + ", " + ireg
+               +!!+ "lea " + ireg + ", " + incNum.ToString() + (getDfrStr oreg),
+             Dfr(outReg))
+        else
+            ("mov " + oreg + ", " + ireg
+               +!!+ "mov " + ureg + ", " + ireg
+               +!!+ "lea " + ireg + ", " + incNum.ToString() + (getDfrStr ureg),
+             Dfr(outReg))
+    | IncDDfr(r, incNum) ->
+        let ireg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            ("mov " + oreg + ", " + (getDfrStr ireg)
+               +!!+ "lea " + ireg + ", " + incNum.ToString() + (getDfrStr ireg),
+             Dfr(outReg))
+        else
+            ("mov " + ureg + ", " + ireg
+               +!!+ "lea " + ireg + ", " + incNum.ToString() + (getDfrStr ureg)
+               +!!+ "mov " + oreg + ", " + (getDfrStr ureg),
+             Dfr(outReg))
+    | DecDfr(r, decNum) ->
+        let ireg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            ("lea " + ireg + ", " + (-decNum).ToString() + (getDfrStr ireg)
+               +!!+ "mov " + oreg + ", " + ireg,
+             Dfr(outReg))
+        else
+            ("mov " + ureg + ", " + ireg
+               +!!+ "lea " + ireg + ", " + (-decNum).ToString() + (getDfrStr ureg)
+               +!!+ "mov " + oreg + ", " + ireg,
+             Dfr(outReg))
+    | DecDDfr(r, decNum) ->
+        let ireg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            ("lea " + ireg + ", " + (-decNum).ToString() + (getDfrStr ireg)
+               +!!+ "mov " + oreg + ", " + (getDfrStr ireg),
+             Dfr(outReg))
+        else
+            ("mov " + ureg + ", " + ireg
+               +!!+ "lea " + ireg + ", " + (-decNum).ToString() + (getDfrStr ureg)
+               +!!+ "mov " + oreg + ", " + (-decNum).ToString() + (getDfrStr ureg),
+             Dfr(outReg))
+    | _ ->
+        failwithf "Invalid address"
+
+
+// get instruction text,
+// that push value of address to stack with auto (in|de)crement.
+// addr -> string
+let pushFromAddr_withIncDec addr =
+    let ureg = getRegStr Util
+
+    match addr with
+    | IncDfr(r, incNum) ->
+        let reg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            "push " + (getDfrStr reg)
+              +!!+ "lea " + reg + ", " + incNum.ToString() + (getDfrStr reg)
+        else
+            "mov " + ureg + ", " + reg
+              +!!+ "lea " + reg + ", " + incNum.ToString() + (getDfrStr ureg)
+              +!!+ "push " + (getDfrStr ureg)
+    | IncDDfr(r, incNum) ->
+        let reg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            "mov " + ureg + ", " + (getDfrStr reg)
+              +!!+ "push " + (getDfrStr ureg)
+              +!!+ "lea " + reg + ", " + incNum.ToString() + (getDfrStr reg)
+        else
+            "mov " + ureg + ", " + reg
+              +!!+ "lea " + reg + ", " + incNum.ToString() + (getDfrStr ureg)
+              +!!+ "mov " + ureg + ", " + (getDfrStr ureg)
+              +!!+ "push " + (getDfrStr ureg)
+    | DecDfr(r,decNum) ->
+        let reg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            "lea " + reg + ", " + (-decNum).ToString() + (getDfrStr reg)
+              +!!+ "push " + (getDfrStr reg)
+        else
+            "mov " + ureg + ", " + reg
+              +!!+ "lea " + reg + ", " + (-decNum).ToString() + (getDfrStr ureg)
+              +!!+ "push " + (-decNum).ToString() + (getDfrStr ureg)
+    | DecDDfr(r,decNum) ->
+        let reg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            "lea " + reg + ", " + (-decNum).ToString() + (getDfrStr reg)
+              +!!+ "mov " + ureg + ", " + (getDfrStr reg)
+              +!!+ "push " + (getDfrStr ureg)
+        else
+            "mov " + ureg + ", " + reg
+              +!!+ "lea " + reg + ", " + (-decNum).ToString() + (getDfrStr ureg)
+              +!!+ "mov " + ureg + ", " + (-decNum).ToString() + (getDfrStr ureg)
+              +!!+ "push " + (getDfrStr ureg)
+    | _ ->
+        failwithf "Invalid address"
+
+
+// get instruction text,
+// that pop value from stack to address with auto (in|de)crement.
+// addr -> string
+let popToAddr_withIncDec addr =
+    let ureg = getRegStr Util
+
+    match addr with
+    | IncDfr(r, incNum) ->
+        let reg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            "pop " + (getDfrStr reg)
+              +!!+ "lea " + reg + ", " + incNum.ToString() + (getDfrStr reg)
+        else
+            "mov " + ureg + ", " + reg
+              +!!+ "lea " + reg + ", " + incNum.ToString() + (getDfrStr ureg)
+              +!!+ "pop " + (getDfrStr ureg)
+    | IncDDfr(r, incNum) ->
+        let reg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            "mov " + ureg + ", " + (getDfrStr reg)
+              +!!+ "pop " + (getDfrStr ureg)
+              +!!+ "lea " + reg + ", " + incNum.ToString() + (getDfrStr reg)
+        else
+            "mov " + ureg + ", " + reg
+              +!!+ "lea " + reg + ", " + incNum.ToString() + (getDfrStr ureg)
+              +!!+ "mov " + ureg + ", " + (getDfrStr ureg)
+              +!!+ "pop " + (getDfrStr ureg)
+    | DecDfr(r, decNum) ->
+        let reg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            "lea " + reg + ", " + (-decNum).ToString() + (getDfrStr reg)
+              +!!+ "pop " + (getDfrStr reg)
+        else
+            "mov " + ureg + ", " + reg
+              +!!+ "lea " + reg + ", " + (-decNum).ToString() + (getDfrStr ureg)
+              +!!+ "pop " + (-decNum).ToString() + (getDfrStr ureg)
+    | DecDDfr(r, decNum) ->
+        let reg = getRegStr r
+        if isMemoryAccessibleRegister r then
+            "lea " + reg + ", " + (-decNum).ToString() + (getDfrStr reg)
+              +!!+ "mov " + ureg + ", " + (getDfrStr reg)
+              +!!+ "pop " + (getDfrStr ureg)
+        else
+            "mov " + ureg + ", " + reg
+              +!!+ "lea " + reg + ", " + (-decNum).ToString() + (getDfrStr ureg)
+              +!!+ "mov " + ureg + ", " + (-decNum).ToString() + (getDfrStr ureg)
+              +!!+ "pop " + (getDfrStr ureg)
+    | _ ->
+        failwithf "Invalid address"
+
+
+
 // get address text of instruction's operand.
 // addr -> string
 let getAddrOperandText addr =
@@ -318,77 +664,6 @@ let restoreRegFromTempMem reg =
 
 
 // get instruction text,
-// that push value of address to stack.
-// addr -> string
-let pushFromAddr addr =
-    let index = getMemIndexStr addr
-    let ureg = getRegStr Util
-
-    match addr with
-    | Register(r) ->
-        "push " + (getRegStr r)
-    | IncDfr(r,_) | DecDfr(r,_) | Dfr(r) | IdxDfr(r,_) ->
-        let reg = getRegStr r
-        if isMemoryAccessibleRegister r then
-            "push " + index + (getDfrStr reg)
-        else
-            "mov " + ureg + ", " + reg
-              +!!+ "push " + index + (getDfrStr ureg)
-    | IncDDfr(r,_) | DecDDfr(r,_) | DDfr(r) | IdxDDfr(r,_) ->
-        let reg = getRegStr r
-        if isMemoryAccessibleRegister r then
-            "mov " + ureg + ", " + index + (getDfrStr reg)
-              +!!+ "push " + (getDfrStr ureg)
-        else
-            "mov " + ureg + ", " + reg
-              +!!+ "mov " + ureg + ", " + index + (getDfrStr ureg)
-              +!!+ "push " + (getDfrStr ureg)
-    | Rel(e) | Abs(e) ->
-        "push " + (getExprStr e)
-    | RelDfr(e) ->
-        "mov " + ureg + ", " + (getExprStr e)
-          +!!+ "push " + (getDfrStr ureg)
-    | Imm(e) ->
-        "mov " + ureg + ", " + (getExprImm e)
-          +!!+ "push " + ureg
-
-
-// get instruction text,
-// that pop value from stack to address.
-// addr -> string
-let popToAddr addr =
-    let index = getMemIndexStr addr
-    let ureg = getRegStr Util
-
-    match addr with
-    | Register(r) ->
-        "pop " + (getRegStr r)
-    | IncDfr(r,_) | DecDfr(r,_) | Dfr(r) | IdxDfr(r,_) ->
-        let reg = getRegStr r
-        if isMemoryAccessibleRegister r then
-            "pop " + index + (getDfrStr reg)
-        else
-            "mov " + ureg + ", " + reg
-              +!!+ "pop " + index + (getDfrStr ureg)
-    | IncDDfr(r,_) | DecDDfr(r,_) | DDfr(r) | IdxDDfr(r,_) ->
-        let reg = getRegStr r
-        if isMemoryAccessibleRegister r then
-            "mov " + ureg + ", " + index + (getDfrStr reg)
-              +!!+ "pop " + (getDfrStr ureg)
-        else
-            "mov " + ureg + ", " + reg
-              +!!+ "mov " + ureg + ", " + index + (getDfrStr ureg)
-              +!!+ "pop " + (getDfrStr ureg)
-    | Rel(e) | Abs(e) ->
-        "pop " + (getExprStr e)
-    | RelDfr(e) ->
-        "mov " + ureg + ", " + (getExprStr e)
-          +!!+ "pop " + (getDfrStr ureg)
-    | _ ->
-        failwithf "Invalid address"
-
-
-// get instruction text,
 // that increment register of address.
 // addr -> int -> string
 let incrementAddr addr incNum =
@@ -397,16 +672,9 @@ let incrementAddr addr incNum =
     if isMemoryAccessibleRegister register then
         "lea " + reg + ", " + incNum.ToString() + (getDfrStr reg)
     else
-        "add " + reg + ", #" + incNum.ToString()
-
-
-// get instruction text,
-// that decrement register of address.
-// addr -> int -> string
-let decrementAddr addr decNum =
-    let register = getRegOfAddr addr
-    let reg = getRegStr register
-    "sub " + reg + ", #" + decNum.ToString()
+        let ureg = getRegStr Util
+        "mov " + ureg + ", " + reg
+          +!!+ "lea " + reg + ", " + incNum.ToString() + (getDfrStr ureg)
 
 
 // get instruction text,
@@ -506,10 +774,6 @@ let removeDestAxReg elemList =
 //     -> string list * (addrTag * addr) list
 let transformStep (codeList, elemList) step =
     match step with
-    | MoveSrcVal_toUtilReg ->
-        let src = searchSrcElem elemList
-        let code = moveValueToReg src Util
-        (code::codeList, (Src, Register(Util))::elemList)
     | MoveSrcVal_toReg(reg) ->
         let src = searchSrcElem elemList
         let code = moveValueToReg src reg
@@ -530,6 +794,44 @@ let transformStep (codeList, elemList) step =
         let dest = searchElem OrgDest elemList
         let (code, destAddr) = moveRefToReg dest Util
         (code::codeList, (Dest, destAddr)::elemList)
+    | PushSrcVal ->
+        let src = searchSrcElem elemList
+        let code = pushFromAddr src
+        (code::codeList, elemList)
+    | PopToDest ->
+        let dest = searchDestElem elemList
+        let code = popToAddr dest
+        (code::codeList, elemList)
+
+    | MoveSrcVal_toReg_withIncDec(reg) ->
+        let src = searchSrcElem elemList
+        let code = moveValueToReg_withIncDec src reg
+        (code::codeList, (Src, Register(reg))::elemList)
+    | MoveSrcVal_toTempMem_withIncDec ->
+        let src = searchSrcElem elemList
+        let code = moveValueToMem_withIncDec src tempValMem
+        (code::codeList, (Src, Rel(Expr(tempValMem)))::elemList)
+    | MoveSrcRef_toUtilReg_withIncDec ->
+        let src = searchElem OrgSrc elemList
+        let (code, srcAddr) = moveRefToReg_withIncDec src Util
+        (code::codeList, (Src, srcAddr)::elemList)
+    | MoveDestVal_toUtilReg_withIncDec ->
+        let dest = searchDestElem elemList
+        let code = moveValueToReg_withIncDec dest Util
+        (code::codeList, (Dest, Register(Util))::elemList)
+    | MoveDestRef_toUtilReg_withIncDec ->
+        let dest = searchElem OrgDest elemList
+        let (code, destAddr) = moveRefToReg_withIncDec dest Util
+        (code::codeList, (Dest, destAddr)::elemList)
+    | PushSrcVal_withIncDec ->
+        let src = searchSrcElem elemList
+        let code = pushFromAddr_withIncDec src
+        (code::codeList, elemList)
+    | PopToDest_withIncDec ->
+        let dest = searchDestElem elemList
+        let code = popToAddr_withIncDec dest
+        (code::codeList, elemList)
+
     | StoreRegVal(reg) ->
         let code = storeRegToTempMem reg
         (code::codeList, elemList)
@@ -576,21 +878,13 @@ let transformStep (codeList, elemList) step =
     | ConvertAxByteIntoWord ->
         let code = convertAxByteIntoWord
         (code::codeList, elemList)
-    | PushSrcVal ->
-        let src = searchSrcElem elemList
-        let code = pushFromAddr src
-        (code::codeList, elemList)
-    | PopToDest ->
-        let dest = searchDestElem elemList
-        let code = popToAddr dest
-        (code::codeList, elemList)
     | IncrementSrcReg(incNum) ->
         let src = searchElem OrgSrc elemList
         let code = incrementAddr src incNum
         (code::codeList, elemList)
     | DecrementSrcReg(decNum) ->
         let src = searchElem OrgSrc elemList
-        let code = decrementAddr src decNum
+        let code = incrementAddr src -decNum
         (code::codeList, elemList)
     | IncrementDestReg(incNum) ->
         let dest = searchElem OrgDest elemList
@@ -598,13 +892,9 @@ let transformStep (codeList, elemList) step =
         (code::codeList, elemList)
     | DecrementDestReg(decNum) ->
         let dest = searchElem OrgDest elemList
-        let code = decrementAddr dest decNum
+        let code = incrementAddr dest -decNum
         (code::codeList, elemList)
 
-    | PopSrcVal_toUtilReg ->
-        let src = searchSrcElem elemList
-        let code = popValueToReg src Util
-        (code::codeList, (Src, Register(Util))::elemList)
     | PopSrcVal_toReg(reg) ->
         let src = searchSrcElem elemList
         let code = popValueToReg src reg
