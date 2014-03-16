@@ -128,6 +128,19 @@ let mulCode code src reg =
         failwithf "Failed to resolve address - %s" codeStr
 
 
+// get ACK i8086 divide code text.
+// string -> addr -> reg -> string
+let divCode code src reg =
+    match divAddressResolve.getProcedure code src reg with
+    | Some procedure ->
+        let codeList = ackInstructionText.transformTwoAddrProcedureToText
+                           procedure (Register(reg)) src
+        String.concat ";  " codeList
+    | _ ->
+        let codeStr = sprintf "(%s  %s, %s)" code (reg.ToString()) (src.ToString())
+        failwithf "Failed to resolve address - %s" codeStr
+
+
 // get ACK i8086 sign-extend code text.
 // addr -> string
 let sxtCode dest =
@@ -259,7 +272,7 @@ let rec getInstructionText = function
     //| ASH(addr, reg) ->
     //| ASHC(addr, reg) ->
     | MUL(src, reg) -> mulCode "imul" src reg
-    //| DIV(addr, reg) ->
+    | DIV(src, reg) -> divCode "idiv" src reg
     //| XOR(reg, addr) -> "xor"
     | SXT(addr) -> sxtCode addr
     //| MARK(expr)
