@@ -838,20 +838,27 @@ let transformStep (codeList, elemList) step =
     | RestoreRegVal(reg) ->
         let code = restoreRegFromTempMem reg
         (code::codeList, elemList)
+    | UnaryCalc(opcode, OSrc) ->
+        let src = searchSrcElem elemList
+        let code = calcWithOneArg opcode src
+        (code::codeList, elemList)
     | UnaryCalc(opcode, ODest) ->
         let dest = searchDestElem elemList
         let code = calcWithOneArg opcode dest
         (code::codeList, elemList)
-    | UnaryCalc(opcode, OImm(dest)) ->
-        let code = calcWithOneArg opcode dest
+    | UnaryCalc(opcode, OAddr(addr)) ->
+        let code = calcWithOneArg opcode addr
         (code::codeList, elemList)
     | BinaryCalc(opcode, ODest, OSrc) ->
         let dest = searchDestElem elemList
         let src = searchSrcElem elemList
         let code = calcWithTwoArgs opcode dest src
         (code::codeList, elemList)
-    | BinaryCalc(opcode, ODest, OImm(src)) ->
+    | BinaryCalc(opcode, ODest, OAddr(addr)) ->
         let dest = searchDestElem elemList
+        let code = calcWithTwoArgs opcode dest addr
+        (code::codeList, elemList)
+    | BinaryCalc(opcode, OAddr(dest), OAddr(src)) ->
         let code = calcWithTwoArgs opcode dest src
         (code::codeList, elemList)
     | BinaryCalc(opcode, OSrc, ODest) ->

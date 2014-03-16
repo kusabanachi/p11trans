@@ -268,6 +268,165 @@ module twoAddressResolveWithoutStoring =
 
 
 
+// resolve i8086's multiply address operation.
+module mulAddressResolve =
+
+    // return if the address is a immediate value or not.
+    // addr -> bool
+    let private isImmediateValue = function
+        | Imm(_) -> true
+        | _ -> false
+
+    // return true if the address is either a immediate value or R0 Register.
+    // addr -> bool
+    let private isImmValueOrR0Reg addr =
+        if addr = Register(R0) || isImmediateValue addr then
+            true
+        else
+            false
+
+    // get next register of the argument.
+    // reg -> reg
+    let private getNextReg = function
+        | R0 -> R1
+        | R1 -> R2
+        | R2 -> R3
+        | R3 -> R4
+        | R4 -> R5
+        | _ ->
+            failwithf "Invalid register."
+
+    // get steps of procedure for i8086's mul operation.
+    // string -> addr -> reg -> procedureStep list option
+    let getProcedure code src reg =
+        let (| DestRegIsR0 | DestRegIsR1
+              | DestRegIsEven | DestRegIsOdd |) (reg) =
+            if reg = R0 then
+                DestRegIsR0
+            elif reg = R1 then
+                DestRegIsR1
+            elif reg = R0 || reg = R2 || reg = R4 then
+                DestRegIsEven
+            else
+                DestRegIsOdd
+
+        let procedure =
+            match reg with
+            | DestRegIsR0 ->
+                if isImmediateValue src then
+                    [
+                    [MoveSrcVal_toUtilReg]
+                    [UnaryCalc(code, OSrc)]
+                    [BinaryCalc("xchg", OAddr(Register(R0)), OAddr(Register(R1)))]
+                    ] |> List.concat
+                elif not (isAccessibleAddress src) then
+                    [
+                    [MoveSrcRef_toUtilReg]           |> incDecCheck (Src, src)
+                    [UnaryCalc(code, OSrc)]
+                    [BinaryCalc("xchg", OAddr(Register(R0)), OAddr(Register(R1)))]
+                    ] |> List.concat
+                else
+                    [
+                    [UnaryCalc(code, OSrc)]          |> incDecCheck (Src, src)
+                    [BinaryCalc("xchg", OAddr(Register(R0)), OAddr(Register(R1)))]
+                    ] |> List.concat
+            | DestRegIsR1 ->
+                if src = Register(R0) then
+                    [
+                    [MoveSrcVal_toUtilReg]
+                    [BinaryCalc("mov", OAddr(Register(R0)), OAddr(Register(R1)))]
+                    [UnaryCalc(code, OSrc)]
+                    [BinaryCalc("mov", OAddr(Register(R1)), OAddr(Register(R0)))]
+                    [BinaryCalc("mov", OAddr(Register(R0)), OAddr(Register(Util)))]
+                    ] |> List.concat
+                elif isImmediateValue src then
+                    [
+                    [MoveSrcVal_toUtilReg]
+                    [StoreRegVal(R0)]
+                    [BinaryCalc("mov", OAddr(Register(R0)), OAddr(Register(R1)))]
+                    [UnaryCalc(code, OSrc)]
+                    [BinaryCalc("mov", OAddr(Register(R1)), OAddr(Register(R0)))]
+                    [RestoreRegVal(R0)]
+                    ] |> List.concat
+                elif not (isAccessibleAddress src) then
+                    [
+                    [MoveSrcRef_toUtilReg]           |> incDecCheck (Src, src)
+                    [StoreRegVal(R0)]
+                    [BinaryCalc("mov", OAddr(Register(R0)), OAddr(Register(R1)))]
+                    [UnaryCalc(code, OSrc)]
+                    [BinaryCalc("mov", OAddr(Register(R1)), OAddr(Register(R0)))]
+                    [RestoreRegVal(R0)]
+                    ] |> List.concat
+                else
+                    [
+                    [BinaryCalc("mov", OAddr(Register(Util)), OAddr(Register(R0)))]
+                    [BinaryCalc("mov", OAddr(Register(R0)), OAddr(Register(R1)))]
+                    [UnaryCalc(code, OSrc)]          |> incDecCheck (Src, src)
+                    [BinaryCalc("mov", OAddr(Register(R1)), OAddr(Register(R0)))]
+                    [BinaryCalc("mov", OAddr(Register(R0)), OAddr(Register(Util)))]
+                    ] |> List.concat
+            | DestRegIsEven ->
+                let nextReg = getNextReg reg
+                if isImmValueOrR0Reg src then
+                    [
+                    [MoveSrcVal_toUtilReg]
+                    [BinaryCalc("xchg", OAddr(Register(reg)), OAddr(Register(R0)))]
+                    [BinaryCalc("mov", OAddr(Register(nextReg)), OAddr(Register(R1)))]
+                    [UnaryCalc(code, OSrc)]
+                    [BinaryCalc("xchg", OAddr(Register(reg)), OAddr(Register(R1)))]
+                    [BinaryCalc("xchg", OAddr(Register(nextReg)), OAddr(Register(R0)))]
+                    [BinaryCalc("xchg", OAddr(Register(R0)), OAddr(Register(R1)))]
+                    ] |> List.concat
+                elif not (isAccessibleAddress src) then
+                    [
+                    [MoveSrcRef_toUtilReg]           |> incDecCheck (Src, src)
+                    [BinaryCalc("xchg", OAddr(Register(reg)), OAddr(Register(R0)))]
+                    [BinaryCalc("mov", OAddr(Register(nextReg)), OAddr(Register(R1)))]
+                    [UnaryCalc(code, OSrc)]
+                    [BinaryCalc("xchg", OAddr(Register(reg)), OAddr(Register(R1)))]
+                    [BinaryCalc("xchg", OAddr(Register(nextReg)), OAddr(Register(R0)))]
+                    [BinaryCalc("xchg", OAddr(Register(R0)), OAddr(Register(R1)))]
+                    ] |> List.concat
+                else
+                    [
+                    [BinaryCalc("xchg", OAddr(Register(reg)), OAddr(Register(R0)))]
+                    [BinaryCalc("mov", OAddr(Register(nextReg)), OAddr(Register(R1)))]
+                    [UnaryCalc(code, OSrc)]          |> incDecCheck (Src, src)
+                    [BinaryCalc("xchg", OAddr(Register(reg)), OAddr(Register(R1)))]
+                    [BinaryCalc("xchg", OAddr(Register(nextReg)), OAddr(Register(R0)))]
+                    [BinaryCalc("xchg", OAddr(Register(R0)), OAddr(Register(R1)))]
+                    ] |> List.concat
+            | DestRegIsOdd ->
+                if isImmValueOrR0Reg src then
+                    [
+                    [MoveSrcVal_toUtilReg]
+                    [StoreRegVal(R1)]
+                    [BinaryCalc("xchg", OAddr(Register(R0)), OAddr(Register(reg)))]
+                    [UnaryCalc(code, OSrc)]
+                    [BinaryCalc("xchg", OAddr(Register(reg)), OAddr(Register(R0)))]
+                    [RestoreRegVal(R1)]
+                    ] |> List.concat
+                elif not (isAccessibleAddress src) then
+                    [
+                    [MoveSrcRef_toUtilReg]           |> incDecCheck (Src, src)
+                    [StoreRegVal(R1)]
+                    [BinaryCalc("xchg", OAddr(Register(R0)), OAddr(Register(reg)))]
+                    [UnaryCalc(code, OSrc)]
+                    [BinaryCalc("xchg", OAddr(Register(reg)), OAddr(Register(R0)))]
+                    [RestoreRegVal(R1)]
+                    ] |> List.concat
+                else
+                    [
+                    [BinaryCalc("mov", OAddr(Register(Util)), OAddr(Register(R1)))]
+                    [BinaryCalc("xchg", OAddr(Register(R0)), OAddr(Register(reg)))]
+                    [UnaryCalc(code, OSrc)]          |> incDecCheck (Src, src)
+                    [BinaryCalc("xchg", OAddr(Register(reg)), OAddr(Register(R0)))]
+                    [BinaryCalc("mov", OAddr(Register(R1)), OAddr(Register(Util)))]
+                    ] |> List.concat
+        Some(procedure)
+
+
+
 // resolve i8086's sxt address operation.
 module sxtAddressResolve =
 
@@ -285,13 +444,13 @@ module sxtAddressResolve =
     // the procedureStep to clear the dest operand's value.
     // procedureStep list
     let private stepsToClearDest =
-        [BinaryCalc("mov", ODest, OImm(Imm(Expr("0"))))]
+        [BinaryCalc("mov", ODest, OAddr(Imm(Expr("0"))))]
 
     // the procedureStep to jump to forward label,
     // if the negative condition flag is not set.
     // procedureStep list
     let private stepsToJumpToLabelIfNotNegCondition =
-        [UnaryCalc("jns", OImm(Rel(Expr(tempLabelName + "f"))))]
+        [UnaryCalc("jns", OAddr(Rel(Expr(tempLabelName + "f"))))]
 
     // the procedureStep to invert the dest operand's value.
     // procedureStep list

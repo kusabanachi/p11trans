@@ -9,7 +9,7 @@ open p11trans.intermediate
 type operand =
     | ODest
     | OSrc
-    | OImm of addr
+    | OAddr of addr
 
 // type of step of procedure
 type procedureStep =
