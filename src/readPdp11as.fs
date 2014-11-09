@@ -102,7 +102,9 @@ let readExpression str =
     match str with
     | RegexMatch pattern rMatch ->
         let exprStr = rMatch.Groups.[1].Value
-        Some( Expression(Expr(exprStr)) )
+        match pdp11Expr.getExpression exprStr with
+        | Some expr -> Some( Expression(expr) )
+        | _ -> None
     | _ -> None
 
 

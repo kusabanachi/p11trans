@@ -26,7 +26,7 @@ let toReg = (|RegisterType|_|)
 
 // convert string to expression.
 // string -> expr option
-let toExpr str = Some(Expr(str))
+let toExpr str = pdp11Expr.getExpression str
 
 
 // instruction type. Word instruction or byte instruction.
