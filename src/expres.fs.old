@@ -1,0 +1,283 @@
+
+module Expres
+
+open ReadOp
+
+    type expr =
+//        | Op of byte * factor * factor
+        | Op of byte * expr * expr
+        | Sym of Bytes
+        | Lbl of Bytes
+        | Dec of Bytes
+        | Oct of Bytes
+        | Group of expr
+//        | Fact of factor
+
+(*    and factor =
+        | Sym of Bytes
+        | Lbl of Bytes
+        | Dec of Bytes
+        | Oct of Bytes
+        | Expr of expr
+*)
+    type OpToken =
+        | OpSymbol of Bytes
+        | OpLabel of Bytes
+        | OpDecimal of Bytes
+        | OpOctal of Bytes
+        | OpGroup of OpToken list
+        | Operator of byte
+
+    let ExpressionError = "E error in expression"
+    let ParenthesesError = "] parentheses error"
+
+    let rec expres' src =
+
+        let operatorMark = function
+            | '^'B | '|'B | '+'B | '-'B | '*'B | '&'B | '%'B | '!'B
+            | '<'B | '>'B | '%'B | '/'B -> true
+            | _ -> false
+        let rec readOperatorMark s =
+            let token, rest = readOp s
+            match token with
+            | FixOr
+            | Escaped('%'B) ->
+                Some('|'B, rest)
+            | Mark(byte) when operatorMark byte ->
+                Some(byte, rest)
+            | Escaped(byte) when operatorMark byte ->
+                Some(byte, rest)
+            | _ ->
+                None
+
+        let rec readFactor src =
+            printfn "*Read Factor"
+            let token, rest = readOp src
+            match token with
+                | Symbol(bytes) ->
+                    Some( Sym bytes, rest )
+                | LocalLabel(bytes) ->
+                    Some( Lbl bytes, rest )
+                | DecimalConstant(bytes) ->
+                    Some( Dec bytes, rest )
+                | OctalConstant(bytes) ->
+                    Some( Oct bytes, rest )
+                | Mark('['B) ->
+                    let ex, rest' = expres' rest
+                    match readOp rest' with
+                    | Mark(']'B), rest'' -> Some( Group ex, rest'' )
+                    | _ -> failwith ParenthesesError
+                | _ -> None
+
+        and readOperation src =
+            printfn "*Read Operation"
+            let operatorMark = function
+                | '^'B | '|'B | '+'B | '-'B | '*'B | '&'B | '%'B | '!'B
+                | '<'B | '>'B | '%'B | '/'B -> true
+                | _ -> false
+            let rec readOperator s =
+                let token, rest = readOp s
+                match token with
+                | FixOr
+                | Escaped('%'B) ->
+                    '|'B, rest
+                | Mark('+'B) ->
+                    readOperator rest
+                | Mark(byte) when operatorMark byte ->
+                    byte, rest
+                | Escaped(byte) when operatorMark byte ->
+                    byte, rest
+                | _ ->
+                    '+'B, s
+
+            let rec readTerm' lhs src =
+                printfn "*Read Term2"
+                let operator, rest = readOperator src
+                match readFactor rest with
+                | None ->
+                    lhs, rest
+                | Some(rhs, rest') ->
+                    //printfn "lhs = %A" lhs
+                    let lhs' = Op(operator, lhs, rhs)
+                    //printfn "lhs' = %A" lhs'
+                    //printfn ""
+                    readTerm' lhs' rest'
+
+            match readFactor src with
+            | Some(lhs, rest) ->
+                //printfn "src = %A" src
+                //printfn "lhs = %A" lhs
+                //printfn ""
+                //let op, rest' = readOperator rest
+                Some(readTerm' lhs rest)
+            | _ ->
+                let dummyLhs = Dec "0"B
+                match readTerm' dummyLhs src with
+                | Dec "0"B, _ ->
+                    failwith ExpressionError
+                | ret -> Some(ret)
+
+
+(*            match readFactor src with
+            | Some(lhs, rest) ->
+                let op, rest' = readOperator rest
+                match readExpr rest' with
+                | Some(rhs, rest'') ->
+                    Some((op, lhs, rhs), rest'')
+                | _ ->
+                    None
+            | _ ->
+                None
+*)
+
+(*        and readNoLhsOperation src =
+            let operatorMark = function
+                | '^'B | '|'B | '+'B | '-'B | '*'B | '&'B | '%'B | '!'B
+                | '<'B | '>'B | '%'B | '/'B -> true
+                | _ -> false
+            let readOperator s =
+                let token, rest = readOp s
+                match token with
+                | FixOr
+                | Escaped('%'B) ->
+                    Some('|'B, rest)
+                | Mark(byte) when operatorMark byte ->
+                    Some(byte, rest)
+                | Escaped(byte) when operatorMark byte ->
+                    Some(byte, rest)
+                | _ ->
+                    None
+
+            match readOperator src with
+            | Some(op, rest) ->
+                match readExpr rest with
+                | Some(rhs, rest') ->
+                    let lhs = Fact(Dec("0"B))
+                    Some((op, lhs, rhs), rest')
+                | _ ->
+                    None
+            | _ ->
+                None
+*)
+
+        and readExpr src =
+            printfn "*Read Expr"
+            match readOperation src with
+            | Some(operation, rest) ->
+                Some(operation, rest)
+            | _ ->
+                match readFactor src with
+                | Some(factor, rest) ->
+                    Some(factor, rest)
+                | _ ->
+                    None
+
+        let result, rest =
+            match readExpr src with
+            | Some e -> e
+            | None -> failwith ExpressionError
+
+        // 数式の後に続く字句がオペレータの場合、オペレータが連続したのでエラー
+        if (readOperatorMark rest).IsSome then failwith ExpressionError
+
+        result, rest
+
+
+
+
+
+    let rec expres src =
+        let readOperator src =
+            let operatorMark = function
+                | '^'B | '|'B | '+'B | '-'B | '*'B | '&'B | '%'B | '!'B
+                | '<'B | '>'B | '%'B | '/'B -> true
+                | _ -> false
+            let token, rest = readOp src
+            match token with
+                | FixOr ->
+                    Some (Operator '|'B, rest )
+                | Mark(byte) when operatorMark byte ->
+                    Some( Operator byte, rest)
+                | Escaped('%'B) ->
+                    Some( Operator '|'B, rest )
+                | Escaped(byte) when operatorMark byte ->
+                    Some( Operator byte, rest )
+                | _ -> None
+
+        let readOperand src =
+            let token, rest = readOp src
+            match token with
+                | Symbol(bytes) ->
+                    Some( OpSymbol bytes, rest )
+                | LocalLabel(bytes) ->
+                    Some( OpLabel bytes, rest )
+                | DecimalConstant(bytes) ->
+                    Some( OpDecimal bytes, rest )
+                | OctalConstant(bytes) ->
+                    Some( OpOctal bytes, rest )
+                | Mark('['B) ->
+                    let express, rest' = expres rest
+                    match readOp rest' with
+                    | Mark(']'B), rest'' -> Some( OpGroup express, rest'' )
+                    | _ -> failwith ParenthesesError
+                | _ -> None
+
+        let (|IsOperatorNotPlus|_|) src =
+            match readOperator src with
+            | Some(op, rest) as x when op <> Operator '+'B -> x
+            | _ -> None
+        let (|IsOperatorPlus|_|) src =
+            match readOperator src with
+            | Some(Operator '+'B, rest) as x -> x
+            | _ -> None
+        let (|IsOperand|_|) = readOperand
+
+
+        let rec OperatorNotPlus (opList:OpToken list) src =
+            match src with
+            | IsOperatorNotPlus (op,rest) ->
+                Operand (op::opList) rest
+            | _ ->
+                OperatorPlus opList src
+        and OperatorPlus (opList:OpToken list) src =
+            match src with
+            | IsOperatorPlus (op,rest) ->
+                // '+'はすぐ後のオペレータに上書きされるかもしれないので無視する
+                OperatorNotPlus opList rest
+            | _ ->
+                Operand opList src
+        and Operand (opList:OpToken list) src =
+            match src with
+            | IsOperand (op,rest) ->
+                match opList with
+                | []
+                | Operator(_)::_ ->
+                    OperatorNotPlus (op::opList) rest
+                | _ ->
+                    // オペランドが続く場合は'+'を間にはさむ
+                    OperatorNotPlus (op::Operator('+'B)::opList) rest
+            | _ ->
+                match opList with
+                | [] -> opList, src
+                | Operator(_)::tail -> tail, src
+                | _ -> opList, src
+
+        let revList, rest = OperatorNotPlus [] src
+
+        // 数式の後に続く字句がオペレータの場合、オペレータが連続したのでエラー
+        if (readOperator rest).IsSome then failwith ExpressionError
+
+        // 数式にオペランドが1つも無ければエラー
+        let isOperand = function | Operator(_) -> false | _ -> true
+        if List.tryFind isOperand revList = None then
+            failwith ExpressionError
+
+        // 逆順のリストを戻し、先頭がオペレータの場合は'0'を先頭に入れる
+        let opList =
+            let alist = List.rev revList
+            match alist with
+            | Operator(_)::_ -> OpDecimal("0"B) :: alist
+            | _ -> alist
+
+        opList, rest
+

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>10.0.0</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{678153EF-F518-462C-A13B-613308143968}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>p11trans</RootNamespace>
+    <AssemblyName>p11trans</AssemblyName>
+    <BuildOrder>
+      <BuildOrder>
+        <String>src/AssemblyInfo.fs</String>
+        <String>src/readOp.fs</String>
+        <String>src/symtab.fs</String>
+        <String>src/expres.fs</String>
+        <String>src/addres.fs</String>
+        <String>src/statementType.fs</String>
+        <String>src/opline.fs</String>
+        <String>src/assem.fs</String>
+        <String>src/Program.fs</String>
+      </BuildOrder>
+    </BuildOrder>
+    <ReleaseVersion>0.01</ReleaseVersion>
+    <SynchReleaseVersion>False</SynchReleaseVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <PlatformTarget>x86</PlatformTarget>
+    <ConsolePause>False</ConsolePause>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <Tailcalls>true</Tailcalls>
+    <Externalconsole>True</Externalconsole>
+    <PlatformTarget>x86</PlatformTarget>
+    <DefineConstants />
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft F#\v4.0\Microsoft.FSharp.Targets" />
+  <ItemGroup>
+    <Folder Include="src\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="src\AssemblyInfo.fs" />
+    <Compile Include="src\Program.fs" />
+    <Compile Include="src\addres.fs" />
+    <Compile Include="src\assem.fs" />
+    <Compile Include="src\expres.fs" />
+    <Compile Include="src\opline.fs" />
+    <Compile Include="src\readOp.fs" />
+    <Compile Include="src\statementType.fs" />
+    <Compile Include="src\symtab.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\expres.fs.old" />
+  </ItemGroup>
+</Project>
