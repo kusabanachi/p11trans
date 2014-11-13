@@ -14,13 +14,6 @@ let SymDefError = "M multiply defined symbol as label"
 let LocalLabelError = "F error in local (\"f\" or \"b\") type symbol"
 
 let assem src =
-    let isEosOrComment = function
-        | Token_Term _
-        | Token_Comment _
-            -> true
-        | _
-            -> false
-
     let checkDotAssign lhs rhsT =
         match lhs with
         | Token_Symbol "." ->
@@ -55,7 +48,12 @@ let assem src =
 
     let rec readStatement src =
         let fst, rest = readOp src
-        if not (isEosOrComment fst) then
+        match fst with
+        | Token_Term _ ->
+            [], src
+        | Token_Comment text ->
+            [Comment text], rest
+        | _ ->
             let snd, rest' = readOp rest
             match snd with
             | Token_Meta '=' ->
@@ -83,10 +81,8 @@ let assem src =
             | _ ->
                 let statement, rest = opline src
                 [statement], rest
-        else
-            [], src
 
-    let readEosOrComment src =
+    let readEos src =
         let op, rest = readOp src
         match op with
         | Token_Term EOT ->
@@ -95,8 +91,6 @@ let assem src =
             Eos '\n', rest
         | Token_Term ';' ->
             Eos ';', rest
-        | Token_Comment text ->
-            Comment text, ""
         | _ ->
             failwith SyntaxError
 
@@ -107,7 +101,7 @@ let assem src =
             []
         | _ ->
             let statement, rest = readStatement src
-            let eos, rest' = readEosOrComment rest
+            let eos, rest' = readEos rest
             statement @ eos :: readSt rest'
 
     readSt src

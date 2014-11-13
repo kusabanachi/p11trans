@@ -13,7 +13,8 @@ type ExpresTest() =
     static member ValidExpressTestData =
         [|
             [| ( "3(r0)", (Expr_Oct "3", TypeAbsolute, "(r0)") ) |]
-            [| ( "3+3.;", (Expr_Op ('+' ,Expr_Oct "3", Expr_Dec "3"), TypeAbsolute, ";") ) |]
+            [| ( "3+3.;", (Expr_Op ('+', Expr_Oct "3", Expr_Dec "3"), TypeAbsolute, ";") ) |]
+            [| ( "'a - \"bc", (Expr_Op ('-', Expr_SChar 'a', Expr_DChar ('b', 'c')), TypeAbsolute, "") ) |]
             [| ( "1 * 91. - 2f",
                  (Expr_Op ('-', Expr_Op ('*', Expr_Oct "1", Expr_Dec "91"), Expr_Lbl "2f"), TypeText, "") ) |]
             [| ( "1f\/1", (Expr_Op ('/' , Expr_Lbl "1f", Expr_Oct "1"), TypeText, "") ) |]

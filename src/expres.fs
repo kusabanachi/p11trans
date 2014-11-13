@@ -185,7 +185,6 @@ let rec expres src =
 
     let result = expres' (Expr_Dec "0") src
     if !opfound = 0 then
-        printfn "DEBUG::: %A" src
         failwith ExpressionError
     result
 

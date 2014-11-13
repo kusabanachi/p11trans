@@ -75,6 +75,20 @@ type AssemTest() =
         Assert.IsTrue(compare, sprintf "assem %A -> %A" src actual)
 
 
+    static member CommentTestData =
+        [|
+            [| ( "/ This is a great comment.", [Comment " This is a great comment."; Eos EOT] ) |]
+            [| ( "/ hoge\n", [Comment " hoge"; Eos '\n'] ) |]
+        |]
+
+    [<TestCaseSource("CommentTestData")>]
+    member x.CommentTest data =
+        let src, expected = data
+        let actual = assem src
+        let compare = actual = expected
+        Assert.IsTrue(compare, sprintf "assem %A -> %A" src actual)
+
+
     static member AssemErrorTestData =
         [|
             [| ".=2" |]

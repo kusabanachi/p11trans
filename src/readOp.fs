@@ -116,7 +116,13 @@ let (|SQuote|_|) (src:string) =
 
 let (|Slash|_|) (src:string) =
     match src.[0] with
-    | '/' -> Some( Token_Comment src.[1..], "" )
+    | '/' ->
+        let text = src.[1..]
+        let len =
+            match text.IndexOfAny([| EOT; '\n' |]) with
+            | -1 -> text.Length
+            | i  -> i
+        Some( Token_Comment text.[..len - 1], text.[len..] )
     | _ -> None
 
 let (|Lt|_|) (src:string) =
