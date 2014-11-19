@@ -108,10 +108,12 @@ type ReadOpTest() =
         Assert.True(readOp src = expected)
 
 
+    static member dqNum a b = (int a <<< 8) + int b
+
     static member DQuoteTestData =
         [|
-            [| ( "\"okok ", (Token_DChar ('o', 'k'), "ok ") ) |]
-            [| ( "\"\r\t\r\t", (Token_DChar ('\r', '\t'), "\r\t") ) |]
+            [| ( "\"okok ", (Token_DChar ('o', 'k', ReadOpTest.dqNum 'o' 'k'), "ok ") ) |]
+            [| ( "\"\r\t\r\t", (Token_DChar ('\r', '\t', ReadOpTest.dqNum '\r' '\t'), "\r\t") ) |]
         |]
 
     [<TestCaseSource("DQuoteTestData")>]
@@ -128,8 +130,8 @@ type ReadOpTest() =
 
     static member SQuoteTestData =
         [|
-            [| ( "\'okok ", (Token_SChar 'o', "kok ") ) |]
-            [| ( "\'\r\t\r\t", (Token_SChar '\r', "\t\r\t") ) |]
+            [| ( "\'okok ", (Token_SChar ('o', int 'o'), "kok ") ) |]
+            [| ( "\'\r\t\r\t", (Token_SChar ('\r', int '\r'), "\t\r\t") ) |]
         |]
 
     [<TestCaseSource("SQuoteTestData")>]
@@ -171,8 +173,8 @@ type ReadOpTest() =
 
     static member NumberTestData =
         [|
-            [| ( "199*40", (Token_Octal "199", "*40") ) |]
-            [| ( "22.(", (Token_Decimal "22", "(") ) |]
+            [| ( "198*40", (Token_Octal 144, "*40") ) |]
+            [| ( "22.(", (Token_Decimal 22, "(") ) |]
             [| ( "8b; 6b", (Token_LocalLabel "8b", "; 6b") ) |]
             [| ( "0f+2", (Token_LocalLabel "0f", "+2") ) |]
             [| ( "003b", (Token_LocalLabel "3b", "") ) |]

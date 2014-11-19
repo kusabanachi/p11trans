@@ -12,9 +12,9 @@ type OplineTest() =
 
     static member OplineTestData =
         [|
-            [| ( "mov 3, r2", (DoubleOp("mov", Rel(Expr_Oct "3"), Reg(Expr_Sym "r2")), "") ) |]
-            [| ( "ror 6(r3)", (SingleOp("ror", IdxDfr(Expr_Oct "6", Expr_Sym "r3")), "") ) |]
-            [| ( ".byte 7, 9, hello;", (ByteExpr[|Expr_Oct "7"; Expr_Oct "9"; Expr_Sym "hello"|], ";") ) |]
+            [| ( "mov 3, r2", (DoubleOp("mov", Rel(Expr_Oct 3), Reg(Expr_Sym "r2")), "") ) |]
+            [| ( "ror 6(r3)", (SingleOp("ror", IdxDfr(Expr_Oct 6, Expr_Sym "r3")), "") ) |]
+            [| ( ".byte 7, 9, hello;", (ByteExpr[|Expr_Oct 7; Expr_Oct 9; Expr_Sym "hello"|], ";") ) |]
             [| ( ".even 7, 9, hello;", (Even, " 7, 9, hello;") ) |]
             [| ( ".if debug", (If (Expr_Sym "debug"), "") ) |]
             [| ( ".endif debug", (EndIf, " debug") ) |]
@@ -23,11 +23,11 @@ type OplineTest() =
             [| ( ".data", (Data, "") ) |]
             [| ( ".bss", (Bss, "") ) |]
             [| ( "sob r0,2b", (Sob(Expr_Sym "r0", Expr_Lbl "2b"), "") ) |]
-            [| ( ".comm _errno,2", (Common("_errno", Expr_Oct "2"), "") ) |]
+            [| ( ".comm _errno,2", (Common("_errno", Expr_Oct 2), "") ) |]
             [| ( "sys exec; 2f; 1f", (ExprOp("sys", Expr_Sym "exec"), "; 2f; 1f") ) |]
             [| ( "sys exec; 2f; 1f", (ExprOp("sys", Expr_Sym "exec"), "; 2f; 1f") ) |]
             [| ( "<tstf\0\0\0\0>;", (Str "tstf\x00\x00\x00\x00", ";") ) |]
-            [| ( "02020, /* [ */", (Expr (Expr_Oct "02020"), ", /* [ */") ) |]
+            [| ( "02020, /* [ */", (Expr (Expr_Oct 0o2020), ", /* [ */") ) |]
             [| ( "..;512.", (Expr (Expr_Sym ".."), ";512.") ) |]
         |]
 

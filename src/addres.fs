@@ -30,11 +30,11 @@ let IndirectionError = "* indirection(*) used illegally"
 let rec addres src =
 
     let readReg src =
-        let regExp, t, rest = expres src
-        if t <> 1 && t < 4 then
+        let expr, (eType, eVal), rest = expres src
+        if eVal > 7 || (eType <> 1 && eType < 4) then
             failwith AddressError
         else
-            regExp, rest
+            expr, rest
 
     let readClosing src =
         let closing, rest = readOp src
@@ -76,7 +76,7 @@ let rec addres src =
          | _ -> failwith IndirectionError
          , rest')
     | _ ->
-        let exp, expT, rest = expres src
+        let exp, (expT, _), rest = expres src
         match readOp rest with
         | Token_Meta '(', rest' ->
             let reg, rest'' = readReg rest'

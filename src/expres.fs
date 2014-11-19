@@ -8,8 +8,8 @@ type expr =
     | Expr_Op of char * expr * expr
     | Expr_Sym of string
     | Expr_Lbl of string
-    | Expr_Dec of string
-    | Expr_Oct of string
+    | Expr_Dec of int
+    | Expr_Oct of int
     | Expr_DChar of char * char
     | Expr_SChar of char
     | Expr_Group of expr
@@ -101,37 +101,38 @@ let rec expres src =
     let opr = ref '+'
     let opfound = ref 0
     let oprfound = ref 0
-    let expT = ref TypeAbsolute
+    let exprT = ref TypeAbsolute
+    let exprVal = ref 0
 
     let (|Sym|_|) = function
-        | Token_Symbol s, rest -> Some( Expr_Sym s, symType s, rest )
+        | Token_Symbol s, rest -> Some( Expr_Sym s, (symType s, symVal s), rest )
         | _ -> None
     let (|Lbl|_|) = function
-        | Token_LocalLabel s, rest -> Some( Expr_Lbl s, TypeText, rest )
+        | Token_LocalLabel s, rest -> Some( Expr_Lbl s, (TypeText, 0), rest )
         | _ -> None
     let (|Dec|_|) = function
-        | Token_Decimal s, rest -> Some( Expr_Dec s, TypeAbsolute, rest )
+        | Token_Decimal n, rest -> Some( Expr_Dec n, (TypeAbsolute, n), rest )
         | _ -> None
     let (|Oct|_|) = function
-        | Token_Octal s, rest -> Some( Expr_Oct s, TypeAbsolute, rest )
+        | Token_Octal n, rest -> Some( Expr_Oct n, (TypeAbsolute, n), rest )
         | _ -> None
     let (|DChar|_|) = function
-        | Token_DChar (c1, c2), rest -> Some( Expr_DChar(c1, c2), TypeAbsolute, rest )
+        | Token_DChar (c1, c2, n), rest -> Some( Expr_DChar(c1, c2), (TypeAbsolute, n), rest )
         | _ -> None
     let (|SChar|_|) = function
-        | Token_SChar c, rest -> Some( Expr_SChar c, TypeAbsolute, rest )
+        | Token_SChar (c, n), rest -> Some( Expr_SChar c, (TypeAbsolute, n), rest )
         | _ -> None
     let (|Grp|_|) = function
         | Token_Meta '[', rest ->
-            let ex, exT, rest' = expres rest
+            let ex, t_v, rest' = expres rest
             match readOp rest' with
-            | Token_Meta ']', rest'' -> Some( Expr_Group ex, exT, rest'' )
+            | Token_Meta ']', rest'' -> Some( Expr_Group ex, t_v, rest'' )
             | _ -> failwith ParenthesesError
         | _ -> None
 
     let operatorMark = function
-        | '^' | '|' | '+' | '-' | '*' | '&' | '%' | '!'
-        | '<' | '>' | '%' | '/' -> true
+        | '^' | '<' | '>' | '|' | '+'
+        | '-' | '*' | '/' | '&' | '%' | '!' -> true
         | _ -> false
     let (|Operater|_|) = function
         | Token_Fixor, rest
@@ -145,28 +146,43 @@ let rec expres src =
             None
 
     let combine rhsT =
-        if !expT = 0 && rhsT = 0 then
+        if !exprT = 0 && rhsT = 0 then
             0
         elif !opr = '^' then
             rhsT
-        elif !opr = '-' && !expT = rhsT then
+        elif !opr = '-' && !exprT = rhsT then
             TypeAbsolute
-        elif !expT >= rhsT then
-            !expT
+        elif !exprT >= rhsT then
+            !exprT
         else
             rhsT
 
+    let calc rhsV =
+        match !opr with
+        | '<' -> !exprVal <<< rhsV
+        | '>' -> !exprVal >>> rhsV
+        | '|' -> !exprVal ||| rhsV
+        | '+' -> !exprVal  +  rhsV
+        | '-' -> !exprVal  -  rhsV
+        | '*' -> !exprVal  *  rhsV
+        | '/' -> !exprVal  /  rhsV
+        | '&' -> !exprVal &&& rhsV
+        | '%' -> !exprVal  %  rhsV
+        | '!' -> !exprVal  + (~~~ rhsV)
+        | _   -> !exprVal
+
     let rec expres' lhs src =
         match readOp src with
-        | Sym (operand, opT, rest)
-        | Lbl (operand, opT, rest)
-        | Dec (operand, opT, rest)
-        | Oct (operand, opT, rest)
-        | DChar (operand, opT, rest)
-        | SChar (operand, opT, rest)
-        | Grp (operand, opT, rest) ->
+        | Sym (operand, (opType, opVal), rest)
+        | Lbl (operand, (opType, opVal), rest)
+        | Dec (operand, (opType, opVal), rest)
+        | Oct (operand, (opType, opVal), rest)
+        | DChar (operand, (opType, opVal), rest)
+        | SChar (operand, (opType, opVal), rest)
+        | Grp (operand, (opType, opVal), rest) ->
             opfound := !opfound + 1
-            expT := combine opT
+            exprT := combine opType
+            exprVal := calc opVal
             if !opfound = 1 && !oprfound = 0 then
                 expres' operand rest
             else
@@ -181,9 +197,9 @@ let rec expres src =
                 oprfound := 1
                 expres' lhs rest
         | _ ->
-            lhs, !expT, src
+            lhs, (!exprT, !exprVal), src
 
-    let result = expres' (Expr_Dec "0") src
+    let result = expres' (Expr_Dec 0) src
     if !opfound = 0 then
         failwith ExpressionError
     result

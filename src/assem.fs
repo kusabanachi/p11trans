@@ -30,19 +30,7 @@ let assem src =
         | Token_Symbol str -> symType str <> 0
         | _                -> false
 
-    let localLabelNumberCheck token =
-        let charToInt c = int c - int '0'
-        let num = token |> function
-            | Token_Octal s ->
-                Seq.fold (fun acc c -> acc * 8 + charToInt c) 0 s
-            | Token_Decimal s ->
-                Int32.Parse s
-            | Token_SChar c ->
-                charToInt c
-            | Token_DChar (c1, c2) ->
-                (charToInt c1) <<< 8 + (charToInt c2)
-            | _ ->
-                0xFFFFFFFF
+    let localLabelNumberCheck num =
         if num > 9 then
             failwith LocalLabelError
 
@@ -59,7 +47,7 @@ let assem src =
             | Token_Meta '=' ->
                 if not (isSymbol fst) then
                     failwith SyntaxError
-                let rhs, rhsT, rest'' = expres rest'
+                let rhs, (rhsT, _), rest'' = expres rest'
                 checkDotAssign fst rhsT |> ignore
                 [Assignment (fst, rhs)], rest''
             | Token_Meta ':' ->
@@ -69,11 +57,11 @@ let assem src =
                         failwith SymDefError
                     let subseqSt, rest'' = readStatement rest'
                     Label fst::subseqSt, rest''
-                | Token_Octal _
-                | Token_Decimal _
-                | Token_SChar _
-                | Token_DChar (_, _) ->
-                    localLabelNumberCheck fst |> ignore
+                | Token_Octal num
+                | Token_Decimal num
+                | Token_SChar (_, num)
+                | Token_DChar (_, _, num) ->
+                    localLabelNumberCheck num |> ignore
                     let subseqSt, rest'' = readStatement rest'
                     Label fst::subseqSt, rest''
                 | _ ->

@@ -17,13 +17,13 @@ type Token =
     | Token_Escp of char
     | Token_Meta of char
     | Token_Term of char
-    | Token_DChar of char * char
-    | Token_SChar of char
+    | Token_DChar of char * char * int
+    | Token_SChar of char * int
     | Token_Comment of string
     | Token_String of string
     | Token_LocalLabel of string
-    | Token_Octal of string
-    | Token_Decimal of string
+    | Token_Octal of int
+    | Token_Decimal of int
     | Token_Symbol of string
 
 let readFirstCharOfString src =
@@ -103,15 +103,17 @@ let (|DQuote|_|) (src:string) =
     match src.[0] with
     | '\"' ->
         let fst, rest = readFirstCharOfString src.[1..]
-        let snd, rest = readFirstCharOfString rest
-        Some( Token_DChar (fst, snd), rest)
+        let snd, rest' = readFirstCharOfString rest
+        let num = (int fst <<< 8) + int snd
+        Some( Token_DChar (fst, snd, num), rest')
     | _ -> None
 
 let (|SQuote|_|) (src:string) =
     match src.[0] with
     | '\'' ->
         let c, rest = readFirstCharOfString src.[1..]
-        Some( Token_SChar c, rest)
+        let num = int c
+        Some( Token_SChar (c, num), rest)
     | _ -> None
 
 let (|Slash|_|) (src:string) =
@@ -142,27 +144,33 @@ let (|Lt|_|) (src:string) =
     | _ -> None
 
 let (|Number|_|) (src:string) =
+    let octNum = Seq.fold (fun acc c -> acc * 8 + int c - int '0') 0
+    let decNum = Int32.Parse
+
     if Char.IsDigit src.[0] then
-        let rec numAndRest numAcc src =
+        let rec digestDigits acc src =
             if String.IsNullOrEmpty src || not (Char.IsDigit src.[0]) then
-                numAcc, src
+                acc, src
             else
-                numAndRest (numAcc + src.[0..0]) src.[1..]
-        let numStr, rest = numAndRest "" src
+                digestDigits (acc + src.[0..0]) src.[1..]
+        let numStr, rest = digestDigits "" src
         match rest with
         | "" ->
-            Some( Token_Octal numStr, rest)
+            let num = octNum numStr
+            Some( Token_Octal num, rest)
         | _ when rest.[0] = 'f' || rest.[0] = 'b' ->
-            let value = Int32.Parse numStr
-            if 0 <= value && value <= 9 then
-                let labelStr = string value + rest.[0..0]
+            let num = Int32.Parse numStr
+            if 0 <= num && num <= 9 then
+                let labelStr = string num + rest.[0..0]
                 Some( Token_LocalLabel labelStr, rest.[1..])
             else
                 failwith LocalLabelError
         | _ when rest.[0] = '.' ->
-            Some( Token_Decimal numStr, rest.[1..])
+            let num = decNum numStr
+            Some( Token_Decimal num, rest.[1..])
         | _ ->
-            Some( Token_Octal numStr, rest )
+            let num = octNum numStr
+            Some( Token_Octal num, rest )
     else
         None
 
