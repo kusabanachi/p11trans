@@ -29,12 +29,16 @@ let IndirectionError = "* indirection(*) used illegally"
 
 let rec addres src =
 
-    let readReg src =
-        let expr, (eType, eVal), rest = expres src
+    let checkReg eType eVal =
         if eVal > 7 || (eType <> 1 && eType < 4) then
             failwith AddressError
         else
-            expr, rest
+            ()
+
+    let readReg src =
+        let expr, (eType, eVal), rest = expres src
+        checkReg eType eVal |> ignore
+        expr, rest
 
     let readClosing src =
         let closing, rest = readOp src
@@ -58,32 +62,33 @@ let rec addres src =
         let rest'' = readClosing rest'
         DecDfr reg, rest''
     | Token_Meta '$' ->
-        let exp, _, rest' = expres rest
-        Imm exp, rest'
+        let expr, _, rest' = expres rest
+        Imm expr, rest'
     | Token_Meta '*' ->
         if nextToken = Token_Meta '*' then
             failwith IndirectionError
 
         let addr, rest' = addres rest
         (match addr with
-         | Reg    exp       -> Dfr     exp
-         | IncDfr exp       -> IncDDfr exp
-         | DecDfr exp       -> DecDDfr exp
-         | IdxDfr(idx, exp) -> IdxDDfr(idx, exp)
-         | Dfr    exp       -> DDfr    exp
-         | Rel    exp       -> RelDfr  exp
-         | Imm    exp       -> Abs     exp
+         | Reg    expr       -> Dfr     expr
+         | IncDfr expr       -> IncDDfr expr
+         | DecDfr expr       -> DecDDfr expr
+         | IdxDfr(idx, expr) -> IdxDDfr(idx, expr)
+         | Dfr    expr       -> DDfr    expr
+         | Rel    expr       -> RelDfr  expr
+         | Imm    expr       -> Abs     expr
          | _ -> failwith IndirectionError
          , rest')
     | _ ->
-        let exp, (expT, _), rest = expres src
+        let expr, (eType, eVal), rest = expres src
         match readOp rest with
         | Token_Meta '(', rest' ->
             let reg, rest'' = readReg rest'
             let rest''' = readClosing rest''
-            IdxDfr (exp, reg), rest'''
-        | _ when expT = TypeRegister ->
-            Reg exp, rest
+            IdxDfr (expr, reg), rest'''
+        | _ when eType = TypeRegister ->
+            checkReg eType eVal |> ignore
+            Reg expr, rest
         | _ ->
-            Rel exp, rest
+            Rel expr, rest
 

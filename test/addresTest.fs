@@ -38,10 +38,12 @@ type AddresTest() =
     static member AddresErrorTestData =
         [|
             [| "(r2,)" |]
-            [| "(r5+3)" |]
             [| "-(sp" |]
             [| "**3" |]
             [| "*(r2,)" |]
+            [| "(r5+3)" |]
+            [| "-(r5+3)" |]
+            [| "r5+3" |]
         |]
 
     [<TestCaseSource("AddresErrorTestData")>]
