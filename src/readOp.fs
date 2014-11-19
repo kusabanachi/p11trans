@@ -17,13 +17,13 @@ type Token =
     | Token_Escp of char
     | Token_Meta of char
     | Token_Term of char
-    | Token_DChar of char * char * int
-    | Token_SChar of char * int
+    | Token_DChar of char * char * int16
+    | Token_SChar of char * int16
     | Token_Comment of string
     | Token_String of string
     | Token_LocalLabel of string
-    | Token_Octal of int
-    | Token_Decimal of int
+    | Token_Octal of int16
+    | Token_Decimal of int16
     | Token_Symbol of string
 
 let readFirstCharOfString src =
@@ -104,7 +104,7 @@ let (|DQuote|_|) (src:string) =
     | '\"' ->
         let fst, rest = readFirstCharOfString src.[1..]
         let snd, rest' = readFirstCharOfString rest
-        let num = (int fst <<< 8) + int snd
+        let num = (int16 fst <<< 8) + int16 snd
         Some( Token_DChar (fst, snd, num), rest')
     | _ -> None
 
@@ -112,7 +112,7 @@ let (|SQuote|_|) (src:string) =
     match src.[0] with
     | '\'' ->
         let c, rest = readFirstCharOfString src.[1..]
-        let num = int c
+        let num = int16 c
         Some( Token_SChar (c, num), rest)
     | _ -> None
 
@@ -144,8 +144,8 @@ let (|Lt|_|) (src:string) =
     | _ -> None
 
 let (|Number|_|) (src:string) =
-    let octNum = Seq.fold (fun acc c -> acc * 8 + int c - int '0') 0
-    let decNum = Int32.Parse
+    let octNum = Seq.fold (fun acc c -> acc * 8s + int16 c - int16 '0') 0s
+    let decNum = Seq.fold (fun acc c -> acc * 10s + int16 c - int16 '0') 0s
 
     if Char.IsDigit src.[0] then
         let rec digestDigits acc src =

@@ -26,15 +26,15 @@ let opline src =
         Str s, rest
     | Token_Symbol sym ->
         match symType sym with
-        | 5 | 7 | 10 | 11 | 12 | 24 -> (* double *)
+        | 5s | 7s | 10s | 11s | 12s | 24s -> (* double *)
             let lhs, rest' = addres rest
             let rest'' = readComma rest'
             let rhs, rest''' = addres rest''
             DoubleOp (sym, lhs, rhs), rest'''
-        | 13 ->  (* single *)
+        | 13s ->  (* single *)
             let addr, rest' = addres rest
             SingleOp (sym, addr), rest'
-        | 14 -> (* .byte *)
+        | 14s -> (* .byte *)
             let rec readByteExpr acc s =
                 let e, _, r = expres s
                 let acc' = e::acc
@@ -45,14 +45,14 @@ let opline src =
             let revList, rest' = readByteExpr [] rest
             let byteArray = List.rev revList |> List.toArray
             ByteExpr byteArray, rest'
-        | 16 -> (* .even *)
+        | 16s -> (* .even *)
             Even, rest
-        | 17 -> (* .if *)
+        | 17s -> (* .if *)
             let expr, _, rest' = expres rest
             If expr, rest'
-        | 18 -> (* .endif *)
+        | 18s -> (* .endif *)
             EndIf, rest
-        | 19 -> (* .global *)
+        | 19s -> (* .global *)
             let rec readGlobalStr acc s =
                 let token, r = readOp s
                 match token with
@@ -66,18 +66,18 @@ let opline src =
             let revList, rest' = readGlobalStr [] rest
             let gsymArray = List.rev revList |> List.toArray
             Global gsymArray, rest'
-        | 21 -> (* .text *)
+        | 21s -> (* .text *)
             Text, rest
-        | 22 -> (* .data *)
+        | 22s -> (* .data *)
             Data, rest
-        | 23 -> (* .bss *)
+        | 23s -> (* .bss *)
             Bss, rest
-        | 25 -> (* sob *)
+        | 25s -> (* sob *)
             let e1, _, rest' = expres rest
             let rest'' = readComma rest'
             let e2, _, rest''' = expres rest''
             Sob (e1, e2), rest'''
-        | 26 -> (* .comm *)
+        | 26s -> (* .comm *)
             match readOp rest with
             | Token_Symbol sym, rest' ->
                 match readOp rest' with
@@ -86,8 +86,8 @@ let opline src =
                     Common (sym, expr), rest'''
                 | _ -> failwith SyntaxError
             | _ -> failwith SyntaxError
-        | 29 | 30 (* jbr, jeq, etc *)
-        | 6 | 8 | 9 | 27 | 28 (* branch, rts, sys, estimated text, estimated data *)->
+        | 29s | 30s (* jbr, jeq, etc *)
+        | 6s | 8s | 9s | 27s | 28s (* branch, rts, sys, estimated text, estimated data *)->
             let expr, _, rest' = expres rest
             ExprOp (sym, expr), rest'
         | _ ->

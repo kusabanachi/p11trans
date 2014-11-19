@@ -8,8 +8,8 @@ type expr =
     | Expr_Op of char * expr * expr
     | Expr_Sym of string
     | Expr_Lbl of string
-    | Expr_Dec of int
-    | Expr_Oct of int
+    | Expr_Dec of int16
+    | Expr_Oct of int16
     | Expr_DChar of char * char
     | Expr_SChar of char
     | Expr_Group of expr
@@ -102,13 +102,13 @@ let rec expres src =
     let opfound = ref 0
     let oprfound = ref 0
     let exprT = ref TypeAbsolute
-    let exprVal = ref 0
+    let exprVal = ref 0s
 
     let (|Sym|_|) = function
         | Token_Symbol s, rest -> Some( Expr_Sym s, (symType s, symVal s), rest )
         | _ -> None
     let (|Lbl|_|) = function
-        | Token_LocalLabel s, rest -> Some( Expr_Lbl s, (TypeText, 0), rest )
+        | Token_LocalLabel s, rest -> Some( Expr_Lbl s, (TypeText, 0s), rest )
         | _ -> None
     let (|Dec|_|) = function
         | Token_Decimal n, rest -> Some( Expr_Dec n, (TypeAbsolute, n), rest )
@@ -146,8 +146,8 @@ let rec expres src =
             None
 
     let combine rhsT =
-        if !exprT = 0 && rhsT = 0 then
-            0
+        if !exprT = 0s && rhsT = 0s then
+            0s
         elif !opr = '^' then
             rhsT
         elif !opr = '-' && !exprT = rhsT then
@@ -159,8 +159,8 @@ let rec expres src =
 
     let calc rhsV =
         match !opr with
-        | '<' -> !exprVal <<< rhsV
-        | '>' -> !exprVal >>> rhsV
+        | '<' -> !exprVal <<< int rhsV
+        | '>' -> !exprVal >>> int rhsV
         | '|' -> !exprVal ||| rhsV
         | '+' -> !exprVal  +  rhsV
         | '-' -> !exprVal  -  rhsV
@@ -199,7 +199,7 @@ let rec expres src =
         | _ ->
             lhs, (!exprT, !exprVal), src
 
-    let result = expres' (Expr_Dec 0) src
+    let result = expres' (Expr_Dec 0s) src
     if !opfound = 0 then
         failwith ExpressionError
     result

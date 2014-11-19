@@ -2,237 +2,237 @@
 module Symtab
 
     [<Literal>]
-    let TypeText = 2
-    let TypeData = 3
-    let TypeBss = 4
-    let TypeAbsolute = 1
-    let TypeRegister = 20
+    let TypeText = 2s
+    let TypeData = 3s
+    let TypeBss = 4s
+    let TypeAbsolute = 1s
+    let TypeRegister = 20s
 
     let symTypeVal = function
 
     (* special variables *)
 
-    | "."      ->  2, 0
-    | ".."     ->  1, 0
+    | "."      ->  2s, 0s
+    | ".."     ->  1s, 0s
 
     (* register *)
 
-    | "r0"     -> 20, 0
-    | "r1"     -> 20, 1
-    | "r2"     -> 20, 2
-    | "r3"     -> 20, 3
-    | "r4"     -> 20, 4
-    | "r5"     -> 20, 5
-    | "sp"     -> 20, 6
-    | "pc"     -> 20, 7
+    | "r0"     -> 20s, 0s
+    | "r1"     -> 20s, 1s
+    | "r2"     -> 20s, 2s
+    | "r3"     -> 20s, 3s
+    | "r4"     -> 20s, 4s
+    | "r5"     -> 20s, 5s
+    | "sp"     -> 20s, 6s
+    | "pc"     -> 20s, 7s
 
     (* system calls *)
 
-    | "exit"   ->  1, 0o1
-    | "fork"   ->  1, 0o2
-    | "read"   ->  1, 0o3
-    | "write"  ->  1, 0o4
-    | "open"   ->  1, 0o5
-    | "close"  ->  1, 0o6
-    | "wait"   ->  1, 0o7
-    | "creat"  ->  1, 0o10
-    | "link"   ->  1, 0o11
-    | "unlink" ->  1, 0o12
-    | "exec"   ->  1, 0o13
-    | "chdir"  ->  1, 0o14
-    | "time"   ->  1, 0o15
-    | "makdir" ->  1, 0o16
-    | "chmod"  ->  1, 0o17
-    | "chown"  ->  1, 0o20
-    | "break"  ->  1, 0o21
-    | "stat"   ->  1, 0o22
-    | "seek"   ->  1, 0o23
-    | "tell"   ->  1, 0o24
-    | "mount"  ->  1, 0o25
-    | "umount" ->  1, 0o26
-    | "setuid" ->  1, 0o27
-    | "getuid" ->  1, 0o30
-    | "stime"  ->  1, 0o31
-    | "fstat"  ->  1, 0o34
-    | "mdate"  ->  1, 0o36
-    | "stty"   ->  1, 0o37
-    | "gtty"   ->  1, 0o40
-    | "nice"   ->  1, 0o42
-    | "signal" ->  1, 0o60
+    | "exit"   ->  1s, 0o1s
+    | "fork"   ->  1s, 0o2s
+    | "read"   ->  1s, 0o3s
+    | "write"  ->  1s, 0o4s
+    | "open"   ->  1s, 0o5s
+    | "close"  ->  1s, 0o6s
+    | "wait"   ->  1s, 0o7s
+    | "creat"  ->  1s, 0o10s
+    | "link"   ->  1s, 0o11s
+    | "unlink" ->  1s, 0o12s
+    | "exec"   ->  1s, 0o13s
+    | "chdir"  ->  1s, 0o14s
+    | "time"   ->  1s, 0o15s
+    | "makdir" ->  1s, 0o16s
+    | "chmod"  ->  1s, 0o17s
+    | "chown"  ->  1s, 0o20s
+    | "break"  ->  1s, 0o21s
+    | "stat"   ->  1s, 0o22s
+    | "seek"   ->  1s, 0o23s
+    | "tell"   ->  1s, 0o24s
+    | "mount"  ->  1s, 0o25s
+    | "umount" ->  1s, 0o26s
+    | "setuid" ->  1s, 0o27s
+    | "getuid" ->  1s, 0o30s
+    | "stime"  ->  1s, 0o31s
+    | "fstat"  ->  1s, 0o34s
+    | "mdate"  ->  1s, 0o36s
+    | "stty"   ->  1s, 0o37s
+    | "gtty"   ->  1s, 0o40s
+    | "nice"   ->  1s, 0o42s
+    | "signal" ->  1s, 0o60s
 
     (* double operand *)
 
-    | "mov"    -> 11, 0o10000
-    | "movb"   -> 11, 0o110000
-    | "cmp"    -> 11, 0o20000
-    | "cmpb"   -> 11, 0o120000
-    | "bit"    -> 11, 0o30000
-    | "bitb"   -> 11, 0o130000
-    | "bic"    -> 11, 0o40000
-    | "bicb"   -> 11, 0o140000
-    | "bis"    -> 11, 0o50000
-    | "bisb"   -> 11, 0o150000
-    | "add"    -> 11, 0o60000
-    | "sub"    -> 11, 0o160000
+    | "mov"    -> 11s, 0o10000s
+    | "movb"   -> 11s, 0o110000s
+    | "cmp"    -> 11s, 0o20000s
+    | "cmpb"   -> 11s, 0o120000s
+    | "bit"    -> 11s, 0o30000s
+    | "bitb"   -> 11s, 0o130000s
+    | "bic"    -> 11s, 0o40000s
+    | "bicb"   -> 11s, 0o140000s
+    | "bis"    -> 11s, 0o50000s
+    | "bisb"   -> 11s, 0o150000s
+    | "add"    -> 11s, 0o60000s
+    | "sub"    -> 11s, 0o160000s
 
     (* branch *)
 
-    | "br"     ->  6, 0o400
-    | "bne"    ->  6, 0o1000
-    | "beq"    ->  6, 0o1400
-    | "bge"    ->  6, 0o2000
-    | "blt"    ->  6, 0o2400
-    | "bgt"    ->  6, 0o3000
-    | "ble"    ->  6, 0o3400
-    | "bpl"    ->  6, 0o100000
-    | "bmi"    ->  6, 0o100400
-    | "bhi"    ->  6, 0o101000
-    | "blos"   ->  6, 0o101400
-    | "bvc"    ->  6, 0o102000
-    | "bvs"    ->  6, 0o102400
-    | "bhis"   ->  6, 0o103000
-    | "bec"    ->  6, 0o103000
-    | "bcc"    ->  6, 0o103000
-    | "blo"    ->  6, 0o103400
-    | "bcs"    ->  6, 0o103400
-    | "bes"    ->  6, 0o103400
+    | "br"     ->  6s, 0o400s
+    | "bne"    ->  6s, 0o1000s
+    | "beq"    ->  6s, 0o1400s
+    | "bge"    ->  6s, 0o2000s
+    | "blt"    ->  6s, 0o2400s
+    | "bgt"    ->  6s, 0o3000s
+    | "ble"    ->  6s, 0o3400s
+    | "bpl"    ->  6s, 0o100000s
+    | "bmi"    ->  6s, 0o100400s
+    | "bhi"    ->  6s, 0o101000s
+    | "blos"   ->  6s, 0o101400s
+    | "bvc"    ->  6s, 0o102000s
+    | "bvs"    ->  6s, 0o102400s
+    | "bhis"   ->  6s, 0o103000s
+    | "bec"    ->  6s, 0o103000s
+    | "bcc"    ->  6s, 0o103000s
+    | "blo"    ->  6s, 0o103400s
+    | "bcs"    ->  6s, 0o103400s
+    | "bes"    ->  6s, 0o103400s
 
     (* jump/branch type *)
 
-    | "jbr"    -> 29, 0o400
-    | "jne"    -> 30, 0o1000
-    | "jeq"    -> 30, 0o1400
-    | "jge"    -> 30, 0o2000
-    | "jlt"    -> 30, 0o2400
-    | "jgt"    -> 30, 0o3000
-    | "jle"    -> 30, 0o3400
-    | "jpl"    -> 30, 0o100000
-    | "jmi"    -> 30, 0o100400
-    | "jhi"    -> 30, 0o101000
-    | "jlos"   -> 30, 0o101400
-    | "jvc"    -> 30, 0o102000
-    | "jvs"    -> 30, 0o102400
-    | "jhis"   -> 30, 0o103000
-    | "jec"    -> 30, 0o103000
-    | "jcc"    -> 30, 0o103000
-    | "jlo"    -> 30, 0o103400
-    | "jcs"    -> 30, 0o103400
-    | "jes"    -> 30, 0o103400
+    | "jbr"    -> 29s, 0o400s
+    | "jne"    -> 30s, 0o1000s
+    | "jeq"    -> 30s, 0o1400s
+    | "jge"    -> 30s, 0o2000s
+    | "jlt"    -> 30s, 0o2400s
+    | "jgt"    -> 30s, 0o3000s
+    | "jle"    -> 30s, 0o3400s
+    | "jpl"    -> 30s, 0o100000s
+    | "jmi"    -> 30s, 0o100400s
+    | "jhi"    -> 30s, 0o101000s
+    | "jlos"   -> 30s, 0o101400s
+    | "jvc"    -> 30s, 0o102000s
+    | "jvs"    -> 30s, 0o102400s
+    | "jhis"   -> 30s, 0o103000s
+    | "jec"    -> 30s, 0o103000s
+    | "jcc"    -> 30s, 0o103000s
+    | "jlo"    -> 30s, 0o103400s
+    | "jcs"    -> 30s, 0o103400s
+    | "jes"    -> 30s, 0o103400s
 
     (* single operand *)
 
-    | "clr"    -> 13, 0o5000
-    | "clrb"   -> 13, 0o105000
-    | "com"    -> 13, 0o5100
-    | "comb"   -> 13, 0o105100
-    | "inc"    -> 13, 0o5200
-    | "incb"   -> 13, 0o105200
-    | "dec"    -> 13, 0o5300
-    | "decb"   -> 13, 0o105300
-    | "neg"    -> 13, 0o5400
-    | "negb"   -> 13, 0o105400
-    | "adc"    -> 13, 0o5500
-    | "adcb"   -> 13, 0o105500
-    | "sbc"    -> 13, 0o5600
-    | "sbcb"   -> 13, 0o105600
-    | "tst"    -> 13, 0o5700
-    | "tstb"   -> 13, 0o105700
-    | "ror"    -> 13, 0o6000
-    | "rorb"   -> 13, 0o106000
-    | "rol"    -> 13, 0o6100
-    | "rolb"   -> 13, 0o106100
-    | "asr"    -> 13, 0o6200
-    | "asrb"   -> 13, 0o106200
-    | "asl"    -> 13, 0o6300
-    | "aslb"   -> 13, 0o106300
-    | "jmp"    -> 13, 0o100
-    | "swab"   -> 13, 0o300
+    | "clr"    -> 13s, 0o5000s
+    | "clrb"   -> 13s, 0o105000s
+    | "com"    -> 13s, 0o5100s
+    | "comb"   -> 13s, 0o105100s
+    | "inc"    -> 13s, 0o5200s
+    | "incb"   -> 13s, 0o105200s
+    | "dec"    -> 13s, 0o5300s
+    | "decb"   -> 13s, 0o105300s
+    | "neg"    -> 13s, 0o5400s
+    | "negb"   -> 13s, 0o105400s
+    | "adc"    -> 13s, 0o5500s
+    | "adcb"   -> 13s, 0o105500s
+    | "sbc"    -> 13s, 0o5600s
+    | "sbcb"   -> 13s, 0o105600s
+    | "tst"    -> 13s, 0o5700s
+    | "tstb"   -> 13s, 0o105700s
+    | "ror"    -> 13s, 0o6000s
+    | "rorb"   -> 13s, 0o106000s
+    | "rol"    -> 13s, 0o6100s
+    | "rolb"   -> 13s, 0o106100s
+    | "asr"    -> 13s, 0o6200s
+    | "asrb"   -> 13s, 0o106200s
+    | "asl"    -> 13s, 0o6300s
+    | "aslb"   -> 13s, 0o106300s
+    | "jmp"    -> 13s, 0o100s
+    | "swab"   -> 13s, 0o300s
 
     (* jsr *)
 
-    | "jsr"    ->  7, 0o4000
+    | "jsr"    ->  7s, 0o4000s
 
     (* rts *)
 
-    | "rts"    ->  8, 0o200
+    | "rts"    ->  8s, 0o200s
 
     (* simple operand *)
 
-    | "sys"    ->  9, 0o104400
+    | "sys"    ->  9s, 0o104400s
 
     (* flag-setting *)
 
-    | "clc"    ->  1, 0o241
-    | "clv"    ->  1, 0o242
-    | "clz"    ->  1, 0o244
-    | "cln"    ->  1, 0o250
-    | "sec"    ->  1, 0o261
-    | "sev"    ->  1, 0o262
-    | "sez"    ->  1, 0o264
-    | "sen"    ->  1, 0o270
+    | "clc"    ->  1s, 0o241s
+    | "clv"    ->  1s, 0o242s
+    | "clz"    ->  1s, 0o244s
+    | "cln"    ->  1s, 0o250s
+    | "sec"    ->  1s, 0o261s
+    | "sev"    ->  1s, 0o262s
+    | "sez"    ->  1s, 0o264s
+    | "sen"    ->  1s, 0o270s
 
     (* floating point ops *)
 
-    | "cfcc"   ->  1, 0o170000
-    | "setf"   ->  1, 0o170001
-    | "setd"   ->  1, 0o170011
-    | "seti"   ->  1, 0o170002
-    | "setl"   ->  1, 0o170012
-    | "clrf"   -> 13, 0o170400
-    | "negf"   -> 13, 0o170700
-    | "absf"   -> 13, 0o170600
-    | "tstf"   -> 13, 0o170500
-    | "movf"   -> 10, 0o172400
-    | "movif"  -> 12, 0o177000
-    | "movfi"  ->  5, 0o175400
-    | "movof"  -> 12, 0o177400
-    | "movfo"  ->  5, 0o176000
-    | "addf"   -> 12, 0o172000
-    | "subf"   -> 12, 0o173000
-    | "mulf"   -> 12, 0o171000
-    | "divf"   -> 12, 0o174400
-    | "cmpf"   -> 12, 0o173400
-    | "modf"   -> 12, 0o171400
-    | "movie"  -> 12, 0o176400
-    | "movei"  ->  5, 0o175000
-    | "ldfps"  -> 13, 0o170100
-    | "stfps"  -> 13, 0o170200
-    | "fr0"    -> 20, 0
-    | "fr1"    -> 20, 1
-    | "fr2"    -> 20, 2
-    | "fr3"    -> 20, 3
-    | "fr4"    -> 20, 4
-    | "fr5"    -> 20, 5
+    | "cfcc"   ->  1s, 0o170000s
+    | "setf"   ->  1s, 0o170001s
+    | "setd"   ->  1s, 0o170011s
+    | "seti"   ->  1s, 0o170002s
+    | "setl"   ->  1s, 0o170012s
+    | "clrf"   -> 13s, 0o170400s
+    | "negf"   -> 13s, 0o170700s
+    | "absf"   -> 13s, 0o170600s
+    | "tstf"   -> 13s, 0o170500s
+    | "movf"   -> 10s, 0o172400s
+    | "movif"  -> 12s, 0o177000s
+    | "movfi"  ->  5s, 0o175400s
+    | "movof"  -> 12s, 0o177400s
+    | "movfo"  ->  5s, 0o176000s
+    | "addf"   -> 12s, 0o172000s
+    | "subf"   -> 12s, 0o173000s
+    | "mulf"   -> 12s, 0o171000s
+    | "divf"   -> 12s, 0o174400s
+    | "cmpf"   -> 12s, 0o173400s
+    | "modf"   -> 12s, 0o171400s
+    | "movie"  -> 12s, 0o176400s
+    | "movei"  ->  5s, 0o175000s
+    | "ldfps"  -> 13s, 0o170100s
+    | "stfps"  -> 13s, 0o170200s
+    | "fr0"    -> 20s, 0s
+    | "fr1"    -> 20s, 1s
+    | "fr2"    -> 20s, 2s
+    | "fr3"    -> 20s, 3s
+    | "fr4"    -> 20s, 4s
+    | "fr5"    -> 20s, 5s
 
     (* 11/45 operations *)
 
-    | "als"    -> 24, 0o72000
-    | "alsc"   -> 24, 0o73000
-    | "mpy"    -> 24, 0o70000
-    | "mul"    -> 24, 0o70000
-    | "div"    -> 24, 0o71000
-    | "ash"    -> 24, 0o72000
-    | "ashc"   -> 24, 0o73000
-    | "dvd"    -> 24, 0o71000
-    | "xor"    ->  7, 0o74000
-    | "sxt"    -> 13, 0o6700
-    | "mark"   ->  9, 0o6400
-    | "sob"    -> 25, 0o77000
+    | "als"    -> 24s, 0o72000s
+    | "alsc"   -> 24s, 0o73000s
+    | "mpy"    -> 24s, 0o70000s
+    | "mul"    -> 24s, 0o70000s
+    | "div"    -> 24s, 0o71000s
+    | "ash"    -> 24s, 0o72000s
+    | "ashc"   -> 24s, 0o73000s
+    | "dvd"    -> 24s, 0o71000s
+    | "xor"    ->  7s, 0o74000s
+    | "sxt"    -> 13s, 0o6700s
+    | "mark"   ->  9s, 0o6400s
+    | "sob"    -> 25s, 0o77000s
 
     (* specials *)
 
-    | ".byte"  -> 14, 0
-    | ".even"  -> 16, 0
-    | ".if"    -> 17, 0
-    | ".endif" -> 18, 0
-    | ".globl" -> 19, 0
-    | ".text"  -> 21, 0
-    | ".data"  -> 22, 0
-    | ".bss"   -> 23, 0
-    | ".comm"  -> 26, 0
+    | ".byte"  -> 14s, 0s
+    | ".even"  -> 16s, 0s
+    | ".if"    -> 17s, 0s
+    | ".endif" -> 18s, 0s
+    | ".globl" -> 19s, 0s
+    | ".text"  -> 21s, 0s
+    | ".data"  -> 22s, 0s
+    | ".bss"   -> 23s, 0s
+    | ".comm"  -> 26s, 0s
 
     (* undef *)
-    | _        ->  0, 0
+    | _        ->  0s, 0s
 
     let symType = fst << symTypeVal
 

@@ -30,7 +30,7 @@ let IndirectionError = "* indirection(*) used illegally"
 let rec addres src =
 
     let checkReg eType eVal =
-        if eVal > 7 || (eType <> 1 && eType < 4) then
+        if eVal > 7s || (eType <> 1s && eType < 4s) then
             failwith AddressError
         else
             ()

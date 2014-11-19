@@ -27,11 +27,11 @@ let assem src =
         | _              -> false
 
     let isBuiltinSymbol = function
-        | Token_Symbol str -> symType str <> 0
+        | Token_Symbol str -> symType str <> 0s
         | _                -> false
 
     let localLabelNumberCheck num =
-        if num > 9 then
+        if num > 9s then
             failwith LocalLabelError
 
     let rec readStatement src =
