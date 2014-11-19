@@ -70,3 +70,20 @@ type ExpresTest() =
     member x.invalidExpression src =
         expres src |> ignore
 
+    static member ShiftByMinusTestData =
+        [|
+            [| ( "15.\>[-2]",
+                 (Expr_Op ('>', Expr_Dec 15s, Expr_Group (Expr_Op ('-', Expr_Dec 0s, Expr_Oct 2s))),
+                  (TypeAbsolute, 0x38s), "") ) |]
+            [| ( "15.\<[-2]",
+                 (Expr_Op ('<', Expr_Dec 15s, Expr_Group (Expr_Op ('-', Expr_Dec 0s, Expr_Oct 2s))),
+                  (TypeAbsolute, 3s), "") ) |]
+        |]
+
+    [<TestCaseSource("ShiftByMinusTestData")>]
+    member x.ShiftByMinusExpression data =
+        let src, expected = data
+        let actual = expres src
+        let compare = actual = expected
+        Assert.IsTrue(compare, sprintf "expres %A -> %A" src actual)
+

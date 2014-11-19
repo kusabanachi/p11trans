@@ -158,9 +158,21 @@ let rec expres src =
             rhsT
 
     let calc rhsV =
+        let lShift lhs rhs =
+            if rhs >= 0s then
+                lhs <<< int rhs
+            else
+                lhs >>> int -rhs
+
+        let rShift (lhs:int16) (rhs:int16):int16 =
+            if rhs >= 0s then
+                lhs >>> int rhs
+            else
+                int16 (int lhs &&& 0xfffe) <<< int -rhs
+
         match !opr with
-        | '<' -> !exprVal <<< int rhsV
-        | '>' -> !exprVal >>> int rhsV
+        | '<' -> lShift !exprVal rhsV
+        | '>' -> rShift !exprVal rhsV
         | '|' -> !exprVal ||| rhsV
         | '+' -> !exprVal  +  rhsV
         | '-' -> !exprVal  -  rhsV
