@@ -12,8 +12,8 @@ type OplineTest() =
 
     static member OplineTestData =
         [|
-            [| ( "mov 3, r2", (DoubleOp("mov", Rel(Expr_Oct 3s), Reg(Expr_Sym "r2")), "") ) |]
-            [| ( "ror 6(r3)", (SingleOp("ror", IdxDfr(Expr_Oct 6s, Expr_Sym "r3")), "") ) |]
+            [| ( "mov 3, r2", (DoubleOp("mov", Rel(Expr_Oct 3s), Reg R2), "") ) |]
+            [| ( "ror 6(r3)", (SingleOp("ror", IdxDfr(R3, Expr_Oct 6s)), "") ) |]
             [| ( ".byte 7, 9, hello;", (ByteExpr[|Expr_Oct 7s; Expr_Oct 9s; Expr_Sym "hello"|], ";") ) |]
             [| ( ".even 7, 9, hello;", (Even, " 7, 9, hello;") ) |]
             [| ( ".if debug", (If (Expr_Sym "debug"), "") ) |]

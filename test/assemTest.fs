@@ -46,7 +46,7 @@ type AssemTest() =
 
     static member OplineTestData =
         [|
-            [| ( "mov 3, r2", [DoubleOp ("mov", Rel (Expr_Oct 3s), Reg (Expr_Sym "r2")); Eos EOT] ) |]
+            [| ( "mov 3, r2", [DoubleOp ("mov", Rel (Expr_Oct 3s), Reg R2); Eos EOT] ) |]
             [| ( ".text", [Text; Eos EOT] ) |]
             [| ( "<tstf\0\0\0\0>;", [Str "tstf\x00\x00\x00\x00"; Eos ';'] ) |]
             [| ( "02020", [Expr (Expr_Oct 0o2020s); Eos EOT] ) |]
@@ -63,8 +63,8 @@ type AssemTest() =
     static member EosTestData =
         [|
             [| ( "\x04 mov 3, r2", [Eos EOT] ) |]
-            [| ( "\n mov 3, r2", [Eos '\n'; DoubleOp ("mov", Rel (Expr_Oct 3s), Reg (Expr_Sym "r2")); Eos EOT] ) |]
-            [| ( "; mov 3, r2", [Eos ';'; DoubleOp ("mov", Rel (Expr_Oct 3s), Reg (Expr_Sym "r2")); Eos EOT] ) |]
+            [| ( "\n mov 3, r2", [Eos '\n'; DoubleOp ("mov", Rel (Expr_Oct 3s), Reg R2); Eos EOT] ) |]
+            [| ( "; mov 3, r2", [Eos ';'; DoubleOp ("mov", Rel (Expr_Oct 3s), Reg R2); Eos EOT] ) |]
         |]
 
     [<TestCaseSource("EosTestData")>]

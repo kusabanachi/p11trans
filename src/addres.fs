@@ -9,15 +9,15 @@ type reg =
     | R0 | R1 | R2 | R3 | R4 | R5 | SP | PC
 
 type addr =
-    | Reg of expr
-    | IncDfr of expr
-    | DecDfr of expr
-    | IdxDfr of expr * expr
-    | Dfr of expr
-    | IncDDfr of expr
-    | DecDDfr of expr
-    | DDfr of expr
-    | IdxDDfr of expr * expr
+    | Reg of reg
+    | IncDfr of reg
+    | DecDfr of reg
+    | IdxDfr of reg * expr
+    | Dfr of reg
+    | IncDDfr of reg
+    | DecDDfr of reg
+    | DDfr of reg
+    | IdxDDfr of reg * expr
     | Rel of expr
     | Imm of expr
     | RelDfr of expr
@@ -29,16 +29,23 @@ let IndirectionError = "* indirection(*) used illegally"
 
 let rec addres src =
 
-    let checkReg eType eVal =
-        if eVal > 7s || (eType <> 1s && eType < 4s) then
+    let toRegister eType eVal =
+        if eType <> 1s && eType < 4s then
             failwith AddressError
-        else
-            ()
+        match eVal with
+        | 0s -> R0
+        | 1s -> R1
+        | 2s -> R2
+        | 3s -> R3
+        | 4s -> R4
+        | 5s -> R5
+        | 6s -> SP
+        | 7s -> PC
+        | _  -> failwith AddressError
 
     let readReg src =
-        let expr, (eType, eVal), rest = expres src
-        checkReg eType eVal |> ignore
-        expr, rest
+        let _, (eType, eVal), rest = expres src
+        toRegister eType eVal, rest
 
     let readClosing src =
         let closing, rest = readOp src
@@ -70,11 +77,11 @@ let rec addres src =
 
         let addr, rest' = addres rest
         (match addr with
-         | Reg    expr       -> Dfr     expr
-         | IncDfr expr       -> IncDDfr expr
-         | DecDfr expr       -> DecDDfr expr
-         | IdxDfr(idx, expr) -> IdxDDfr(idx, expr)
-         | Dfr    expr       -> DDfr    expr
+         | Reg    reg        -> Dfr     reg
+         | IncDfr reg        -> IncDDfr reg
+         | DecDfr reg        -> DecDDfr reg
+         | IdxDfr(reg, expr) -> IdxDDfr(reg, expr)
+         | Dfr    reg        -> DDfr    reg
          | Rel    expr       -> RelDfr  expr
          | Imm    expr       -> Abs     expr
          | _ -> failwith IndirectionError
@@ -85,10 +92,10 @@ let rec addres src =
         | Token_Meta '(', rest' ->
             let reg, rest'' = readReg rest'
             let rest''' = readClosing rest''
-            IdxDfr (expr, reg), rest'''
+            IdxDfr (reg, expr), rest'''
         | _ when eType = TypeRegister ->
-            checkReg eType eVal |> ignore
-            Reg expr, rest
+            let reg = toRegister eType eVal
+            Reg reg, rest
         | _ ->
             Rel expr, rest
 
