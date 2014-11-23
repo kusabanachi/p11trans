@@ -19,6 +19,10 @@
         <String>src/statementType.fs</String>
         <String>src/opline.fs</String>
         <String>src/assem.fs</String>
+        <String>src/trans/address.fs</String>
+        <String>src/trans/instructionAsm.fs</String>
+        <String>src/trans/instruction.fs</String>
+        <String>src/trans/ack_i86.fs</String>
         <String>src/Program.fs</String>
       </BuildOrder>
     </BuildOrder>
@@ -32,7 +36,7 @@
     <DefineConstants>DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <PlatformTarget>x86</PlatformTarget>
-    <ConsolePause>False</ConsolePause>
+    <Externalconsole>True</Externalconsole>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <DebugSymbols>true</DebugSymbols>
@@ -53,6 +57,7 @@
   <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft F#\v4.0\Microsoft.FSharp.Targets" />
   <ItemGroup>
     <Folder Include="src\" />
+    <Folder Include="src\trans\" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="src\AssemblyInfo.fs" />
@@ -64,6 +69,10 @@
     <Compile Include="src\readOp.fs" />
     <Compile Include="src\statementType.fs" />
     <Compile Include="src\symtab.fs" />
+    <Compile Include="src\trans\ack_i86.fs" />
+    <Compile Include="src\trans\instruction.fs" />
+    <Compile Include="src\trans\address.fs" />
+    <Compile Include="src\trans\instructionAsm.fs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\expres.fs.old" />
