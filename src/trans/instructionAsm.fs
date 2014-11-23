@@ -5,7 +5,7 @@ module InstructionAsm =
     open Address
     open Expres
 
-    let private tempMem = "tmpMem"
+    let tempMem = "tmpMem"
 
     let inline (+!!+) (i1:string) (i2:string) =
         if i1.Length <> 0 && i2.Length <> 0 then
@@ -170,6 +170,98 @@ module InstructionAsm =
             (movText (Reg midReg) (Rel expr)
                +!!+ movText (Reg dReg) (Dfr (midReg, None)),
              Reg dReg)
+
+
+    let moveValToMem symbol sAddr =
+        match sAddr with
+        | IncDfr sReg ->
+            if sReg.isMemoryAccessible then
+                (movText (Reg utilReg) (Dfr (sReg, None))
+                   +!!+ incText sReg sReg 2
+                   +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
+                 Abs (Expr_Sym symbol))
+            else
+                (movText (Reg utilReg) (Reg sReg)
+                   +!!+ incText sReg utilReg 2
+                   +!!+ movText (Reg utilReg) (Dfr (utilReg, None))
+                   +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
+                 Abs (Expr_Sym symbol))
+        | DecDfr sReg ->
+            if sReg.isMemoryAccessible then
+                (incText sReg sReg -2
+                   +!!+ movText (Reg utilReg) (Dfr (sReg, None))
+                   +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
+                 Abs (Expr_Sym symbol))
+            else
+                let decIndex = Some (Expr_Oct -2s)
+                (movText (Reg utilReg) (Reg sReg)
+                   +!!+ incText sReg utilReg -2
+                   +!!+ movText (Reg utilReg) (Dfr (utilReg, decIndex))
+                   +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
+                 Abs (Expr_Sym symbol))
+        | Dfr (sReg, expr) ->
+            if sReg.isMemoryAccessible then
+                (movText (Reg utilReg) sAddr
+                   +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
+                 Abs (Expr_Sym symbol))
+            else
+                (movText (Reg utilReg) (Reg sReg)
+                   +!!+ movText (Reg utilReg) (Dfr (utilReg, expr))
+                   +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
+                 Abs (Expr_Sym symbol))
+        | IncDDfr sReg ->
+            if sReg.isMemoryAccessible then
+                (movText (Reg utilReg) (Dfr (sReg, None))
+                   +!!+ incText sReg sReg 2
+                   +!!+ movText (Reg utilReg) (Dfr (utilReg, None))
+                   +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
+                 Abs (Expr_Sym symbol))
+            else
+                (movText (Reg utilReg) (Reg sReg)
+                   +!!+ incText sReg utilReg 2
+                   +!!+ movText (Reg utilReg) (Dfr (utilReg, None))
+                   +!!+ movText (Reg utilReg) (Dfr (utilReg, None))
+                   +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
+                 Abs (Expr_Sym symbol))
+        | DecDDfr sReg ->
+            if sReg.isMemoryAccessible then
+                (incText sReg sReg -2
+                   +!!+ movText (Reg utilReg) (Dfr (sReg, None))
+                   +!!+ movText (Reg utilReg) (Dfr (utilReg, None))
+                   +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
+                 Abs (Expr_Sym symbol))
+            else
+                let decIndex = Some (Expr_Oct -2s)
+                (movText (Reg utilReg) (Reg sReg)
+                   +!!+ incText sReg utilReg -2
+                   +!!+ movText (Reg utilReg) (Dfr (utilReg, decIndex))
+                   +!!+ movText (Reg utilReg) (Dfr (utilReg, None))
+                   +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
+                 Abs (Expr_Sym symbol))
+        | DDfr (sReg, expr) ->
+            if sReg.isMemoryAccessible then
+                (movText (Reg utilReg) (Dfr (sReg, expr))
+                   +!!+ movText (Reg utilReg) (Dfr (utilReg, None))
+                   +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
+                 Abs (Expr_Sym symbol))
+            else
+                (movText (Reg utilReg) (Reg sReg)
+                   +!!+ movText (Reg utilReg) (Dfr (utilReg, expr))
+                   +!!+ movText (Reg utilReg) (Dfr (utilReg, None))
+                   +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
+                 Abs (Expr_Sym symbol))
+        | Rel _ | Abs _ ->
+            (movText (Reg utilReg) sAddr
+               +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
+             Abs (Expr_Sym symbol))
+        | RelDfr expr ->
+            (movText (Reg utilReg) (Rel expr)
+               +!!+ movText (Reg utilReg) (Dfr (utilReg, None))
+               +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
+             Abs (Expr_Sym symbol))
+        | Reg _ | Imm _ ->
+            (movText (Abs (Expr_Sym symbol)) sAddr,
+             Abs (Expr_Sym symbol))
 
 
     let pushVal sAddr =
