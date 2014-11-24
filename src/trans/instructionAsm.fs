@@ -426,6 +426,21 @@ module InstructionAsm =
                 codeText dAddr sAddr
 
 
+    let unaryCalc codeStr addr =
+        let codeText (a:addr) =
+            codeStr + " " + a.text
+
+        match addr with
+        | IncDfr reg ->
+            codeText (Dfr (reg, None))
+              +!!+ incText reg reg 2
+        | DecDfr reg ->
+            incText reg reg -2
+              +!!+ codeText (Dfr (reg, None))
+        | _ ->
+            codeText addr
+
+
     let storeRegVal reg =
         movText (Abs (Expr_Sym tempMem)) (Reg reg)
 

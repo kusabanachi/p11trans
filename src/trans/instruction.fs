@@ -119,3 +119,14 @@ module Instruction =
             binaryCalc code dest src
 
 
+    let incType code addr =
+        let addr = i86Addr addr
+
+        if not addr.isAccessible then
+            let code1, addr = moveRef utilReg addr
+            let code2       = unaryCalc code addr
+            code1 +!!+ code2
+        else
+            unaryCalc code addr
+
+
