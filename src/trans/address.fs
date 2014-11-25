@@ -22,6 +22,15 @@ type reg =
         | IP -> "ip"
         | BX -> "bx"
 
+    member this.l8bitText =
+        match this with
+        | AX -> "al"
+        | BX -> "bl"
+        | CX -> "cl"
+        | DX -> "dl"
+        | _ -> failwithf "Byte Address error %A" this
+
+
 type addr =
     | Reg of reg
     | IncDfr of reg
@@ -65,6 +74,11 @@ type addr =
         | Rel e | Abs e   -> sprintf "%A" e
         | Imm e           -> "#" + sprintf "%A" e
         | _               -> failwithf "Address error %A" this
+
+    member this.byteText =
+        match this with
+        | Reg r -> r.l8bitText
+        | _     -> this.text
 
 
 module Address =

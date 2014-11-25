@@ -4,7 +4,7 @@ module Instruction =
 
     open Address
     open Expres
-    open InstructionAsm
+    open WordInstructionAsm
 
     let private findFreeReg (a1:addr) (a2:addr) =
         let notUsing reg =
