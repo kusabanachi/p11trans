@@ -2,86 +2,87 @@ namespace Ack_i86
 
 open Expres
 
-type reg =
-    | AX | DX | CX | SI | DI | BP | SP | IP | BX
-
-    member this.isMemoryAccessible =
-        match this with
-        | SI | DI | BP | BX -> true
-        | _                 -> false
-
-    member this.text =
-        match this with
-        | AX -> "ax"
-        | DX -> "dx"
-        | CX -> "cx"
-        | SI -> "si"
-        | DI -> "di"
-        | BP -> "bp"
-        | SP -> "sp"
-        | IP -> "ip"
-        | BX -> "bx"
-
-    member this.l8bitText =
-        match this with
-        | AX -> "al"
-        | BX -> "bl"
-        | CX -> "cl"
-        | DX -> "dl"
-        | _ -> failwithf "Byte Address error %A" this
-
-
-type addr =
-    | Reg of reg
-    | IncDfr of reg
-    | DecDfr of reg
-    | Dfr of reg * expr option
-    | IncDDfr of reg
-    | DecDDfr of reg
-    | DDfr of reg * expr option
-    | Rel of expr
-    | Imm of expr
-    | RelDfr of expr
-    | Abs of expr
-
-    member this.isAccessible =
-        match this with
-        | IncDfr r | DecDfr r | Dfr (r, _)
-            -> r.isMemoryAccessible
-        | Reg _ | Rel _ | Imm _ | Abs _
-            -> true
-        | _
-            -> false
-
-    member this.isMemory =
-        match this with
-        | Reg _ | Imm _ -> false
-        | _             -> true
-
-    member this.isUsing (reg:reg) =
-        match this with
-        | Reg r
-        | IncDfr  r | DecDfr  r | Dfr  (r, _)
-        | IncDDfr r | DecDDfr r | DDfr (r, _)
-            when r = reg -> true
-        | _              -> false
-
-    member this.text =
-        match this with
-        | Reg r           -> r.text
-        | Dfr (r, Some e) -> sprintf "%A" e + "(" + r.text + ")"
-        | Dfr (r, None)   -> "(" + r.text + ")"
-        | Rel e | Abs e   -> sprintf "%A" e
-        | Imm e           -> "#" + sprintf "%A" e
-        | _               -> failwithf "Address error %A" this
-
-    member this.byteText =
-        match this with
-        | Reg r -> r.l8bitText
-        | _     -> this.text
-
-
 module Address =
+
+    type reg =
+        | AX | DX | CX | SI | DI | BP | SP | IP | BX
+
+        member this.isMemoryAccessible =
+            match this with
+            | SI | DI | BP | BX -> true
+            | _                 -> false
+
+        member this.text =
+            match this with
+            | AX -> "ax"
+            | DX -> "dx"
+            | CX -> "cx"
+            | SI -> "si"
+            | DI -> "di"
+            | BP -> "bp"
+            | SP -> "sp"
+            | IP -> "ip"
+            | BX -> "bx"
+
+        member this.l8bitText =
+            match this with
+            | AX -> "al"
+            | BX -> "bl"
+            | CX -> "cl"
+            | DX -> "dl"
+            | _ -> failwithf "Byte Address error %A" this
+
+
+    type addr =
+        | Reg of reg
+        | IncDfr of reg
+        | DecDfr of reg
+        | Dfr of reg * expr option
+        | IncDDfr of reg
+        | DecDDfr of reg
+        | DDfr of reg * expr option
+        | Rel of expr
+        | Imm of expr
+        | RelDfr of expr
+        | Abs of expr
+
+        member this.isAccessible =
+            match this with
+            | IncDfr r | DecDfr r | Dfr (r, _)
+                -> r.isMemoryAccessible
+            | Reg _ | Rel _ | Imm _ | Abs _
+                -> true
+            | _
+                -> false
+
+        member this.isMemory =
+            match this with
+            | Reg _ | Imm _ -> false
+            | _             -> true
+
+        member this.isUsing (reg:reg) =
+            match this with
+            | Reg r
+            | IncDfr  r | DecDfr  r | Dfr  (r, _)
+            | IncDDfr r | DecDDfr r | DDfr (r, _)
+                when r = reg -> true
+            | _              -> false
+
+        member this.text =
+            match this with
+            | Reg r           -> r.text
+            | Dfr (r, Some e) -> sprintf "%A" e + "(" + r.text + ")"
+            | Dfr (r, None)   -> "(" + r.text + ")"
+            | Rel e | Abs e   -> sprintf "%A" e
+            | Imm e           -> "#" + sprintf "%A" e
+            | _               -> failwithf "Address error %A" this
+
+        member this.byteText =
+            match this with
+            | Reg r -> r.l8bitText
+            | _     -> this.text
+
+
 
     let utilReg = BX
 
@@ -112,5 +113,8 @@ module Address =
         | Addres.RelDfr e      -> RelDfr e
         | Addres.Abs e         -> Abs e
 
+
+    let dfr reg      = Dfr (reg, None)
+    let idfr reg num = Dfr (reg, Some (Expr_Dec (int16 num)))
 
 

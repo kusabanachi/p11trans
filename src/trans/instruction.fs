@@ -25,7 +25,7 @@ module Instruction =
             pushVal src
         elif src = IncDfr SP then
             popValTo dest
-        elif dest = Dfr (SP, None) then
+        elif dest = dfr SP then
             let code1 = incrementReg SP 2
             let code2 = pushVal src
             code1 +!!+ code2

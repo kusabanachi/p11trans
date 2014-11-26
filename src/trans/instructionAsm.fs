@@ -30,11 +30,8 @@ module InstructionAsm =
                 | Word -> 2
                 | Byte -> 1
 
-        let dfrAddr reg num =
-            Dfr (reg, Some (Expr_Dec (int16 num)))
-
         let incText r1 r2 num =
-            leaText (Reg r1) (dfrAddr r2 num)
+            leaText (Reg r1) (idfr r2 num)
 
 
         member this.moveRef (dReg:reg) sAddr =
@@ -46,66 +43,66 @@ module InstructionAsm =
                 if sReg.isMemoryAccessible then
                     (movText (Reg dReg) (Reg sReg)
                        +!!+ incText sReg sReg incNum,
-                     Dfr (dReg, None))
+                     dfr dReg)
                 elif dReg.isMemoryAccessible then
                     (movText (Reg dReg) (Reg sReg)
                        +!!+ incText sReg dReg incNum,
-                     Dfr (dReg, None))
+                     dfr dReg)
                 else
                     (movText (Reg dReg) (Reg sReg)
                        +!!+ movText (Reg utilReg) (Reg sReg)
                        +!!+ incText sReg utilReg incNum,
-                     Dfr (dReg, None))
+                     dfr dReg)
             | DecDfr sReg ->
                 let decNum = -(incDfrNum sReg)
                 if sReg.isMemoryAccessible then
                     (incText sReg sReg decNum
                        +!!+ movText (Reg dReg) (Reg sReg),
-                     Dfr (dReg, None))
+                     dfr dReg)
                 else
                     (movText (Reg midReg) (Reg sReg)
                        +!!+ incText sReg midReg decNum
                        +!!+ movText (Reg dReg) (Reg sReg),
-                     Dfr (dReg, None))
+                     dfr dReg)
             | Dfr (sReg, expr) ->
                 (movText (Reg dReg) (Reg sReg),
                  Dfr (dReg, expr))
             | IncDDfr sReg ->
                 let incNum = incDfrNum sReg
                 if sReg.isMemoryAccessible then
-                    (movText (Reg dReg) (Dfr (sReg, None))
+                    (movText (Reg dReg) (dfr sReg)
                        +!!+ incText sReg sReg incNum,
-                     Dfr (dReg, None))
+                     dfr dReg)
                 else
                     (movText (Reg midReg) (Reg sReg)
                        +!!+ incText sReg midReg incNum
-                       +!!+ movText (Reg dReg) (Dfr (midReg, None)),
-                     Dfr (dReg, None))
+                       +!!+ movText (Reg dReg) (dfr midReg),
+                     dfr dReg)
             | DecDDfr sReg ->
                 let decNum = -(incDfrNum sReg)
                 if sReg.isMemoryAccessible then
                     (incText sReg sReg decNum
-                       +!!+ movText (Reg dReg) (Dfr (sReg, None)),
-                     Dfr (dReg, None))
+                       +!!+ movText (Reg dReg) (dfr sReg),
+                     dfr dReg)
                 else
                     (movText (Reg midReg) (Reg sReg)
                        +!!+ incText sReg midReg decNum
-                       +!!+ movText (Reg dReg) (dfrAddr midReg decNum),
-                     Dfr (dReg, None))
+                       +!!+ movText (Reg dReg) (idfr midReg decNum),
+                     dfr dReg)
             | DDfr (sReg, expr) ->
                 if sReg.isMemoryAccessible then
                     (movText (Reg dReg) (Dfr (sReg, expr)),
-                     Dfr (dReg, None))
+                     dfr dReg)
                 else
                     (movText (Reg midReg) (Reg sReg)
                        +!!+ movText (Reg dReg) (Dfr (midReg, expr)),
-                     Dfr (dReg, None))
+                     dfr dReg)
             | Rel expr | Abs expr ->
                 (movText (Reg dReg) (Imm expr),
-                 Dfr (dReg, None))
+                 dfr dReg)
             | RelDfr expr ->
                 (movText (Reg dReg) (Rel expr),
-                 Dfr (dReg, None))
+                 dfr dReg)
             | _ ->
                 failwithf "Invalid address"
 
@@ -117,24 +114,24 @@ module InstructionAsm =
             | IncDfr sReg ->
                 let incNum = incDfrNum sReg
                 if sReg.isMemoryAccessible then
-                    (movText (Reg dReg) (Dfr (sReg, None))
+                    (movText (Reg dReg) (dfr sReg)
                        +!!+ incText sReg sReg incNum,
                      Reg dReg)
                 else
                     (movText (Reg midReg) (Reg sReg)
                        +!!+ incText sReg midReg incNum
-                       +!!+ movText (Reg dReg) (Dfr (midReg, None)),
+                       +!!+ movText (Reg dReg) (dfr midReg),
                      Reg dReg)
             | DecDfr sReg ->
                 let decNum = -(incDfrNum sReg)
                 if sReg.isMemoryAccessible then
                     (incText sReg sReg decNum
-                       +!!+ movText (Reg dReg) (Dfr (sReg, None)),
+                       +!!+ movText (Reg dReg) (dfr sReg),
                      Reg dReg)
                 else
                     (movText (Reg midReg) (Reg sReg)
                        +!!+ incText sReg midReg decNum
-                       +!!+ movText (Reg dReg) (dfrAddr midReg decNum),
+                       +!!+ movText (Reg dReg) (idfr midReg decNum),
                      Reg dReg)
             | Dfr (sReg, expr) ->
                 if sReg.isMemoryAccessible then
@@ -147,45 +144,45 @@ module InstructionAsm =
             | IncDDfr sReg ->
                 let incNum = incDfrNum sReg
                 if sReg.isMemoryAccessible then
-                    (movText (Reg midReg) (Dfr (sReg, None))
+                    (movText (Reg midReg) (dfr sReg)
                        +!!+ incText sReg sReg incNum
-                       +!!+ movText (Reg dReg) (Dfr (midReg, None)),
+                       +!!+ movText (Reg dReg) (dfr midReg),
                      Reg dReg)
                 else
                     (movText (Reg midReg) (Reg sReg)
                        +!!+ incText sReg midReg incNum
-                       +!!+ movText (Reg midReg) (Dfr (midReg, None))
-                       +!!+ movText (Reg dReg) (Dfr (midReg, None)),
+                       +!!+ movText (Reg midReg) (dfr midReg)
+                       +!!+ movText (Reg dReg) (dfr midReg),
                      Reg dReg)
             | DecDDfr sReg ->
                 let decNum = -(incDfrNum sReg)
                 if sReg.isMemoryAccessible then
                     (incText sReg sReg decNum
-                       +!!+ movText (Reg midReg) (Dfr (sReg, None))
-                       +!!+ movText (Reg dReg) (Dfr (midReg, None)),
+                       +!!+ movText (Reg midReg) (dfr sReg)
+                       +!!+ movText (Reg dReg) (dfr midReg),
                      Reg dReg)
                 else
                     (movText (Reg midReg) (Reg sReg)
                        +!!+ incText sReg midReg decNum
-                       +!!+ movText (Reg midReg) (dfrAddr midReg decNum)
-                       +!!+ movText (Reg dReg) (Dfr (midReg, None)),
+                       +!!+ movText (Reg midReg) (idfr midReg decNum)
+                       +!!+ movText (Reg dReg) (dfr midReg),
                      Reg dReg)
             | DDfr (sReg, expr) ->
                 if sReg.isMemoryAccessible then
                     (movText (Reg midReg) (Dfr (sReg, expr))
-                       +!!+ movText (Reg dReg) (Dfr (midReg, None)),
+                       +!!+ movText (Reg dReg) (dfr midReg),
                      Reg dReg)
                 else
                     (movText (Reg midReg) (Reg sReg)
                        +!!+ movText (Reg midReg) (Dfr (midReg, expr))
-                       +!!+ movText (Reg dReg) (Dfr (midReg, None)),
+                       +!!+ movText (Reg dReg) (dfr midReg),
                      Reg dReg)
             | Reg _ | Rel _ | Abs _ | Imm _ ->
                 (movText (Reg dReg) sAddr,
                  Reg dReg)
             | RelDfr expr ->
                 (movText (Reg midReg) (Rel expr)
-                   +!!+ movText (Reg dReg) (Dfr (midReg, None)),
+                   +!!+ movText (Reg dReg) (dfr midReg),
                  Reg dReg)
 
 
@@ -194,27 +191,27 @@ module InstructionAsm =
             | IncDfr sReg ->
                 let incNum = incDfrNum sReg
                 if sReg.isMemoryAccessible then
-                    (movText (Reg utilReg) (Dfr (sReg, None))
+                    (movText (Reg utilReg) (dfr sReg)
                        +!!+ incText sReg sReg incNum
                        +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
                      Abs (Expr_Sym symbol))
                 else
                     (movText (Reg utilReg) (Reg sReg)
                        +!!+ incText sReg utilReg incNum
-                       +!!+ movText (Reg utilReg) (Dfr (utilReg, None))
+                       +!!+ movText (Reg utilReg) (dfr utilReg)
                        +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
                      Abs (Expr_Sym symbol))
             | DecDfr sReg ->
                 let decNum = -(incDfrNum sReg)
                 if sReg.isMemoryAccessible then
                     (incText sReg sReg decNum
-                       +!!+ movText (Reg utilReg) (Dfr (sReg, None))
+                       +!!+ movText (Reg utilReg) (dfr sReg)
                        +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
                      Abs (Expr_Sym symbol))
                 else
                     (movText (Reg utilReg) (Reg sReg)
                        +!!+ incText sReg utilReg decNum
-                       +!!+ movText (Reg utilReg) (dfrAddr utilReg decNum)
+                       +!!+ movText (Reg utilReg) (idfr utilReg decNum)
                        +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
                      Abs (Expr_Sym symbol))
             | Dfr (sReg, expr) ->
@@ -230,43 +227,43 @@ module InstructionAsm =
             | IncDDfr sReg ->
                 let incNum = incDfrNum sReg
                 if sReg.isMemoryAccessible then
-                    (movText (Reg utilReg) (Dfr (sReg, None))
+                    (movText (Reg utilReg) (dfr sReg)
                        +!!+ incText sReg sReg incNum
-                       +!!+ movText (Reg utilReg) (Dfr (utilReg, None))
+                       +!!+ movText (Reg utilReg) (dfr utilReg)
                        +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
                      Abs (Expr_Sym symbol))
                 else
                     (movText (Reg utilReg) (Reg sReg)
                        +!!+ incText sReg utilReg incNum
-                       +!!+ movText (Reg utilReg) (Dfr (utilReg, None))
-                       +!!+ movText (Reg utilReg) (Dfr (utilReg, None))
+                       +!!+ movText (Reg utilReg) (dfr utilReg)
+                       +!!+ movText (Reg utilReg) (dfr utilReg)
                        +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
                      Abs (Expr_Sym symbol))
             | DecDDfr sReg ->
                 let decNum = -(incDfrNum sReg)
                 if sReg.isMemoryAccessible then
                     (incText sReg sReg decNum
-                       +!!+ movText (Reg utilReg) (Dfr (sReg, None))
-                       +!!+ movText (Reg utilReg) (Dfr (utilReg, None))
+                       +!!+ movText (Reg utilReg) (dfr sReg)
+                       +!!+ movText (Reg utilReg) (dfr utilReg)
                        +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
                      Abs (Expr_Sym symbol))
                 else
                     (movText (Reg utilReg) (Reg sReg)
                        +!!+ incText sReg utilReg decNum
-                       +!!+ movText (Reg utilReg) (dfrAddr utilReg decNum)
-                       +!!+ movText (Reg utilReg) (Dfr (utilReg, None))
+                       +!!+ movText (Reg utilReg) (idfr utilReg decNum)
+                       +!!+ movText (Reg utilReg) (dfr utilReg)
                        +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
                      Abs (Expr_Sym symbol))
             | DDfr (sReg, expr) ->
                 if sReg.isMemoryAccessible then
                     (movText (Reg utilReg) (Dfr (sReg, expr))
-                       +!!+ movText (Reg utilReg) (Dfr (utilReg, None))
+                       +!!+ movText (Reg utilReg) (dfr utilReg)
                        +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
                      Abs (Expr_Sym symbol))
                 else
                     (movText (Reg utilReg) (Reg sReg)
                        +!!+ movText (Reg utilReg) (Dfr (utilReg, expr))
-                       +!!+ movText (Reg utilReg) (Dfr (utilReg, None))
+                       +!!+ movText (Reg utilReg) (dfr utilReg)
                        +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
                      Abs (Expr_Sym symbol))
             | Rel _ | Abs _ ->
@@ -275,7 +272,7 @@ module InstructionAsm =
                  Abs (Expr_Sym symbol))
             | RelDfr expr ->
                 (movText (Reg utilReg) (Rel expr)
-                   +!!+ movText (Reg utilReg) (Dfr (utilReg, None))
+                   +!!+ movText (Reg utilReg) (dfr utilReg)
                    +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
                  Abs (Expr_Sym symbol))
             | Reg _ | Imm _ ->
@@ -290,21 +287,21 @@ module InstructionAsm =
             | IncDfr sReg ->
                 let incNum = incDfrNum sReg
                 if sReg.isMemoryAccessible then
-                    pushText (Dfr (sReg, None))
+                    pushText (dfr sReg)
                       +!!+ incText sReg sReg incNum
                 else
                     movText (Reg utilReg) (Reg sReg)
                       +!!+ incText sReg utilReg incNum
-                      +!!+ pushText (Dfr (utilReg, None))
+                      +!!+ pushText (dfr utilReg)
             | DecDfr sReg ->
                 let decNum = -(incDfrNum sReg)
                 if sReg.isMemoryAccessible then
                     incText sReg sReg decNum
-                      +!!+ pushText (Dfr (sReg, None))
+                      +!!+ pushText (dfr sReg)
                 else
                     movText (Reg utilReg) (Reg sReg)
                       +!!+ incText sReg utilReg decNum
-                      +!!+ pushText (dfrAddr utilReg decNum)
+                      +!!+ pushText (idfr utilReg decNum)
             | Dfr (sReg, expr) ->
                 if sReg.isMemoryAccessible then
                     pushText sAddr
@@ -314,41 +311,41 @@ module InstructionAsm =
             | IncDDfr sReg ->
                 let incNum = incDfrNum sReg
                 if sReg.isMemoryAccessible then
-                    movText (Reg utilReg) (Dfr (sReg, None))
-                      +!!+ pushText (Dfr (utilReg, None))
+                    movText (Reg utilReg) (dfr sReg)
+                      +!!+ pushText (dfr utilReg)
                       +!!+ incText sReg sReg incNum
                 else
                     movText (Reg utilReg) (Reg sReg)
                       +!!+ incText sReg utilReg incNum
-                      +!!+ movText (Reg utilReg) (Dfr (utilReg, None))
-                      +!!+ pushText (Dfr (utilReg, None))
+                      +!!+ movText (Reg utilReg) (dfr utilReg)
+                      +!!+ pushText (dfr utilReg)
             | DecDDfr sReg ->
                 let decNum = -(incDfrNum sReg)
                 if sReg.isMemoryAccessible then
                     incText sReg sReg decNum
-                      +!!+ movText (Reg utilReg) (Dfr (sReg, None))
-                      +!!+ pushText (Dfr (utilReg, None))
+                      +!!+ movText (Reg utilReg) (dfr sReg)
+                      +!!+ pushText (dfr utilReg)
                 else
                     movText (Reg utilReg) (Reg sReg)
                       +!!+ incText sReg utilReg decNum
-                      +!!+ movText (Reg utilReg) (dfrAddr utilReg decNum)
-                      +!!+ pushText (Dfr (utilReg, None))
+                      +!!+ movText (Reg utilReg) (idfr utilReg decNum)
+                      +!!+ pushText (dfr utilReg)
             | DDfr (sReg, expr) ->
                 if sReg.isMemoryAccessible then
                     movText (Reg utilReg) sAddr
-                      +!!+ pushText (Dfr (utilReg, None))
+                      +!!+ pushText (dfr utilReg)
                 else
                     movText (Reg utilReg) (Reg sReg)
                       +!!+ movText (Reg utilReg) (Dfr (utilReg, expr))
-                      +!!+ pushText (Dfr (utilReg, None))
+                      +!!+ pushText (dfr utilReg)
             | Reg _ | Rel _ | Abs _ ->
                 pushText sAddr
             | RelDfr expr ->
                 movText (Reg utilReg) (Rel expr)
-                  +!!+ pushText (Dfr (utilReg, None))
+                  +!!+ pushText (dfr utilReg)
             | Imm _ ->
                 movText (Reg utilReg) sAddr
-                  +!!+ pushText (Dfr (utilReg, None))
+                  +!!+ pushText (dfr utilReg)
 
 
         member this.popValTo dAddr =
@@ -358,21 +355,21 @@ module InstructionAsm =
             | IncDfr dReg ->
                 let incNum = incDfrNum dReg
                 if dReg.isMemoryAccessible then
-                    popText (Dfr (dReg, None))
+                    popText (dfr dReg)
                       +!!+ incText dReg dReg incNum
                 else
                     movText (Reg utilReg) (Reg dReg)
                       +!!+ incText dReg utilReg incNum
-                      +!!+ popText (Dfr (utilReg, None))
+                      +!!+ popText (dfr utilReg)
             | DecDfr dReg ->
                 let decNum = -(incDfrNum dReg)
                 if dReg.isMemoryAccessible then
                     incText dReg dReg decNum
-                      +!!+ popText (Dfr (dReg, None))
+                      +!!+ popText (dfr dReg)
                 else
                     movText (Reg utilReg) (Reg dReg)
                       +!!+ incText dReg utilReg decNum
-                      +!!+ popText (dfrAddr utilReg decNum)
+                      +!!+ popText (idfr utilReg decNum)
             | Dfr (dReg, expr) ->
                 if dReg.isMemoryAccessible then
                     popText dAddr
@@ -382,48 +379,48 @@ module InstructionAsm =
             | IncDDfr dReg ->
                 let incNum = incDfrNum dReg
                 if dReg.isMemoryAccessible then
-                    movText (Reg utilReg) (Dfr (dReg, None))
-                      +!!+ popText (Dfr (utilReg, None))
+                    movText (Reg utilReg) (dfr dReg)
+                      +!!+ popText (dfr utilReg)
                       +!!+ incText dReg dReg incNum
                 else
                     movText (Reg utilReg) (Reg dReg)
                       +!!+ incText dReg utilReg incNum
-                      +!!+ movText (Reg utilReg) (Dfr (utilReg, None))
-                      +!!+ popText (Dfr (utilReg, None))
+                      +!!+ movText (Reg utilReg) (dfr utilReg)
+                      +!!+ popText (dfr utilReg)
             | DecDDfr dReg ->
                 let decNum = -(incDfrNum dReg)
                 if dReg.isMemoryAccessible then
                     incText dReg dReg decNum
-                      +!!+ movText (Reg utilReg) (Dfr (dReg, None))
-                      +!!+ popText (Dfr (utilReg, None))
+                      +!!+ movText (Reg utilReg) (dfr dReg)
+                      +!!+ popText (dfr utilReg)
                 else
                     movText (Reg utilReg) (Reg dReg)
                       +!!+ incText dReg utilReg decNum
-                      +!!+ movText (Reg utilReg) (dfrAddr utilReg decNum)
-                      +!!+ popText (Dfr (utilReg, None))
+                      +!!+ movText (Reg utilReg) (idfr utilReg decNum)
+                      +!!+ popText (dfr utilReg)
             | DDfr (dReg, expr) ->
                 if dReg.isMemoryAccessible then
                     movText (Reg utilReg) dAddr
-                      +!!+ popText (Dfr (utilReg, None))
+                      +!!+ popText (dfr utilReg)
                 else
                     movText (Reg utilReg) (Reg dReg)
                       +!!+ movText (Reg utilReg) (Dfr (utilReg, expr))
-                      +!!+ popText (Dfr (utilReg, None))
+                      +!!+ popText (dfr utilReg)
             | Reg _ | Rel _ | Abs _ ->
                 popText dAddr
             | RelDfr expr ->
                 movText (Reg utilReg) (Rel expr)
-                  +!!+ popText (Dfr (utilReg, None))
+                  +!!+ popText (dfr utilReg)
             | _ ->
                 failwithf "Invalid address: pop to %A" dAddr
 
 
         member this.incrementReg (reg:reg) num =
             if reg.isMemoryAccessible then
-                leaText (Reg reg) (dfrAddr reg num)
+                leaText (Reg reg) (idfr reg num)
             else
                 movText (Reg utilReg) (Reg reg)
-                  +!!+ leaText (Reg reg) (dfrAddr utilReg num)
+                  +!!+ leaText (Reg reg) (idfr utilReg num)
 
 
         member this.binaryCalc codeStr (dAddr:addr) (sAddr:addr) =
@@ -437,22 +434,22 @@ module InstructionAsm =
             match sAddr with
             | IncDfr sReg ->
                 let incNum = incDfrNum sReg
-                codeText dAddr (Dfr (sReg, None))
+                codeText dAddr (dfr sReg)
                   +!!+ incText sReg sReg incNum
             | DecDfr sReg ->
                 let decNum = -(incDfrNum sReg)
                 incText sReg sReg decNum
-                  +!!+ codeText dAddr (Dfr (sReg, None))
+                  +!!+ codeText dAddr (dfr sReg)
             | _ ->
                 match dAddr with
                 | IncDfr dReg ->
                     let incNum = incDfrNum dReg
-                    codeText (Dfr (dReg, None)) sAddr
+                    codeText (dfr dReg) sAddr
                       +!!+ incText dReg dReg incNum
                 | DecDfr dReg ->
                     let decNum = -(incDfrNum dReg)
                     incText dReg dReg decNum
-                      +!!+ codeText (Dfr (dReg, None)) sAddr
+                      +!!+ codeText (dfr dReg) sAddr
                 | _ ->
                     codeText dAddr sAddr
 
@@ -468,12 +465,12 @@ module InstructionAsm =
             match addr with
             | IncDfr reg ->
                 let incNum = incDfrNum reg
-                codeText (Dfr (reg, None))
+                codeText (dfr reg)
                   +!!+ incText reg reg incNum
             | DecDfr reg ->
                 let decNum = -(incDfrNum reg)
                 incText reg reg decNum
-                  +!!+ codeText (Dfr (reg, None))
+                  +!!+ codeText (dfr reg)
             | _ ->
                 codeText addr
 
