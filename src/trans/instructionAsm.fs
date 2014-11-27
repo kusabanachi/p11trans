@@ -498,27 +498,27 @@ module WordInstructionAsm =
     let inline (+!!+) i1 i2 = (+!!+) i1 i2
 
 
-    let asm = instructionAsm (itype = Word)
+    let private asm = instructionAsm (itype = Word)
 
-    let moveRef dReg sAddr = asm.moveRef dReg sAddr
+    let moveRef = asm.moveRef
 
-    let moveVal dReg sAddr = asm.moveVal dReg sAddr
+    let moveVal = asm.moveVal
 
-    let moveValToMem symbol sAddr = asm.moveValToMem symbol sAddr
+    let moveValToMem = asm.moveValToMem
 
-    let pushVal sAddr = asm.pushVal sAddr
+    let pushVal = asm.pushVal
 
-    let popValTo dAddr = asm.popValTo dAddr
+    let popValTo = asm.popValTo
 
-    let incrementReg reg num = asm.incrementReg reg num
+    let incrementReg = asm.incrementReg
 
-    let binaryCalc codeStr dAddr sAddr = asm.binaryCalc codeStr dAddr sAddr
+    let binaryCalc = asm.binaryCalc
 
-    let unaryCalc codeStr addr = asm.unaryCalc codeStr addr
+    let unaryCalc = asm.unaryCalc
 
-    let storeRegVal reg = asm.storeRegVal reg
+    let storeRegVal = asm.storeRegVal
 
-    let restoreRegVal reg = asm.restoreRegVal reg
+    let restoreRegVal = asm.restoreRegVal
 
     let signExtend = asm.signExtend
 
@@ -534,27 +534,27 @@ module ByteInstructionAsm =
     let inline (+!!+) i1 i2 = (+!!+) i1 i2
 
 
-    let asm = instructionAsm (itype = Byte)
+    let private asm = instructionAsm (itype = Byte)
 
-    let moveRef dReg sAddr = asm.moveRef dReg sAddr
+    let moveRef = asm.moveRef
 
-    let moveVal dReg sAddr = asm.moveVal dReg sAddr
+    let moveVal = asm.moveVal
 
-    let moveValToMem symbol sAddr = asm.moveValToMem symbol sAddr
+    let moveValToMem = asm.moveValToMem
 
-    let pushVal sAddr = asm.pushVal sAddr
+    let pushVal = asm.pushVal
 
-    let popValTo dAddr = asm.popValTo dAddr
+    let popValTo = asm.popValTo
 
-    let incrementReg reg num = asm.incrementReg reg num
+    let incrementReg = asm.incrementReg
 
-    let binaryCalc codeStr dAddr sAddr = asm.binaryCalc codeStr dAddr sAddr
+    let binaryCalc = asm.binaryCalc
 
-    let unaryCalc codeStr addr = asm.unaryCalc codeStr addr
+    let unaryCalc = asm.unaryCalc
 
-    let storeRegVal reg = asm.storeRegVal reg
+    let storeRegVal = asm.storeRegVal
 
-    let restoreRegVal reg = asm.restoreRegVal reg
+    let restoreRegVal = asm.restoreRegVal
 
     let signExtend = asm.signExtend
 
