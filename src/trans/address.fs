@@ -12,6 +12,11 @@ module Address =
             | SI | DI | BP | BX -> true
             | _                 -> false
 
+        member this.has8bitPart =
+            match this with
+            | AX | BX | CX | DX -> true
+            | _                 -> false
+
         member this.text =
             match this with
             | AX -> "ax"
@@ -55,10 +60,26 @@ module Address =
             | _
                 -> false
 
+        member this.isByteAccessible =
+            match this with
+            | Reg r
+                -> r.has8bitPart
+            | IncDfr r | DecDfr r | Dfr (r, _)
+                -> r.isMemoryAccessible
+            | Rel _ | Imm _ | Abs _
+                -> true
+            | _
+                -> false
+
         member this.isMemory =
             match this with
             | Reg _ | Imm _ -> false
             | _             -> true
+
+        member this.isRegValue =
+            match this with
+            | Reg _ -> true
+            | _     -> false
 
         member this.isUsing (reg:reg) =
             match this with

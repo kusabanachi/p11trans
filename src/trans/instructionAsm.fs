@@ -481,6 +481,12 @@ module InstructionAsm =
         member this.restoreRegVal reg =
             movText (Reg reg) (Abs (Expr_Sym tempMem))
 
+        member this.signExtend =
+            "cbw"
+
+        member this.exchangeVal (dAddr:addr) (sAddr:addr) =
+            "xchg " + dAddr.text + ", " + sAddr.text
+
 
 
 module WordInstructionAsm =
@@ -514,4 +520,43 @@ module WordInstructionAsm =
 
     let restoreRegVal reg = asm.restoreRegVal reg
 
+    let signExtend = asm.signExtend
+
+    let exchangeVal = asm.exchangeVal
+
+
+module ByteInstructionAsm =
+
+    open InstructionAsm
+
+    let tempMem = tempMem
+
+    let inline (+!!+) i1 i2 = (+!!+) i1 i2
+
+
+    let asm = instructionAsm (itype = Byte)
+
+    let moveRef dReg sAddr = asm.moveRef dReg sAddr
+
+    let moveVal dReg sAddr = asm.moveVal dReg sAddr
+
+    let moveValToMem symbol sAddr = asm.moveValToMem symbol sAddr
+
+    let pushVal sAddr = asm.pushVal sAddr
+
+    let popValTo dAddr = asm.popValTo dAddr
+
+    let incrementReg reg num = asm.incrementReg reg num
+
+    let binaryCalc codeStr dAddr sAddr = asm.binaryCalc codeStr dAddr sAddr
+
+    let unaryCalc codeStr addr = asm.unaryCalc codeStr addr
+
+    let storeRegVal reg = asm.storeRegVal reg
+
+    let restoreRegVal reg = asm.restoreRegVal reg
+
+    let signExtend = asm.signExtend
+
+    let exchangeVal = asm.exchangeVal
 

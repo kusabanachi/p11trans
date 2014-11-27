@@ -22,6 +22,7 @@
         <String>src/trans/address.fs</String>
         <String>src/trans/instructionAsm.fs</String>
         <String>src/trans/instruction.fs</String>
+        <String>src/trans/byteInstruction.fs</String>
         <String>src/trans/ack_i86.fs</String>
         <String>src/Program.fs</String>
       </BuildOrder>
@@ -73,6 +74,7 @@
     <Compile Include="src\trans\instruction.fs" />
     <Compile Include="src\trans\address.fs" />
     <Compile Include="src\trans\instructionAsm.fs" />
+    <Compile Include="src\trans\byteInstruction.fs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\expres.fs.old" />
