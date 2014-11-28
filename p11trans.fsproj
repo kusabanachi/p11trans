@@ -19,6 +19,7 @@
         <String>src/statementType.fs</String>
         <String>src/opline.fs</String>
         <String>src/assem.fs</String>
+        <String>src/trans/express.fs</String>
         <String>src/trans/address.fs</String>
         <String>src/trans/instructionAsm.fs</String>
         <String>src/trans/instruction.fs</String>
@@ -75,6 +76,7 @@
     <Compile Include="src\trans\address.fs" />
     <Compile Include="src\trans\instructionAsm.fs" />
     <Compile Include="src\trans\byteInstruction.fs" />
+    <Compile Include="src\trans\express.fs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\expres.fs.old" />

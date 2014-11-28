@@ -1,6 +1,7 @@
 namespace Ack_i86
 
 open Expres
+open Express
 
 module Address =
 
@@ -92,10 +93,10 @@ module Address =
         member this.text =
             match this with
             | Reg r           -> r.text
-            | Dfr (r, Some e) -> sprintf "%A" e + "(" + r.text + ")"
+            | Dfr (r, Some e) -> expr e + "(" + r.text + ")"
             | Dfr (r, None)   -> "(" + r.text + ")"
-            | Rel e | Abs e   -> sprintf "%A" e
-            | Imm e           -> "#" + sprintf "%A" e
+            | Rel e | Abs e   -> expr e
+            | Imm e           -> "#" + expr e
             | _               -> failwithf "Address error %A" this
 
         member this.byteText =
