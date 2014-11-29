@@ -6,6 +6,7 @@ module Ack_i86_trans =
     open Instruction
     open ByteInstruction
     open Expres
+    open Label
 
     let ack_i86_asm pdp11as =
         let singleOp code addr =
@@ -106,6 +107,8 @@ module Ack_i86_trans =
             | SingleOp (code, addr)      -> singleOp code addr
             | DoubleOp (code, src, dest) -> doubleOp code dest src
             | ExprOp   (code, expr)      -> exprOp   code expr
+            | NameLabel name             -> nameLabel name
+            | NumericLabel num           -> numLabel num
             | _ -> ""
 
         List.map transStatement pdp11as
