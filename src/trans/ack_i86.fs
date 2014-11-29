@@ -111,7 +111,18 @@ module Ack_i86_trans =
             | NameLabel name             -> nameLabel name
             | NumericLabel num           -> numLabel num
             | Comment text               -> comment text
-            | _ -> ""
+            | Str str                    -> Pseudo.ascii str
+            | Byte byteExprs             -> Pseudo.data1 byteExprs
+            | Even                       -> Pseudo.even
+            | If _                       -> "! .if is not suported."
+            | EndIf                      -> "! .endif is not suported."
+            | Global names               -> Pseudo.globalSym names
+            | Text                       -> Pseudo.text
+            | Data                       -> Pseudo.data
+            | Bss                        -> Pseudo.bss
+            | Common (name,expr)         -> Pseudo.common name expr
+            | Expr expr                  -> Pseudo.data2 expr
+            | _                          -> ""
 
         List.map transStatement pdp11as
 

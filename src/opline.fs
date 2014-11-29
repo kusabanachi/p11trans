@@ -35,16 +35,16 @@ let opline src =
             let addr, rest' = addres rest
             SingleOp (sym, addr), rest'
         | 14s -> (* .byte *)
-            let rec readByteExpr acc s =
+            let rec readBytes acc s =
                 let e, _, r = expres s
                 let acc' = e::acc
                 match readOp r with
-                | Token_Meta ',', r' -> readByteExpr acc' r'
+                | Token_Meta ',', r' -> readBytes acc' r'
                 | _ -> acc', r
 
-            let revList, rest' = readByteExpr [] rest
-            let byteArray = List.rev revList |> List.toArray
-            ByteExpr byteArray, rest'
+            let revList, rest' = readBytes [] rest
+            let exprs = List.rev revList
+            Byte exprs, rest'
         | 16s -> (* .even *)
             Even, rest
         | 17s -> (* .if *)
@@ -64,8 +64,8 @@ let opline src =
                 | _                       -> acc, s
 
             let revList, rest' = readGlobalStr [] rest
-            let gsymArray = List.rev revList |> List.toArray
-            Global gsymArray, rest'
+            let symbols = List.rev revList
+            Global symbols, rest'
         | 21s -> (* .text *)
             Text, rest
         | 22s -> (* .data *)

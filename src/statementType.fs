@@ -13,17 +13,17 @@ type statement =
     | Comment of string
     (* oplineType *)
     | Str of string
-    | Expr of expr
-    | ByteExpr of expr []
+    | Byte of expr list
     | Even
     | If of expr
     | EndIf
-    | Global of string []
+    | Global of string list
     | Text
     | Data
     | Bss
     | Sob of expr * expr
     | Common of string * expr
+    | Expr of expr
     | ExprOp of string * expr
     | SingleOp of string * addr
     | DoubleOp of string * addr * addr
