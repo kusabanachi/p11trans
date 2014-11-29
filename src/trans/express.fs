@@ -34,7 +34,10 @@ module Express =
         | Expr_Dec num ->
             Convert.ToString num
         | Expr_Oct num ->
-            "0" + Convert.ToString (num, 8)
+            if num < 10s then
+                Convert.ToString num
+            else
+                "0" + Convert.ToString (num, 8)
         | Expr_DChar (c1, c2) ->
             sprintf "[\'%c\'<<8]|\'%c\'" c1 c2
         | Expr_SChar c ->
