@@ -102,7 +102,10 @@ module Ack_i86_trans =
             | "jlo"  -> incType "jb"   addr
             | "jcs"  -> incType "jc"   addr
             | "jes"  -> incType "jc"   addr
+
+            | "sys"  -> sysType expr
             | _ -> ""
+
 
         let transStatement = function
             | SingleOp (code, addr)      -> singleOp code addr

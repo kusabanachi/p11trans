@@ -5,6 +5,43 @@ module Express =
     open System
     open Expres
 
+
+    let (|Keyword|_|) = function
+        | ".."     ->  Some 0s
+        | "exit"   ->  Some 0o1s
+        | "fork"   ->  Some 0o2s
+        | "read"   ->  Some 0o3s
+        | "write"  ->  Some 0o4s
+        | "open"   ->  Some 0o5s
+        | "close"  ->  Some 0o6s
+        | "wait"   ->  Some 0o7s
+        | "creat"  ->  Some 0o10s
+        | "link"   ->  Some 0o11s
+        | "unlink" ->  Some 0o12s
+        | "exec"   ->  Some 0o13s
+        | "chdir"  ->  Some 0o14s
+        | "time"   ->  Some 0o15s
+        | "makdir" ->  Some 0o16s
+        | "chmod"  ->  Some 0o17s
+        | "chown"  ->  Some 0o20s
+        | "break"  ->  Some 0o21s
+        | "stat"   ->  Some 0o22s
+        | "seek"   ->  Some 0o23s
+        | "tell"   ->  Some 0o24s
+        | "mount"  ->  Some 0o25s
+        | "umount" ->  Some 0o26s
+        | "setuid" ->  Some 0o27s
+        | "getuid" ->  Some 0o30s
+        | "stime"  ->  Some 0o31s
+        | "fstat"  ->  Some 0o34s
+        | "mdate"  ->  Some 0o36s
+        | "stty"   ->  Some 0o37s
+        | "gtty"   ->  Some 0o40s
+        | "nice"   ->  Some 0o42s
+        | "signal" ->  Some 0o60s
+        | _        ->  None
+
+
     let private oprPrior = function
         | '*' -> 5
         | '/' -> 5
@@ -28,7 +65,9 @@ module Express =
         | Expr_Op (operator, lhs, rhs) ->
             opStr operator lhs rhs
         | Expr_Sym sStr ->
-            sStr
+            match sStr with
+            | Keyword num -> Convert.ToString num
+            | _           -> sStr
         | Expr_Lbl lStr ->
             lStr
         | Expr_Dec num ->

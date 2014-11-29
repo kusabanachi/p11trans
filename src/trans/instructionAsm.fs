@@ -487,6 +487,9 @@ module InstructionAsm =
         member this.exchangeVal (dAddr:addr) (sAddr:addr) =
             "xchg " + dAddr.text + ", " + sAddr.text
 
+        member this.systemCall expr =
+            "int 7" +!!+ Pseudo.data1 [expr]
+
 
 
 module WordInstructionAsm =
@@ -524,6 +527,8 @@ module WordInstructionAsm =
 
     let exchangeVal = asm.exchangeVal
 
+    let systemCall = asm.systemCall
+
 
 module ByteInstructionAsm =
 
@@ -559,4 +564,6 @@ module ByteInstructionAsm =
     let signExtend = asm.signExtend
 
     let exchangeVal = asm.exchangeVal
+
+    let systemCall = asm.systemCall
 

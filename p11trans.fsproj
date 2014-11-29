@@ -20,11 +20,11 @@
         <String>src/opline.fs</String>
         <String>src/assem.fs</String>
         <String>src/trans/express.fs</String>
+        <String>src/trans/pseudo.fs</String>
         <String>src/trans/address.fs</String>
         <String>src/trans/instructionAsm.fs</String>
         <String>src/trans/instruction.fs</String>
         <String>src/trans/byteInstruction.fs</String>
-        <String>src/trans/pseudo.fs</String>
         <String>src/trans/label.fs</String>
         <String>src/trans/comment.fs</String>
         <String>src/trans/ack_i86.fs</String>

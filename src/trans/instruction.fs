@@ -130,3 +130,6 @@ module Instruction =
             unaryCalc code addr
 
 
+    let sysType = systemCall
+
+
