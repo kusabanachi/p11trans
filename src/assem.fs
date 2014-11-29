@@ -26,9 +26,8 @@ let assem src =
         | Token_Symbol _ -> true
         | _              -> false
 
-    let isBuiltinSymbol = function
-        | Token_Symbol str -> symType str <> 0s
-        | _                -> false
+    let isBuiltinSymbol symStr =
+        symType symStr <> 0s
 
     let localLabelNumberCheck num =
         if num > 9s then
@@ -52,18 +51,18 @@ let assem src =
                 [Assignment (fst, rhs)], rest''
             | Token_Meta ':' ->
                 match fst with
-                | Token_Symbol _ ->
-                    if isBuiltinSymbol fst then
+                | Token_Symbol symStr ->
+                    if isBuiltinSymbol symStr then
                         failwith SymDefError
                     let subseqSt, rest'' = readStatement rest'
-                    Label fst::subseqSt, rest''
+                    NameLabel symStr :: subseqSt, rest''
                 | Token_Octal num
                 | Token_Decimal num
                 | Token_SChar (_, num)
                 | Token_DChar (_, _, num) ->
                     localLabelNumberCheck num |> ignore
                     let subseqSt, rest'' = readStatement rest'
-                    Label fst::subseqSt, rest''
+                    NumericLabel num :: subseqSt, rest''
                 | _ ->
                     failwith SyntaxError
             | _ ->

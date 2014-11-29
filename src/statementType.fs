@@ -7,7 +7,8 @@ open Addres
 
 type statement =
     | Assignment of Token * expr
-    | Label of Token
+    | NameLabel of string
+    | NumericLabel of int16
     | Eos of char
     | Comment of string
     (* oplineType *)

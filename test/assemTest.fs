@@ -27,13 +27,13 @@ type AssemTest() =
 
     static member LabelTestData =
         [|
-            [| ( "pof: .=.+1", [Label (Token_Symbol "pof"); Assignment (Token_Symbol ".", Expr_Op ('+', Expr_Sym ".", Expr_Oct 1s)); Eos EOT] ) |]
-            [| ( "9: sys seek", [Label (Token_Octal 9s); ExprOp ("sys", Expr_Sym "seek"); Eos EOT] ) |]
-            [| ( "2.:", [Label (Token_Decimal 2s); Eos EOT] ) |]
-            [| ( "11:", [Label (Token_Octal 9s); Eos EOT] ) |]
-            [| ( "\'\\a:", [Label (Token_SChar ('\006', 6s)); Eos EOT] ) |]
-            [| ( "\"\\0\\0:", [Label (Token_DChar ('\000', '\000', 0s)); Eos EOT] ) |]
-            [| ( "hoge: 2.: fuga:", [Label (Token_Symbol "hoge"); Label (Token_Decimal 2s); Label (Token_Symbol "fuga"); Eos EOT] ) |]
+            [| ( "pof: .=.+1", [NameLabel "pof"; Assignment (Token_Symbol ".", Expr_Op ('+', Expr_Sym ".", Expr_Oct 1s)); Eos EOT] ) |]
+            [| ( "9: sys seek", [NumericLabel 9s; ExprOp ("sys", Expr_Sym "seek"); Eos EOT] ) |]
+            [| ( "2.:", [NumericLabel 2s; Eos EOT] ) |]
+            [| ( "11:", [NumericLabel 9s; Eos EOT] ) |]
+            [| ( "\'\\a:", [NumericLabel 6s; Eos EOT] ) |]
+            [| ( "\"\\0\\0:", [NumericLabel 0s; Eos EOT] ) |]
+            [| ( "hoge: 2.: fuga:", [NameLabel "hoge"; NumericLabel 2s; NameLabel "fuga"; Eos EOT] ) |]
         |]
 
     [<TestCaseSource("LabelTestData")>]
