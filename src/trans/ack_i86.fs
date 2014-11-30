@@ -8,6 +8,7 @@ module Ack_i86_trans =
     open Expres
     open Label
     open Comment
+    open Eos
 
     let ack_i86_asm pdp11as =
         let singleOp code addr =
@@ -36,7 +37,7 @@ module Ack_i86_trans =
             | "aslb" -> andbType "salb" addr (immVal 1)
             | "jmp"  -> incType  "jmp"  addr
             | "rts"  -> rtsType         addr
-            | _ -> ""
+            | _ -> sprintf "Not suported opcode : %s" code
 
         let doubleOp code dest src =
             match code with
@@ -58,7 +59,7 @@ module Ack_i86_trans =
                    //+!!+ getInstructionText (MOV(Register(PC), Register(reg)))
                    //+!!+ getInstructionText (BR(dest))
                    failwith "jsr with not PC register is unimplemented.."
-            | _ -> ""
+            | _ -> sprintf "Not suported opcode : %s" code
 
         let exprOp code expr =
             let addr = Addres.Rel expr
@@ -105,7 +106,7 @@ module Ack_i86_trans =
             | "jes"  -> incType "jc"   addr
 
             | "sys"  -> sysType expr
-            | _ -> ""
+            | _ -> sprintf "Not suported opcode : %s" code
 
 
         let transStatement = function
@@ -126,7 +127,9 @@ module Ack_i86_trans =
             | Bss                        -> Pseudo.bss
             | Common (name,expr)         -> Pseudo.common name expr
             | Expr expr                  -> Pseudo.data2 expr
-            | _                          -> ""
+            | Eos c                      -> eos c
+            | x                          -> sprintf "Not suported statement : %A" x
 
-        List.map transStatement pdp11as
+        let stringList = List.map transStatement pdp11as
+        System.String.Concat stringList
 

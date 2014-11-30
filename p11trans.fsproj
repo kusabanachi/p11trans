@@ -19,6 +19,7 @@
         <String>src/statementType.fs</String>
         <String>src/opline.fs</String>
         <String>src/assem.fs</String>
+        <String>src/trans/eos.fs</String>
         <String>src/trans/express.fs</String>
         <String>src/trans/pseudo.fs</String>
         <String>src/trans/address.fs</String>
@@ -28,7 +29,7 @@
         <String>src/trans/label.fs</String>
         <String>src/trans/comment.fs</String>
         <String>src/trans/ack_i86.fs</String>
-        <String>src/Program.fs</String>
+        <String>src/main.fs</String>
       </BuildOrder>
     </BuildOrder>
     <ReleaseVersion>0.01</ReleaseVersion>
@@ -66,7 +67,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="src\AssemblyInfo.fs" />
-    <Compile Include="src\Program.fs" />
     <Compile Include="src\addres.fs" />
     <Compile Include="src\assem.fs" />
     <Compile Include="src\expres.fs" />
@@ -83,8 +83,7 @@
     <Compile Include="src\trans\label.fs" />
     <Compile Include="src\trans\comment.fs" />
     <Compile Include="src\trans\pseudo.fs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="src\expres.fs.old" />
+    <Compile Include="src\main.fs" />
+    <Compile Include="src\trans\eos.fs" />
   </ItemGroup>
 </Project>

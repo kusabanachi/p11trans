@@ -4,12 +4,13 @@ module InstructionAsm =
 
     open Address
     open Expres
+    open Eos
 
     let tempMem = "tmpMem"
 
     let inline (+!!+) (i1:string) (i2:string) =
         if i1.Length <> 0 && i2.Length <> 0 then
-            i1 + ";  " + i2
+            i1 + (eos ';') + i2
         else
             i1 + i2
 
