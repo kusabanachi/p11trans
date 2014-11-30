@@ -35,6 +35,7 @@ module Ack_i86_trans =
             | "asl"  -> addType  "sal"  addr (immVal 1)
             | "aslb" -> andbType "salb" addr (immVal 1)
             | "jmp"  -> incType  "jmp"  addr
+            | "rts"  -> rtsType         addr
             | _ -> ""
 
         let doubleOp code dest src =

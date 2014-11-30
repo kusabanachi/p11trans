@@ -27,31 +27,33 @@ let AddressError = "A error in address"
 let ParenthesesError = ") Parentheses error"
 let IndirectionError = "* indirection(*) used illegally"
 
+
+let toRegister eType eVal =
+    if eType <> 1s && eType < 4s then
+        failwith AddressError
+    match eVal with
+    | 0s -> R0
+    | 1s -> R1
+    | 2s -> R2
+    | 3s -> R3
+    | 4s -> R4
+    | 5s -> R5
+    | 6s -> SP
+    | 7s -> PC
+    | _  -> failwith AddressError
+
+let readReg src =
+    let _, (eType, eVal), rest = expres src
+    toRegister eType eVal, rest
+
+let readClosing src =
+    let closing, rest = readOp src
+    match closing with
+    | Token_Meta ')' -> rest
+    | _ -> failwith ParenthesesError
+
+
 let rec addres src =
-
-    let toRegister eType eVal =
-        if eType <> 1s && eType < 4s then
-            failwith AddressError
-        match eVal with
-        | 0s -> R0
-        | 1s -> R1
-        | 2s -> R2
-        | 3s -> R3
-        | 4s -> R4
-        | 5s -> R5
-        | 6s -> SP
-        | 7s -> PC
-        | _  -> failwith AddressError
-
-    let readReg src =
-        let _, (eType, eVal), rest = expres src
-        toRegister eType eVal, rest
-
-    let readClosing src =
-        let closing, rest = readOp src
-        match closing with
-        | Token_Meta ')' -> rest
-        | _ -> failwith ParenthesesError
 
     let token, rest = readOp src
     let nextToken, nextTokenRest = readOp rest

@@ -87,9 +87,12 @@ let opline src =
                 | _ -> failwith SyntaxError
             | _ -> failwith SyntaxError
         | 29s | 30s (* jbr, jeq, etc *)
-        | 6s | 8s | 9s | 27s | 28s (* branch, rts, sys, estimated text, estimated data *)->
+        | 6s | 9s | 27s | 28s -> (* branch, sys, estimated text, estimated data *)
             let expr, _, rest' = expres rest
             ExprOp (sym, expr), rest'
+        | 8s -> (* rts *)
+            let reg, rest' = readReg rest
+            SingleOp (sym, Reg reg), rest'
         | _ ->
             let e, _, rest = expres src
             Expr e, rest

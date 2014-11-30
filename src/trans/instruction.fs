@@ -58,7 +58,6 @@ module Instruction =
             binaryCalc code dest src
 
 
-
     let addType code dest src =
         let dest = i86Addr dest
         let src = i86Addr src
@@ -86,7 +85,6 @@ module Instruction =
             code1 +!!+ code2
         else
             binaryCalc code dest src
-
 
 
     let cmpType code dest src =
@@ -131,5 +129,16 @@ module Instruction =
 
 
     let sysType = systemCall
+
+
+    let rtsType addr =
+        match i86Addr addr with
+        | Reg IP ->
+            "ret"
+        | reg ->
+            let code1, addr = moveVal utilReg reg
+            let code2       = popValTo reg
+            let code3       = unaryCalc "jmp" addr
+            code1 +!!+ code2 +!!+ code3
 
 
