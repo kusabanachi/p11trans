@@ -36,10 +36,9 @@ let assem src =
     let rec readStatement src =
         let fst, rest = readOp src
         match fst with
-        | Token_Term _ ->
+        | Token_Term _
+        | Token_Comment _ ->
             [], src
-        | Token_Comment text ->
-            [Comment text], rest
         | _ ->
             let snd, rest' = readOp rest
             match snd with
@@ -78,6 +77,8 @@ let assem src =
             Eos '\n', rest
         | Token_Term ';' ->
             Eos ';', rest
+        | Token_Comment text ->
+            Comment text, rest
         | _ ->
             failwith SyntaxError
 
