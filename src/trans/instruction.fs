@@ -152,9 +152,9 @@ module Instruction =
         | Reg IP ->
             "ret"
         | reg ->
-            let code1, addr = moveVal utilReg reg
-            let code2       = popValTo reg
-            let code3       = unaryCalc "jmp" addr
+            let code1, _ = moveVal utilReg reg
+            let code2    = popValTo reg
+            let code3    = unaryCalc "jmp" (dfr utilReg)
             code1 +!!+ code2 +!!+ code3
 
 
