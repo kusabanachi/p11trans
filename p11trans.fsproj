@@ -26,6 +26,7 @@
         <String>src/trans/instructionAsm.fs</String>
         <String>src/trans/instruction.fs</String>
         <String>src/trans/byteInstruction.fs</String>
+        <String>src/trans/assign.fs</String>
         <String>src/trans/label.fs</String>
         <String>src/trans/comment.fs</String>
         <String>src/trans/ack_i86.fs</String>
@@ -85,5 +86,6 @@
     <Compile Include="src\trans\pseudo.fs" />
     <Compile Include="src\main.fs" />
     <Compile Include="src\trans\eos.fs" />
+    <Compile Include="src\trans\assign.fs" />
   </ItemGroup>
 </Project>

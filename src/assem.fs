@@ -43,11 +43,13 @@ let assem src =
             let snd, rest' = readOp rest
             match snd with
             | Token_Meta '=' ->
-                if not (isSymbol fst) then
+                match fst with
+                | Token_Symbol symStr ->
+                    let rhs, (rhsT, _), rest'' = expres rest'
+                    checkDotAssign fst rhsT |> ignore
+                    [Assignment (symStr, rhs)], rest''
+                | _ ->
                     failwith SyntaxError
-                let rhs, (rhsT, _), rest'' = expres rest'
-                checkDotAssign fst rhsT |> ignore
-                [Assignment (fst, rhs)], rest''
             | Token_Meta ':' ->
                 match fst with
                 | Token_Symbol symStr ->

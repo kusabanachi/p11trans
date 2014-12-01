@@ -6,6 +6,7 @@ module Ack_i86_trans =
     open Instruction
     open ByteInstruction
     open Expres
+    open Assign
     open Label
     open Comment
     open Eos
@@ -107,6 +108,7 @@ module Ack_i86_trans =
             | SingleOp (code, addr)      -> singleOp code addr
             | DoubleOp (code, src, dest) -> doubleOp code dest src
             | ExprOp   (code, expr)      -> exprOp   code expr
+            | Assignment (sym, expr)     -> assign sym expr
             | NameLabel name             -> nameLabel name
             | NumericLabel num           -> numLabel num
             | Comment text               -> comment text

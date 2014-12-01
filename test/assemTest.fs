@@ -13,8 +13,8 @@ type AssemTest() =
 
     static member AssignmentTestData =
         [|
-            [| ( "signal = 48.\n", [Assignment (Token_Symbol "signal", Expr_Dec 48s); Eos '\n'] ) |]
-            [| ( ".=.+2;", [Assignment (Token_Symbol ".", Expr_Op ('+', Expr_Sym ".", Expr_Oct 2s)); Eos ';'] ) |]
+            [| ( "signal = 48.\n", [Assignment ("signal", Expr_Dec 48s); Eos '\n'] ) |]
+            [| ( ".=.+2;", [Assignment (".", Expr_Op ('+', Expr_Sym ".", Expr_Oct 2s)); Eos ';'] ) |]
         |]
 
     [<TestCaseSource("AssignmentTestData")>]
@@ -27,7 +27,7 @@ type AssemTest() =
 
     static member LabelTestData =
         [|
-            [| ( "pof: .=.+1", [NameLabel "pof"; Assignment (Token_Symbol ".", Expr_Op ('+', Expr_Sym ".", Expr_Oct 1s)); Eos EOT] ) |]
+            [| ( "pof: .=.+1", [NameLabel "pof"; Assignment (".", Expr_Op ('+', Expr_Sym ".", Expr_Oct 1s)); Eos EOT] ) |]
             [| ( "9: sys seek", [NumericLabel 9s; ExprOp ("sys", Expr_Sym "seek"); Eos EOT] ) |]
             [| ( "2.:", [NumericLabel 2s; Eos EOT] ) |]
             [| ( "11:", [NumericLabel 9s; Eos EOT] ) |]

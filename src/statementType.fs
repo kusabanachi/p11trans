@@ -6,7 +6,7 @@ open Expres
 open Addres
 
 type statement =
-    | Assignment of Token * expr
+    | Assignment of string * expr
     | NameLabel of string
     | NumericLabel of int16
     | Eos of char
