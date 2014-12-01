@@ -131,6 +131,22 @@ module Instruction =
     let sysType = systemCall
 
 
+    let jsrType dest reg =
+        match i86Addr reg with
+        | Reg IP ->
+            incType "call" dest
+        | reg ->
+            let dest = i86Addr dest
+            let code1, dest =
+                if not dest.isAccessible then
+                    moveRef utilReg dest
+                else
+                    resolveIncDec dest
+            let code2 = pushVal reg
+            let code3 = storePCtoRegAndJmpToDest reg dest
+            code1 +!!+ code2 +!!+ code3
+
+
     let rtsType addr =
         match i86Addr addr with
         | Reg IP ->

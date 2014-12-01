@@ -51,14 +51,8 @@ module Ack_i86_trans =
             | "sub"  -> addType  "sub"  dest src
 
             //  Miscellaneous
-            | "jsr"  ->
-                if src = Addres.Reg Addres.PC then
-                    incType "call" dest
-                else
-                   //getInstructionText (MOV(Register(reg), DecDfr(SP)))
-                   //+!!+ getInstructionText (MOV(Register(PC), Register(reg)))
-                   //+!!+ getInstructionText (BR(dest))
-                   failwith "jsr with not PC register is unimplemented.."
+            | "jsr"  -> jsrType         dest src
+
             | _ -> sprintf "Not suported opcode : %s" code
 
         let exprOp code expr =

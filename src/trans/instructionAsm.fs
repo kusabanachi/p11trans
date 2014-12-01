@@ -476,6 +476,21 @@ module InstructionAsm =
                 codeText addr
 
 
+        member this.resolveIncDec addr =
+            match addr with
+            | IncDfr reg ->
+                let incNum = incDfrNum reg
+                (movText (Reg utilReg) (Reg reg)
+                   +!!+ incText reg reg incNum,
+                 dfr utilReg)
+            | DecDfr reg ->
+                let decNum = -(incDfrNum reg)
+                (incText reg reg decNum,
+                 dfr reg)
+            | _ ->
+                ("", addr)
+
+
         member this.storeRegVal reg =
             movText (Abs (Expr_Sym tempMem)) (Reg reg)
 
@@ -490,6 +505,13 @@ module InstructionAsm =
 
         member this.systemCall expr =
             "int 7" +!!+ Pseudo.data1 [expr]
+
+        member this.storePCtoRegAndJmpToDest (reg:addr) (dest:addr) =
+            "call 8f"
+              +!!+ "8: pop " + reg.text
+              +!!+ "add " + reg.text + ", #7"
+              +!!+ "jmp " + dest.text
+              +!!+ "nop"
 
 
 
@@ -520,6 +542,8 @@ module WordInstructionAsm =
 
     let unaryCalc = asm.unaryCalc
 
+    let resolveIncDec = asm.resolveIncDec
+
     let storeRegVal = asm.storeRegVal
 
     let restoreRegVal = asm.restoreRegVal
@@ -529,6 +553,8 @@ module WordInstructionAsm =
     let exchangeVal = asm.exchangeVal
 
     let systemCall = asm.systemCall
+
+    let storePCtoRegAndJmpToDest = asm.storePCtoRegAndJmpToDest
 
 
 module ByteInstructionAsm =
@@ -558,6 +584,8 @@ module ByteInstructionAsm =
 
     let unaryCalc = asm.unaryCalc
 
+    let resolveIncDec = asm.resolveIncDec
+
     let storeRegVal = asm.storeRegVal
 
     let restoreRegVal = asm.restoreRegVal
@@ -567,4 +595,6 @@ module ByteInstructionAsm =
     let exchangeVal = asm.exchangeVal
 
     let systemCall = asm.systemCall
+
+    let storePCtoRegAndJmpToDest = asm.storePCtoRegAndJmpToDest
 
