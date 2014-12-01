@@ -70,6 +70,14 @@ let assem src =
                 let statement, rest = opline src
                 [statement], rest
 
+    let readComment src =
+        let op, rest = readOp src
+        match op with
+        | Token_Comment text ->
+            [Comment text], rest
+        | _ ->
+            [], src
+
     let readEos src =
         let op, rest = readOp src
         match op with
@@ -79,8 +87,6 @@ let assem src =
             Eos '\n', rest
         | Token_Term ';' ->
             Eos ';', rest
-        | Token_Comment text ->
-            Comment text, rest
         | _ ->
             failwith SyntaxError
 
@@ -91,8 +97,9 @@ let assem src =
             []
         | _ ->
             let statement, rest = readStatement src
-            let eos, rest' = readEos rest
-            statement @ eos :: readSt rest'
+            let comment, rest'  = readComment rest
+            let eos, rest''     = readEos rest'
+            statement @ comment @ eos :: readSt rest''
 
     readSt src
 
