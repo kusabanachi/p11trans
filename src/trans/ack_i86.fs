@@ -1,15 +1,16 @@
 namespace Ack_i86
 
-module Ack_i86_trans =
+open V6as
+open V6as.StatementType
+open V6as.Expres
+open Instruction
+open ByteInstruction
+open Assign
+open Label
+open Comment
+open Eos
 
-    open StatementType
-    open Instruction
-    open ByteInstruction
-    open Expres
-    open Assign
-    open Label
-    open Comment
-    open Eos
+module Ack_i86_trans =
 
     let ack_i86_asm pdp11as =
         let singleOp code addr =

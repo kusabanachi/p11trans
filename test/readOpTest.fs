@@ -2,7 +2,7 @@ namespace test
 
 open System
 open NUnit.Framework
-open ReadOp
+open V6as.ReadOp
 
 
 [<TestFixture>]

@@ -1,10 +1,10 @@
 namespace Ack_i86
 
+open Address
+open ByteInstructionAsm
+
+
 module ByteInstruction =
-
-    open Address
-    open ByteInstructionAsm
-
 
     let andbType code dest src =
         let dest = i86Addr dest

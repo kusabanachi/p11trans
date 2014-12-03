@@ -3,7 +3,7 @@ namespace Ack_i86
 module Instruction =
 
     open Address
-    open Expres
+    open V6as.Expres
     open WordInstructionAsm
 
     let private findFreeReg (a1:addr) (a2:addr) =

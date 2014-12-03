@@ -1,9 +1,9 @@
 namespace Ack_i86
 
-module Assign =
+open Express
+open V6as.Expres
 
-    open Express
-    open Expres
+module Assign =
 
     let inline (<|>) o1 o2 =
         match o1 with

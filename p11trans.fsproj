@@ -12,13 +12,13 @@
     <BuildOrder>
       <BuildOrder>
         <String>src/AssemblyInfo.fs</String>
-        <String>src/readOp.fs</String>
-        <String>src/symtab.fs</String>
-        <String>src/expres.fs</String>
-        <String>src/addres.fs</String>
-        <String>src/statementType.fs</String>
-        <String>src/opline.fs</String>
-        <String>src/assem.fs</String>
+        <String>src/v6as/symtab.fs</String>
+        <String>src/v6as/readOp.fs</String>
+        <String>src/v6as/expres.fs</String>
+        <String>src/v6as/addres.fs</String>
+        <String>src/v6as/statementType.fs</String>
+        <String>src/v6as/opline.fs</String>
+        <String>src/v6as/assem.fs</String>
         <String>src/trans/eos.fs</String>
         <String>src/trans/express.fs</String>
         <String>src/trans/pseudo.fs</String>
@@ -65,16 +65,10 @@
   <ItemGroup>
     <Folder Include="src\" />
     <Folder Include="src\trans\" />
+    <Folder Include="src\v6as\" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="src\AssemblyInfo.fs" />
-    <Compile Include="src\addres.fs" />
-    <Compile Include="src\assem.fs" />
-    <Compile Include="src\expres.fs" />
-    <Compile Include="src\opline.fs" />
-    <Compile Include="src\readOp.fs" />
-    <Compile Include="src\statementType.fs" />
-    <Compile Include="src\symtab.fs" />
     <Compile Include="src\trans\ack_i86.fs" />
     <Compile Include="src\trans\instruction.fs" />
     <Compile Include="src\trans\address.fs" />
@@ -87,5 +81,12 @@
     <Compile Include="src\main.fs" />
     <Compile Include="src\trans\eos.fs" />
     <Compile Include="src\trans\assign.fs" />
+    <Compile Include="src\v6as\addres.fs" />
+    <Compile Include="src\v6as\assem.fs" />
+    <Compile Include="src\v6as\expres.fs" />
+    <Compile Include="src\v6as\opline.fs" />
+    <Compile Include="src\v6as\readOp.fs" />
+    <Compile Include="src\v6as\statementType.fs" />
+    <Compile Include="src\v6as\symtab.fs" />
   </ItemGroup>
 </Project>

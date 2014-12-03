@@ -1,8 +1,8 @@
 namespace Ack_i86
 
-module Label =
+open System
 
-    open System
+module Label =
 
     let nameLabel name =
         name + ":"

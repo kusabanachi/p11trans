@@ -1,10 +1,9 @@
 ﻿namespace Ack_i86
 
+open System
+open V6as.Expres
+
 module Express =
-
-    open System
-    open Expres
-
 
     let (|Keyword|_|) = function
         | ".."     ->  Some 0s

@@ -2,9 +2,9 @@ namespace test
 
 open System
 open NUnit.Framework
-open ReadOp
-open Symtab
-open Expres
+open V6as.ReadOp
+open V6as.Symtab
+open V6as.Expres
 
 
 [<TestFixture>]

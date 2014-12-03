@@ -1,10 +1,10 @@
 namespace Ack_i86
 
-module InstructionAsm =
+open Address
+open V6as.Expres
+open Eos
 
-    open Address
-    open Expres
-    open Eos
+module InstructionAsm =
 
     let tempMem = "tmpMem"
 

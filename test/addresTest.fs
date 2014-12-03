@@ -2,8 +2,8 @@ namespace test
 
 open System
 open NUnit.Framework
-open Expres
-open Addres
+open V6as.Expres
+open V6as.Addres
 
 
 [<TestFixture>]

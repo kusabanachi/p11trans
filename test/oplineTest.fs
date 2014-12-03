@@ -1,10 +1,10 @@
 namespace test
 
 open NUnit.Framework
-open Expres
-open Addres
-open Opline
-open StatementType
+open V6as.Expres
+open V6as.Addres
+open V6as.Opline
+open V6as.StatementType
 
 
 [<TestFixture>]

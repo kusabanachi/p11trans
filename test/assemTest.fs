@@ -1,11 +1,11 @@
 namespace test
 
 open NUnit.Framework
-open ReadOp
-open Expres
-open Addres
-open Assem
-open StatementType
+open V6as.ReadOp
+open V6as.Expres
+open V6as.Addres
+open V6as.Assem
+open V6as.StatementType
 
 
 [<TestFixture>]

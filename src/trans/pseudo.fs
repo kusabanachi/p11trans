@@ -1,8 +1,8 @@
 namespace Ack_i86
 
-module Pseudo =
+open Express
 
-    open Express
+module Pseudo =
 
     let ascii str = ".ascii \"" + str + "\""
 

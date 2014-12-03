@@ -3,7 +3,7 @@ module p11trans.Main
 
 open System
 open System.IO
-open Assem
+open V6as.Assem
 open Ack_i86.Ack_i86_trans
 
 
