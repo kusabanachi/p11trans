@@ -1,7 +1,7 @@
 namespace test
 
 open NUnit.Framework
-open V6as.Expres
+open ExpressionType
 open V6as.Addres
 open V6as.Opline
 open V6as.StatementType

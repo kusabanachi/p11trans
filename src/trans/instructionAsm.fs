@@ -1,7 +1,7 @@
 namespace Ack_i86
 
 open Address
-open V6as.Expres
+open ExpressionType
 open Eos
 
 module InstructionAsm =

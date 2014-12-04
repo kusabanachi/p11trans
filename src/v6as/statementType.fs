@@ -1,31 +1,30 @@
 namespace V6as
 
-open ReadOp
-open Expres
 open Addres
+open ExpressionType
 
 module StatementType =
 
     type statement =
-        | Assignment of string * expr
+        | Assignment of string * expression
         | NameLabel of string
         | NumericLabel of int16
         | Eos of char
         | Comment of string
         (* oplineType *)
         | Str of string
-        | Byte of expr list
+        | Byte of expression list
         | Even
-        | If of expr
+        | If of expression
         | EndIf
         | Global of string list
         | Text
         | Data
         | Bss
-        | Sob of expr * expr
-        | Common of string * expr
-        | Expr of expr
-        | ExprOp of string * expr
+        | Sob of expression * expression
+        | Common of string * expression
+        | Expr of expression
+        | ExprOp of string * expression
         | SingleOp of string * addr
         | DoubleOp of string * addr * addr
 

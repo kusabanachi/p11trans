@@ -1,8 +1,8 @@
 namespace Ack_i86
 
-open V6as
-open V6as.Expres
+open ExpressionType
 open Express
+open V6as
 
 module Address =
 
@@ -44,14 +44,14 @@ module Address =
         | Reg of reg
         | IncDfr of reg
         | DecDfr of reg
-        | Dfr of reg * expr option
+        | Dfr of reg * expression option
         | IncDDfr of reg
         | DecDDfr of reg
-        | DDfr of reg * expr option
-        | Rel of expr
-        | Imm of expr
-        | RelDfr of expr
-        | Abs of expr
+        | DDfr of reg * expression option
+        | Rel of expression
+        | Imm of expression
+        | RelDfr of expression
+        | Abs of expression
 
         member this.isAccessible =
             match this with

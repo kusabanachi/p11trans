@@ -2,7 +2,7 @@ namespace test
 
 open System
 open NUnit.Framework
-open V6as.Expres
+open ExpressionType
 open V6as.Addres
 
 

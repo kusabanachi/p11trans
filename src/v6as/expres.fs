@@ -1,19 +1,10 @@
 namespace V6as
 
+open ExpressionType
 open ReadOp
 open Symtab
 
 module Expres =
-
-    type expr =
-        | Expr_Op of char * expr * expr
-        | Expr_Sym of string
-        | Expr_Lbl of string
-        | Expr_Dec of int16
-        | Expr_Oct of int16
-        | Expr_DChar of char * char
-        | Expr_SChar of char
-        | Expr_Group of expr
 
     let ExpressionError = "E error in expression"
     let ParenthesesError = "] parentheses error"

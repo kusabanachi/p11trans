@@ -12,6 +12,7 @@
     <BuildOrder>
       <BuildOrder>
         <String>src/AssemblyInfo.fs</String>
+        <String>src/common/expressionType.fs</String>
         <String>src/v6as/symtab.fs</String>
         <String>src/v6as/readOp.fs</String>
         <String>src/v6as/expres.fs</String>
@@ -66,6 +67,7 @@
     <Folder Include="src\" />
     <Folder Include="src\trans\" />
     <Folder Include="src\v6as\" />
+    <Folder Include="src\common\" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="src\AssemblyInfo.fs" />
@@ -88,5 +90,6 @@
     <Compile Include="src\v6as\readOp.fs" />
     <Compile Include="src\v6as\statementType.fs" />
     <Compile Include="src\v6as\symtab.fs" />
+    <Compile Include="src\common\expressionType.fs" />
   </ItemGroup>
 </Project>

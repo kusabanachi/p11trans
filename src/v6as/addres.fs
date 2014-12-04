@@ -3,6 +3,7 @@ namespace V6as
 open Symtab
 open ReadOp
 open Expres
+open ExpressionType
 
 module Addres =
 
@@ -13,16 +14,16 @@ module Addres =
         | Reg of reg
         | IncDfr of reg
         | DecDfr of reg
-        | IdxDfr of reg * expr
+        | IdxDfr of reg * expression
         | Dfr of reg
         | IncDDfr of reg
         | DecDDfr of reg
         | DDfr of reg
-        | IdxDDfr of reg * expr
-        | Rel of expr
-        | Imm of expr
-        | RelDfr of expr
-        | Abs of expr
+        | IdxDDfr of reg * expression
+        | Rel of expression
+        | Imm of expression
+        | RelDfr of expression
+        | Abs of expression
 
     let AddressError = "A error in address"
     let ParenthesesError = ") Parentheses error"

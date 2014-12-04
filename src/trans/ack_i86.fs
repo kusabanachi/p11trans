@@ -1,8 +1,8 @@
 namespace Ack_i86
 
+open ExpressionType
 open V6as
 open V6as.StatementType
-open V6as.Expres
 open Instruction
 open ByteInstruction
 open Assign

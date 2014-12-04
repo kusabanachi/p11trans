@@ -2,7 +2,7 @@ namespace test
 
 open System
 open NUnit.Framework
-open V6as.ReadOp
+open ExpressionType
 open V6as.Symtab
 open V6as.Expres
 
