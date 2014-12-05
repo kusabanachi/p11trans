@@ -346,7 +346,7 @@ module InstructionAsm =
                   +!!+ pushText (dfr utilReg)
             | Imm _ ->
                 movText (Reg utilReg) sAddr
-                  +!!+ pushText (dfr utilReg)
+                  +!!+ pushText (Reg utilReg)
 
 
         member this.popValTo dAddr =
