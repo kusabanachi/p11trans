@@ -333,7 +333,7 @@ module InstructionAsm =
                       +!!+ pushText (dfr utilReg)
             | DDfr (sReg, expr) ->
                 if sReg.isMemoryAccessible then
-                    movText (Reg utilReg) sAddr
+                    movText (Reg utilReg) (Dfr (sReg, expr))
                       +!!+ pushText (dfr utilReg)
                 else
                     movText (Reg utilReg) (Reg sReg)
@@ -401,7 +401,7 @@ module InstructionAsm =
                       +!!+ popText (dfr utilReg)
             | DDfr (dReg, expr) ->
                 if dReg.isMemoryAccessible then
-                    movText (Reg utilReg) dAddr
+                    movText (Reg utilReg) (Dfr (dReg, expr))
                       +!!+ popText (dfr utilReg)
                 else
                     movText (Reg utilReg) (Reg dReg)
