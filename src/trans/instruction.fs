@@ -20,6 +20,14 @@ module Instruction =
     let movType code dest src =
         let dest = i86Addr dest
         let src = i86Addr src
+        let destAddrAffectSrcVal = function
+            | Reg srcReg, IncDfr destReg
+            | Reg srcReg, DecDfr destReg
+            | Reg srcReg, IncDDfr destReg
+            | Reg srcReg, DecDDfr destReg
+                when srcReg = destReg -> true
+            | _                       -> false
+
 
         if dest = DecDfr SP then
             pushVal src
@@ -29,7 +37,8 @@ module Instruction =
             let code1 = incrementReg SP 2
             let code2 = pushVal src
             code1 +!!+ code2
-        elif src.isMemory && dest.isMemory then
+        elif src.isMemory && dest.isMemory ||
+             destAddrAffectSrcVal (src, dest) then
             if dest.isAccessible then
                 let code1, src = moveVal utilReg src
                 let code2      = binaryCalc code dest src
