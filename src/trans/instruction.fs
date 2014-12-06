@@ -66,10 +66,22 @@ module Instruction =
             let code2       = binaryCalc code dest src
             code1 +!!+ code2
         elif not src.isAccessible then
+            let src =
+                match src, dest with
+                | IncDfr  srcReg,  Reg destReg
+                    when srcReg = destReg -> dfr srcReg
+                | IncDDfr srcReg,  Reg destReg
+                    when srcReg = destReg -> ddfr srcReg
+                | _                       -> src
             let code1, src = moveRef utilReg src
             let code2      = binaryCalc code dest src
             code1 +!!+ code2
         else
+            let src =
+                match src, dest with
+                | IncDfr srcReg,  Reg destReg
+                    when srcReg = destReg -> dfr srcReg
+                | _                       -> src
             binaryCalc code dest src
 
 
