@@ -31,12 +31,18 @@ module Instruction =
 
         if dest = DecDfr SP then
             pushVal src
-        elif src = IncDfr SP then
+        elif src = IncDfr SP && not (dest.isUsing SP) then
             popValTo dest
         elif dest = dfr SP then
-            let code1 = incrementReg SP 2
-            let code2 = pushVal src
-            code1 +!!+ code2
+            if not (src.isUsing SP) then
+                let code1 = popValTo (Reg utilReg)
+                let code2 = pushVal src
+                code1 +!!+ code2
+            else
+                let code1, src = moveVal utilReg src
+                let code2 = popValTo (namedMem tempMem)
+                let code3 = pushVal src
+                code1 +!!+ code2 +!!+ code3
         elif src.isMemory && dest.isMemory ||
              destAddrAffectSrcVal (src, dest) then
             if dest.isAccessible then

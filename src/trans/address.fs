@@ -139,5 +139,5 @@ module Address =
 
     let dfr reg      = Dfr (reg, None)
     let idfr reg num = Dfr (reg, Some (Expr_Dec (int16 num)))
-
+    let namedMem name = Abs (Expr_Sym name)
 
