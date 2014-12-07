@@ -133,6 +133,16 @@ module Instruction =
                 let code2, dest = moveVal utilReg dest
                 let code3       = binaryCalc code dest src
                 code1 +!!+ code2 +!!+ code3
+        elif destAddrAffectSrcVal (src, dest) then
+            if dest.isAccessible then
+                let code1, src = moveVal utilReg src
+                let code2      = binaryCalc code dest src
+                code1 +!!+ code2
+            else
+                let code1, src  = moveValToMem tempMem src
+                let code2, dest = moveVal utilReg dest
+                let code3       = binaryCalc code dest src
+                code1 +!!+ code2 +!!+ code3
         elif not dest.isAccessible then
             let code1, dest = moveRef utilReg dest
             let code2       = binaryCalc code dest src
