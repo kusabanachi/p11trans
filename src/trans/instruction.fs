@@ -16,18 +16,18 @@ module Instruction =
         else
             BP
 
+    let private destAddrAffectSrcVal = function
+        | Reg srcReg, IncDfr destReg
+        | Reg srcReg, DecDfr destReg
+        | Reg srcReg, IncDDfr destReg
+        | Reg srcReg, DecDDfr destReg
+            when srcReg = destReg -> true
+        | _                       -> false
+
 
     let movType code dest src =
         let dest = i86Addr dest
         let src = i86Addr src
-        let destAddrAffectSrcVal = function
-            | Reg srcReg, IncDfr destReg
-            | Reg srcReg, DecDfr destReg
-            | Reg srcReg, IncDDfr destReg
-            | Reg srcReg, DecDDfr destReg
-                when srcReg = destReg -> true
-            | _                       -> false
-
 
         if dest = DecDfr SP then
             pushVal src
@@ -89,7 +89,8 @@ module Instruction =
         let dest = i86Addr dest
         let src = i86Addr src
 
-        if src.isMemory && dest.isMemory then
+        if src.isMemory && dest.isMemory ||
+             destAddrAffectSrcVal (src, dest) then
             if dest.isAccessible then
                 let code1, src = moveVal utilReg src
                 let code2      = binaryCalc code dest src
