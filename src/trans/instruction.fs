@@ -118,12 +118,17 @@ module Instruction =
     let cmpType code dest src =
         let dest = i86Addr dest
         let src = i86Addr src
+        let binaryCalc' d s =
+            if code <> "cmp" then
+                binaryCalc code d s
+            else
+                binaryCalc code s d
 
         if src.isMemory && dest.isMemory ||
              destAddrAffectSrcVal (src, dest) then
             if dest.isAccessible then
                 let code1, src = moveVal utilReg src
-                let code2      = binaryCalc code dest src
+                let code2      = binaryCalc' dest src
                 code1 +!!+ code2
             elif src.isAccessible
                     && not src.isIncrement
@@ -137,23 +142,23 @@ module Instruction =
                     | _              ->
                         "", src
                 let code2, dest = moveVal utilReg dest
-                let code3       = binaryCalc code dest src
+                let code3       = binaryCalc' dest src
                 code1 +!!+ code2 +!!+ code3
             else
                 let code1, src  = moveValToMem tempMem src
                 let code2, dest = moveVal utilReg dest
-                let code3       = binaryCalc code dest src
+                let code3       = binaryCalc' dest src
                 code1 +!!+ code2 +!!+ code3
         elif not dest.isAccessible then
             let code1, dest = moveRef utilReg dest
-            let code2       = binaryCalc code dest src
+            let code2       = binaryCalc' dest src
             code1 +!!+ code2
         elif not src.isAccessible then
             let code1, src = moveRef utilReg src
-            let code2      = binaryCalc code dest src
+            let code2      = binaryCalc' dest src
             code1 +!!+ code2
         else
-            binaryCalc code dest src
+            binaryCalc' dest src
 
 
     let incType code addr =
