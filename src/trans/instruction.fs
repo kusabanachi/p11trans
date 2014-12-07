@@ -17,12 +17,12 @@ module Instruction =
             BP
 
     let private destAddrAffectSrcVal = function
-        | Reg srcReg, IncDfr destReg
-        | Reg srcReg, DecDfr destReg
-        | Reg srcReg, IncDDfr destReg
-        | Reg srcReg, DecDDfr destReg
-            when srcReg = destReg -> true
-        | _                       -> false
+        | src: addr, IncDfr destReg
+        | src      , DecDfr destReg
+        | src      , IncDDfr destReg
+        | src      , DecDDfr destReg
+            when src.isUsing destReg -> true
+        | _                          -> false
 
 
     let movType code dest src =
@@ -119,25 +119,26 @@ module Instruction =
         let dest = i86Addr dest
         let src = i86Addr src
 
-        if src.isMemory && dest.isMemory then
+        if src.isMemory && dest.isMemory ||
+             destAddrAffectSrcVal (src, dest) then
             if dest.isAccessible then
                 let code1, src = moveVal utilReg src
                 let code2      = binaryCalc code dest src
                 code1 +!!+ code2
-            elif src.isAccessible then
-                let code1, dest = moveVal utilReg dest
-                let code2       = binaryCalc code dest src
-                code1 +!!+ code2
-            else
-                let code1, src  = moveValToMem tempMem src
+            elif src.isAccessible
+                    && not src.isIncrement
+                    && not (destAddrAffectSrcVal (src, dest)) then
+                let code1, src =
+                    match src with
+                    | DecDfr  sReg ->
+                        incrementReg sReg -2, dfr sReg
+                    | DecDDfr sReg ->
+                        incrementReg sReg -2, ddfr sReg
+                    | _              ->
+                        "", src
                 let code2, dest = moveVal utilReg dest
                 let code3       = binaryCalc code dest src
                 code1 +!!+ code2 +!!+ code3
-        elif destAddrAffectSrcVal (src, dest) then
-            if dest.isAccessible then
-                let code1, src = moveVal utilReg src
-                let code2      = binaryCalc code dest src
-                code1 +!!+ code2
             else
                 let code1, src  = moveValToMem tempMem src
                 let code2, dest = moveVal utilReg dest

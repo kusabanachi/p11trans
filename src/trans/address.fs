@@ -91,6 +91,16 @@ module Address =
                 when r = reg -> true
             | _              -> false
 
+        member this.isIncrement =
+            match this with
+            | IncDfr  _ | IncDDfr _ -> true
+            | _                     -> false
+
+        member this.isDecrement =
+            match this with
+            | DecDfr  _ | DecDDfr _ -> true
+            | _                     -> false
+
         member this.text =
             match this with
             | Reg r           -> r.text
