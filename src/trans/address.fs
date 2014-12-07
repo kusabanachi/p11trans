@@ -83,6 +83,11 @@ module Address =
             | Reg _ -> true
             | _     -> false
 
+        member this.isImmediate =
+            match this with
+            | Imm _ -> true
+            | _     -> false
+
         member this.isUsing (reg:reg) =
             match this with
             | Reg r

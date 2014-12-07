@@ -24,6 +24,14 @@ module Instruction =
             when src.isUsing destReg -> true
         | _                          -> false
 
+    let private srcAddrAffectDestVal = function
+        | IncDfr srcReg,  dest: addr
+        | DecDfr srcReg,  dest
+        | IncDDfr srcReg, dest
+        | DecDDfr srcReg, dest
+            when dest.isUsing srcReg -> true
+        | _                          -> false
+
 
     let movType code dest src =
         let dest = i86Addr dest
@@ -43,8 +51,8 @@ module Instruction =
                 let code2 = popValTo (namedMem tempMem)
                 let code3 = pushVal src
                 code1 +!!+ code2 +!!+ code3
-        elif src.isMemory && dest.isMemory ||
-             destAddrAffectSrcVal (src, dest) then
+        elif src.isMemory && dest.isMemory
+                || destAddrAffectSrcVal (src, dest) then
             if dest.isAccessible then
                 let code1, src = moveVal utilReg src
                 let code2      = binaryCalc code dest src
@@ -89,8 +97,8 @@ module Instruction =
         let dest = i86Addr dest
         let src = i86Addr src
 
-        if src.isMemory && dest.isMemory ||
-             destAddrAffectSrcVal (src, dest) then
+        if src.isMemory && dest.isMemory
+                || destAddrAffectSrcVal (src, dest) then
             if dest.isAccessible then
                 let code1, src = moveVal utilReg src
                 let code2      = binaryCalc code dest src
@@ -124,14 +132,35 @@ module Instruction =
             else
                 binaryCalc code s d
 
-        if src.isMemory && dest.isMemory ||
-             destAddrAffectSrcVal (src, dest) then
+        let moveSrcAndDestAndCalc =
+            let code1, src  = moveValToMem tempMem src
+            let code2, dest = moveVal utilReg dest
+            let code3       = binaryCalc' dest src
+            code1 +!!+ code2 +!!+ code3
+
+
+        if dest.isImmediate && code <> "cmp" then
+            if src.isAccessible then
+                let code1, dest = moveVal utilReg dest
+                let code2       = binaryCalc' dest src
+                code1 +!!+ code2
+            else
+                moveSrcAndDestAndCalc
+        elif src.isImmediate && code = "cmp" then
+            if dest.isAccessible then
+                let code1, src  = moveVal utilReg src
+                let code2       = binaryCalc' dest src
+                code1 +!!+ code2
+            else
+                moveSrcAndDestAndCalc
+        elif src.isMemory && dest.isMemory
+                || destAddrAffectSrcVal (src, dest) then
             if dest.isAccessible then
                 let code1, src = moveVal utilReg src
                 let code2      = binaryCalc' dest src
                 code1 +!!+ code2
             elif src.isAccessible
-                    && not src.isIncrement
+                    && not (src.isIncrement && srcAddrAffectDestVal (src, dest))
                     && not (destAddrAffectSrcVal (src, dest)) then
                 let code1, src =
                     match src with
@@ -145,10 +174,7 @@ module Instruction =
                 let code3       = binaryCalc' dest src
                 code1 +!!+ code2 +!!+ code3
             else
-                let code1, src  = moveValToMem tempMem src
-                let code2, dest = moveVal utilReg dest
-                let code3       = binaryCalc' dest src
-                code1 +!!+ code2 +!!+ code3
+                moveSrcAndDestAndCalc
         elif not dest.isAccessible then
             let code1, dest = moveRef utilReg dest
             let code2       = binaryCalc' dest src
