@@ -35,8 +35,48 @@ module InstructionAsm =
             leaText (Reg r1) (idfr r2 num)
 
 
+        let moveReferredVal (reg:reg) ref =
+            let midReg =
+                if reg.isMemoryAccessible then reg else utilReg
+            let dest = Reg reg
+
+            match ref with
+            | IncDfr reg
+            | IncDDfr reg ->
+                let incNum = incDfrNum reg
+                if reg.isMemoryAccessible then
+                    movText dest (dfr reg)
+                      +!!+ incText reg reg incNum
+                else
+                    movText (Reg midReg) (Reg reg)
+                      +!!+ incText reg midReg incNum
+                      +!!+ movText dest (dfr midReg)
+            | DecDfr reg
+            | DecDDfr reg ->
+                let decNum = -(incDfrNum reg)
+                if reg.isMemoryAccessible then
+                    incText reg reg decNum
+                      +!!+ movText dest (dfr reg)
+                else
+                    movText (Reg midReg) (Reg reg)
+                      +!!+ incText reg midReg decNum
+                      +!!+ movText dest (idfr midReg decNum)
+            | Dfr (reg, expr)
+            | DDfr (reg, expr) ->
+                if reg.isMemoryAccessible then
+                    movText dest (Dfr (reg, expr))
+                else
+                    movText (Reg midReg) (Reg reg)
+                      +!!+ movText dest (Dfr (midReg, expr))
+            | Reg _ | Rel _ | Abs _ | Imm _ ->
+                movText dest ref
+            | RelDfr expr ->
+                movText dest (Rel expr)
+
+
         member this.moveRef (dReg:reg) sAddr =
-            let midReg = if dReg.isMemoryAccessible then dReg else utilReg
+            let midReg =
+                if dReg.isMemoryAccessible then dReg else utilReg
 
             match sAddr with
             | IncDfr sReg ->
@@ -68,211 +108,53 @@ module InstructionAsm =
             | Dfr (sReg, expr) ->
                 (movText (Reg dReg) (Reg sReg),
                  Dfr (dReg, expr))
-            | IncDDfr sReg ->
-                let incNum = incDfrNum sReg
-                if sReg.isMemoryAccessible then
-                    (movText (Reg dReg) (dfr sReg)
-                       +!!+ incText sReg sReg incNum,
-                     dfr dReg)
-                else
-                    (movText (Reg midReg) (Reg sReg)
-                       +!!+ incText sReg midReg incNum
-                       +!!+ movText (Reg dReg) (dfr midReg),
-                     dfr dReg)
-            | DecDDfr sReg ->
-                let decNum = -(incDfrNum sReg)
-                if sReg.isMemoryAccessible then
-                    (incText sReg sReg decNum
-                       +!!+ movText (Reg dReg) (dfr sReg),
-                     dfr dReg)
-                else
-                    (movText (Reg midReg) (Reg sReg)
-                       +!!+ incText sReg midReg decNum
-                       +!!+ movText (Reg dReg) (idfr midReg decNum),
-                     dfr dReg)
-            | DDfr (sReg, expr) ->
-                if sReg.isMemoryAccessible then
-                    (movText (Reg dReg) (Dfr (sReg, expr)),
-                     dfr dReg)
-                else
-                    (movText (Reg midReg) (Reg sReg)
-                       +!!+ movText (Reg dReg) (Dfr (midReg, expr)),
-                     dfr dReg)
             | Rel expr | Abs expr ->
                 (movText (Reg dReg) (Imm expr),
                  dfr dReg)
-            | RelDfr expr ->
-                (movText (Reg dReg) (Rel expr),
+            | IncDDfr _
+            | DecDDfr _
+            | DDfr _
+            | RelDfr _ ->
+                (moveReferredVal dReg sAddr,
                  dfr dReg)
             | _ ->
                 failwithf "Invalid address"
 
 
         member this.moveVal (dReg:reg) sAddr =
-            let midReg = if dReg.isMemoryAccessible then dReg else utilReg
+            let midReg =
+                if dReg.isMemoryAccessible then dReg else utilReg
 
             match sAddr with
-            | IncDfr sReg ->
-                let incNum = incDfrNum sReg
-                if sReg.isMemoryAccessible then
-                    (movText (Reg dReg) (dfr sReg)
-                       +!!+ incText sReg sReg incNum,
-                     Reg dReg)
-                else
-                    (movText (Reg midReg) (Reg sReg)
-                       +!!+ incText sReg midReg incNum
-                       +!!+ movText (Reg dReg) (dfr midReg),
-                     Reg dReg)
-            | DecDfr sReg ->
-                let decNum = -(incDfrNum sReg)
-                if sReg.isMemoryAccessible then
-                    (incText sReg sReg decNum
-                       +!!+ movText (Reg dReg) (dfr sReg),
-                     Reg dReg)
-                else
-                    (movText (Reg midReg) (Reg sReg)
-                       +!!+ incText sReg midReg decNum
-                       +!!+ movText (Reg dReg) (idfr midReg decNum),
-                     Reg dReg)
-            | Dfr (sReg, expr) ->
-                if sReg.isMemoryAccessible then
-                    (movText (Reg dReg) sAddr,
-                     Reg dReg)
-                else
-                    (movText (Reg midReg) (Reg sReg)
-                       +!!+ movText (Reg dReg) (Dfr (midReg, expr)),
-                     Reg dReg)
-            | IncDDfr sReg ->
-                let incNum = incDfrNum sReg
-                if sReg.isMemoryAccessible then
-                    (movText (Reg midReg) (dfr sReg)
-                       +!!+ incText sReg sReg incNum
-                       +!!+ movText (Reg dReg) (dfr midReg),
-                     Reg dReg)
-                else
-                    (movText (Reg midReg) (Reg sReg)
-                       +!!+ incText sReg midReg incNum
-                       +!!+ movText (Reg midReg) (dfr midReg)
-                       +!!+ movText (Reg dReg) (dfr midReg),
-                     Reg dReg)
-            | DecDDfr sReg ->
-                let decNum = -(incDfrNum sReg)
-                if sReg.isMemoryAccessible then
-                    (incText sReg sReg decNum
-                       +!!+ movText (Reg midReg) (dfr sReg)
-                       +!!+ movText (Reg dReg) (dfr midReg),
-                     Reg dReg)
-                else
-                    (movText (Reg midReg) (Reg sReg)
-                       +!!+ incText sReg midReg decNum
-                       +!!+ movText (Reg midReg) (idfr midReg decNum)
-                       +!!+ movText (Reg dReg) (dfr midReg),
-                     Reg dReg)
-            | DDfr (sReg, expr) ->
-                if sReg.isMemoryAccessible then
-                    (movText (Reg midReg) (Dfr (sReg, expr))
-                       +!!+ movText (Reg dReg) (dfr midReg),
-                     Reg dReg)
-                else
-                    (movText (Reg midReg) (Reg sReg)
-                       +!!+ movText (Reg midReg) (Dfr (midReg, expr))
-                       +!!+ movText (Reg dReg) (dfr midReg),
-                     Reg dReg)
+            | IncDfr _
+            | DecDfr _
+            | Dfr _
             | Reg _ | Rel _ | Abs _ | Imm _ ->
-                (movText (Reg dReg) sAddr,
+                (moveReferredVal dReg sAddr,
                  Reg dReg)
-            | RelDfr expr ->
-                (movText (Reg midReg) (Rel expr)
+            | IncDDfr _
+            | DecDDfr _
+            | DDfr _
+            | RelDfr _ ->
+                (moveReferredVal midReg sAddr
                    +!!+ movText (Reg dReg) (dfr midReg),
                  Reg dReg)
 
 
         member this.moveValToMem symbol sAddr =
             match sAddr with
-            | IncDfr sReg ->
-                let incNum = incDfrNum sReg
-                if sReg.isMemoryAccessible then
-                    (movText (Reg utilReg) (dfr sReg)
-                       +!!+ incText sReg sReg incNum
-                       +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
-                     Abs (Expr_Sym symbol))
-                else
-                    (movText (Reg utilReg) (Reg sReg)
-                       +!!+ incText sReg utilReg incNum
-                       +!!+ movText (Reg utilReg) (dfr utilReg)
-                       +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
-                     Abs (Expr_Sym symbol))
-            | DecDfr sReg ->
-                let decNum = -(incDfrNum sReg)
-                if sReg.isMemoryAccessible then
-                    (incText sReg sReg decNum
-                       +!!+ movText (Reg utilReg) (dfr sReg)
-                       +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
-                     Abs (Expr_Sym symbol))
-                else
-                    (movText (Reg utilReg) (Reg sReg)
-                       +!!+ incText sReg utilReg decNum
-                       +!!+ movText (Reg utilReg) (idfr utilReg decNum)
-                       +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
-                     Abs (Expr_Sym symbol))
-            | Dfr (sReg, expr) ->
-                if sReg.isMemoryAccessible then
-                    (movText (Reg utilReg) sAddr
-                       +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
-                     Abs (Expr_Sym symbol))
-                else
-                    (movText (Reg utilReg) (Reg sReg)
-                       +!!+ movText (Reg utilReg) (Dfr (utilReg, expr))
-                       +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
-                     Abs (Expr_Sym symbol))
-            | IncDDfr sReg ->
-                let incNum = incDfrNum sReg
-                if sReg.isMemoryAccessible then
-                    (movText (Reg utilReg) (dfr sReg)
-                       +!!+ incText sReg sReg incNum
-                       +!!+ movText (Reg utilReg) (dfr utilReg)
-                       +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
-                     Abs (Expr_Sym symbol))
-                else
-                    (movText (Reg utilReg) (Reg sReg)
-                       +!!+ incText sReg utilReg incNum
-                       +!!+ movText (Reg utilReg) (dfr utilReg)
-                       +!!+ movText (Reg utilReg) (dfr utilReg)
-                       +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
-                     Abs (Expr_Sym symbol))
-            | DecDDfr sReg ->
-                let decNum = -(incDfrNum sReg)
-                if sReg.isMemoryAccessible then
-                    (incText sReg sReg decNum
-                       +!!+ movText (Reg utilReg) (dfr sReg)
-                       +!!+ movText (Reg utilReg) (dfr utilReg)
-                       +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
-                     Abs (Expr_Sym symbol))
-                else
-                    (movText (Reg utilReg) (Reg sReg)
-                       +!!+ incText sReg utilReg decNum
-                       +!!+ movText (Reg utilReg) (idfr utilReg decNum)
-                       +!!+ movText (Reg utilReg) (dfr utilReg)
-                       +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
-                     Abs (Expr_Sym symbol))
-            | DDfr (sReg, expr) ->
-                if sReg.isMemoryAccessible then
-                    (movText (Reg utilReg) (Dfr (sReg, expr))
-                       +!!+ movText (Reg utilReg) (dfr utilReg)
-                       +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
-                     Abs (Expr_Sym symbol))
-                else
-                    (movText (Reg utilReg) (Reg sReg)
-                       +!!+ movText (Reg utilReg) (Dfr (utilReg, expr))
-                       +!!+ movText (Reg utilReg) (dfr utilReg)
-                       +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
-                     Abs (Expr_Sym symbol))
+            | IncDfr _
+            | DecDfr _
+            | Dfr _
             | Rel _ | Abs _ ->
-                (movText (Reg utilReg) sAddr
+                (moveReferredVal utilReg sAddr
                    +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
                  Abs (Expr_Sym symbol))
-            | RelDfr expr ->
-                (movText (Reg utilReg) (Rel expr)
+            | IncDDfr _
+            | DecDDfr _
+            | DDfr _
+            | RelDfr _ ->
+                (moveReferredVal utilReg sAddr
                    +!!+ movText (Reg utilReg) (dfr utilReg)
                    +!!+ movText (Abs (Expr_Sym symbol)) (Reg utilReg),
                  Abs (Expr_Sym symbol))
@@ -309,41 +191,14 @@ module InstructionAsm =
                 else
                     movText (Reg utilReg) (Reg sReg)
                       +!!+ pushText (Dfr (utilReg, expr))
-            | IncDDfr sReg ->
-                let incNum = incDfrNum sReg
-                if sReg.isMemoryAccessible then
-                    movText (Reg utilReg) (dfr sReg)
-                      +!!+ pushText (dfr utilReg)
-                      +!!+ incText sReg sReg incNum
-                else
-                    movText (Reg utilReg) (Reg sReg)
-                      +!!+ incText sReg utilReg incNum
-                      +!!+ movText (Reg utilReg) (dfr utilReg)
-                      +!!+ pushText (dfr utilReg)
-            | DecDDfr sReg ->
-                let decNum = -(incDfrNum sReg)
-                if sReg.isMemoryAccessible then
-                    incText sReg sReg decNum
-                      +!!+ movText (Reg utilReg) (dfr sReg)
-                      +!!+ pushText (dfr utilReg)
-                else
-                    movText (Reg utilReg) (Reg sReg)
-                      +!!+ incText sReg utilReg decNum
-                      +!!+ movText (Reg utilReg) (idfr utilReg decNum)
-                      +!!+ pushText (dfr utilReg)
-            | DDfr (sReg, expr) ->
-                if sReg.isMemoryAccessible then
-                    movText (Reg utilReg) (Dfr (sReg, expr))
-                      +!!+ pushText (dfr utilReg)
-                else
-                    movText (Reg utilReg) (Reg sReg)
-                      +!!+ movText (Reg utilReg) (Dfr (utilReg, expr))
-                      +!!+ pushText (dfr utilReg)
+            | IncDDfr _
+            | DecDDfr _
+            | DDfr _
+            | RelDfr _ ->
+                moveReferredVal utilReg sAddr
+                  +!!+ pushText (dfr utilReg)
             | Reg _ | Rel _ | Abs _ ->
                 pushText sAddr
-            | RelDfr expr ->
-                movText (Reg utilReg) (Rel expr)
-                  +!!+ pushText (dfr utilReg)
             | Imm _ ->
                 movText (Reg utilReg) sAddr
                   +!!+ pushText (Reg utilReg)
@@ -377,41 +232,14 @@ module InstructionAsm =
                 else
                     movText (Reg utilReg) (Reg dReg)
                       +!!+ popText (Dfr (utilReg, expr))
-            | IncDDfr dReg ->
-                let incNum = incDfrNum dReg
-                if dReg.isMemoryAccessible then
-                    movText (Reg utilReg) (dfr dReg)
-                      +!!+ popText (dfr utilReg)
-                      +!!+ incText dReg dReg incNum
-                else
-                    movText (Reg utilReg) (Reg dReg)
-                      +!!+ incText dReg utilReg incNum
-                      +!!+ movText (Reg utilReg) (dfr utilReg)
-                      +!!+ popText (dfr utilReg)
-            | DecDDfr dReg ->
-                let decNum = -(incDfrNum dReg)
-                if dReg.isMemoryAccessible then
-                    incText dReg dReg decNum
-                      +!!+ movText (Reg utilReg) (dfr dReg)
-                      +!!+ popText (dfr utilReg)
-                else
-                    movText (Reg utilReg) (Reg dReg)
-                      +!!+ incText dReg utilReg decNum
-                      +!!+ movText (Reg utilReg) (idfr utilReg decNum)
-                      +!!+ popText (dfr utilReg)
-            | DDfr (dReg, expr) ->
-                if dReg.isMemoryAccessible then
-                    movText (Reg utilReg) (Dfr (dReg, expr))
-                      +!!+ popText (dfr utilReg)
-                else
-                    movText (Reg utilReg) (Reg dReg)
-                      +!!+ movText (Reg utilReg) (Dfr (utilReg, expr))
-                      +!!+ popText (dfr utilReg)
+            | IncDDfr _
+            | DecDDfr _
+            | DDfr _
+            | RelDfr _ ->
+                moveReferredVal utilReg dAddr
+                  +!!+ popText (dfr utilReg)
             | Reg _ | Rel _ | Abs _ ->
                 popText dAddr
-            | RelDfr expr ->
-                movText (Reg utilReg) (Rel expr)
-                  +!!+ popText (dfr utilReg)
             | _ ->
                 failwithf "Invalid address: pop to %A" dAddr
 
