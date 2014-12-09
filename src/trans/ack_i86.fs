@@ -54,6 +54,7 @@ module Ack_i86_trans =
 
             //  Miscellaneous
             | "jsr"  -> jsrType         dest src
+            | "mul"  -> mulType         dest src
 
             | _ -> sprintf "Not suported opcode : %s" code
 

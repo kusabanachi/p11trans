@@ -152,6 +152,15 @@ module Address =
         | Addres.Abs e         -> Abs e
 
 
+    let nextReg = function
+        | AX -> DX
+        | DX -> CX
+        | CX -> SI
+        | SI -> DI
+        | DI -> BP
+        | _  -> failwith "Invalid register"
+
+
     let dfr reg      = Dfr (reg, None)
     let idfr reg num = Dfr (reg, Some (Expr_Dec (int16 num)))
     let ddfr reg     = DDfr (reg, None)

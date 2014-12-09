@@ -147,6 +147,16 @@ module InstructionAsm =
                  Reg dReg)
 
 
+        member this.moveRefOrVal dReg sAddr =
+            match sAddr with
+            | Reg _
+            | Imm _
+            | IncDfr SP ->
+                this.moveVal dReg sAddr
+            | _ ->
+                this.moveRef dReg sAddr
+
+
         member this.moveValToMem symbol sAddr =
             let destMem = Abs (Expr_Sym symbol)
 
@@ -372,6 +382,8 @@ module WordInstructionAsm =
 
     let moveVal = asm.moveVal
 
+    let moveRefOrVal = asm.moveRefOrVal
+
     let moveValToMem = asm.moveValToMem
 
     let pushVal = asm.pushVal
@@ -413,6 +425,8 @@ module ByteInstructionAsm =
     let moveRef = asm.moveRef
 
     let moveVal = asm.moveVal
+
+    let moveRefOrVal = asm.moveRefOrVal
 
     let moveValToMem = asm.moveValToMem
 

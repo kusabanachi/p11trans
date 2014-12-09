@@ -198,6 +198,132 @@ module Instruction =
             unaryCalc code addr
 
 
+    let mulType dest src =
+        let dest = i86Addr dest
+        let src = i86Addr src
+
+        let swapReg addr reg =
+            match addr with
+            | Reg _         -> Reg reg
+            | IncDfr _      -> IncDfr reg
+            | DecDfr _      -> DecDfr reg
+            | Dfr (_, e)    -> Dfr (reg, e)
+            | IncDDfr _     -> IncDDfr reg
+            | DecDDfr _     -> DecDDfr reg
+            | DDfr (_, e)   -> DDfr (reg, e)
+            | x             -> x
+
+        match dest with
+        | Reg AX ->
+            let code1, src =
+                if src.isImmediate || not src.isAccessible then
+                    moveRefOrVal utilReg src
+                else
+                    "", src
+            let code2 = unaryCalc "imul" src
+            let code3 = exchangeVal (Reg AX) (Reg DX)
+            code1 +!!+ code2 +!!+ code3
+        | Reg DX ->
+            let code1, src, axSv =
+                if src.isImmediate then
+                    let c11, axSv = moveVal utilReg (Reg AX)
+                    let c12, _    = moveVal AX dest
+                    let c13, src' = moveVal DX src
+                    c11 +!!+ c12 +!!+ c13, src', axSv
+                elif not src.isAccessible || src.isUsing AX then
+                    match src with
+                    | Reg    AX
+                    | DecDfr AX
+                    | Dfr   (AX, _) ->
+                        let c11, src' = moveRefOrVal utilReg src
+                        let c12, _    = moveVal AX dest
+                        c11 +!!+ c12, src', (Reg utilReg)
+                    | _ ->
+                        let c11, src' = moveRef utilReg src
+                        let c12, axSv = moveValToMem tempMem (Reg AX)
+                        let c13, _    = moveVal AX dest
+                        c11 +!!+ c12 +!!+ c13, src', axSv
+                else
+                    let c11, axSv = moveVal utilReg (Reg AX)
+                    let c12, _    = moveVal AX dest
+                    c11 +!!+ c12, src, axSv
+            let code2    = unaryCalc "imul" src
+            let code3, _ = moveVal DX (Reg AX)
+            let code4, _ = moveVal AX axSv
+            code1 +!!+ code2 +!!+ code3 +!!+ code4
+        | Reg dReg when dReg = CX || dReg = DI ->
+            let nextR = nextReg dReg
+
+            let code1, src =
+                if src = Reg dReg
+                        || (src.isUsing AX && (swapReg src dReg).isAccessible) then
+                    let c11, _ = moveVal nextR (Reg DX)
+                    let c12    = exchangeVal (Reg AX) dest
+                    let src' = match src with
+                               | Reg r when r = dReg -> Reg AX
+                               | _                   -> swapReg src dReg
+                    c11 +!!+ c12, src'
+                elif src = Reg nextR then
+                    let c11 = exchangeVal (Reg DX) (Reg nextR)
+                    let c12 = exchangeVal (Reg AX) dest
+                    c11 +!!+ c12, (Reg DX)
+                elif not (src.isAccessible)
+                        || src.isUsing dReg
+                        || src.isUsing nextR
+                        || src.isImmediate then
+                    let c11, src' = moveRefOrVal utilReg src
+                    let c12, _    = moveVal nextR (Reg DX)
+                    let c13       = exchangeVal (Reg AX) dest
+                    c11 +!!+ c12 +!!+ c13, src'
+                else
+                    let c11, _ = moveVal nextR (Reg DX)
+                    let c12    = exchangeVal (Reg AX) dest
+                    c11 +!!+ c12, src
+            let code2 = unaryCalc "imul" src
+            let code3 = exchangeVal (Reg dReg) (Reg DX)
+            let code4 = exchangeVal (Reg nextR) (Reg AX)
+            let code5 = exchangeVal (Reg AX) (Reg DX)
+            code1 +!!+ code2 +!!+ code3 +!!+ code4 +!!+ code5
+        | Reg dReg (* SI or BP *) ->
+            let code1, src, dxSv =
+                if src = Reg dReg
+                        || (src.isUsing AX && (swapReg src dReg).isAccessible) then
+                    let c11, dxSv = moveVal utilReg (Reg DX)
+                    let c12       = exchangeVal (Reg AX) dest
+                    let src' = match src with
+                               | Reg r when r = dReg -> Reg AX
+                               | _                   -> swapReg src dReg
+                    c11 +!!+ c12, src', dxSv
+                elif src.isImmediate then
+                    let c11, dxSv = moveVal utilReg (Reg DX)
+                    let c12, src' = moveVal DX src
+                    let c13       = exchangeVal (Reg AX) dest
+                    c11 +!!+ c12 +!!+ c13, src', dxSv
+                elif not (src.isAccessible)
+                        || src.isUsing dReg then
+                    match src with
+                    | DecDfr DX
+                    | Dfr   (DX, _) ->
+                        let c11, src' = moveRef utilReg src
+                        let c12       = exchangeVal (Reg AX) dest
+                        c11 +!!+ c12, src', (Reg utilReg)
+                    | _ ->
+                        let c11, src' = moveRef utilReg src
+                        let c12, dxSv = moveValToMem tempMem (Reg DX)
+                        let c13       = exchangeVal (Reg AX) dest
+                        c11 +!!+ c12 +!!+ c13, src', dxSv
+                else
+                    let c11, dxSv = moveVal utilReg (Reg DX)
+                    let c12       = exchangeVal (Reg AX) dest
+                    c11 +!!+ c12, src, dxSv
+            let code2     = unaryCalc "imul" src
+            let code3     = exchangeVal (Reg dReg) (Reg AX)
+            let code4, _  = moveVal DX dxSv
+            code1 +!!+ code2 +!!+ code3 +!!+ code4
+        | _ ->
+            failwithf "Invalid address"
+
+
     let sysType = systemCall
 
 
