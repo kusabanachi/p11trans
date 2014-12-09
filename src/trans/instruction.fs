@@ -16,7 +16,7 @@ module Instruction =
         else
             BP
 
-    let private destAddrAffectSrcVal = function
+    let destAddrAffectSrcVal = function
         | src: addr, IncDfr destReg
         | src      , DecDfr destReg
         | src      , IncDDfr destReg
@@ -24,11 +24,22 @@ module Instruction =
             when src.isUsing destReg -> true
         | _                          -> false
 
-    let private srcAddrAffectDestVal = function
+    let srcAddrAffectDestVal = function
         | IncDfr srcReg,  dest: addr
         | DecDfr srcReg,  dest
         | IncDDfr srcReg, dest
         | DecDDfr srcReg, dest
+            when dest.isUsing srcReg -> true
+        | _                          -> false
+
+    let usingSameReg = function
+        | Reg srcReg      , dest: addr
+        | IncDfr srcReg   , dest
+        | DecDfr srcReg   , dest
+        | Dfr (srcReg, _) , dest
+        | IncDDfr srcReg  , dest
+        | DecDDfr srcReg  , dest
+        | DDfr (srcReg, _), dest
             when dest.isUsing srcReg -> true
         | _                          -> false
 

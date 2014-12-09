@@ -2,7 +2,7 @@ namespace Ack_i86
 
 open Address
 open ByteInstructionAsm
-
+open Instruction
 
 module ByteInstruction =
 
@@ -12,19 +12,21 @@ module ByteInstruction =
 
         if dest = Reg AX then
             let code1, src =
-                if src.isAccessible then
+                if src.isByteAccessible then
                     "", src
                 else
-                    moveRef utilReg src
+                    moveRefOrVal utilReg src
             let code2 = binaryCalc code dest src
             let code3 = signExtend
             code1 +!!+ code2 +!!+ code3
         elif dest.isRegValue then
             let code1, src =
-                if src.isByteAccessible && src <> Reg AX then
+                if src.isByteAccessible
+                        && src <> Reg AX
+                        && not (usingSameReg (src, dest)) then
                     "", src
                 else
-                    moveRef utilReg src
+                    moveRefOrVal utilReg src
             let code2 = exchangeVal (Reg AX) dest
             let code3 = binaryCalc code (Reg AX) src
             let code4 = signExtend
@@ -38,7 +40,9 @@ module ByteInstruction =
                     moveVal utilReg src
             let code2 = binaryCalc code dest src
             code1 +!!+ code2
-        elif src.isByteAccessible && not src.isMemory then
+        elif src.isByteAccessible
+                && not src.isMemory
+                && not (destAddrAffectSrcVal (src, dest)) then
             let code1, dest = moveRef utilReg dest
             let code2       = binaryCalc code dest src
             code1 +!!+ code2
