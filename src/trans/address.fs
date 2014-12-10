@@ -106,6 +106,15 @@ module Address =
             | DecDfr  _ | DecDDfr _ -> true
             | _                     -> false
 
+        member this.getRegister =
+            match this with
+            | Reg r
+            | IncDfr  r | DecDfr  r | Dfr  (r, _)
+            | IncDDfr r | DecDDfr r | DDfr (r, _)
+                -> r
+            | _
+                -> failwithf "Address error %A" this
+
         member this.text =
             match this with
             | Reg r           -> r.text

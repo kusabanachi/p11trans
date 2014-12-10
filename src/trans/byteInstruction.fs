@@ -6,40 +6,44 @@ open Instruction
 
 module ByteInstruction =
 
+    let private findFreeReg (a1:addr) (a2:addr) =
+        let notUsing reg =
+            not (a1.isUsing reg || a2.isUsing reg)
+        if notUsing AX then
+            AX
+        elif notUsing CX then
+            CX
+        else
+            DX
+
+
     let andbType code dest src =
         let dest = i86Addr dest
         let src = i86Addr src
 
-        if dest = Reg AX then
+        if dest.isByteAccessible then
             let code1, src =
-                if src.isByteAccessible then
-                    "", src
-                else
+                if not dest.isMemory && not src.isByteAccessible then
                     moveRefOrVal utilReg src
-            let code2 = binaryCalc code dest src
-            let code3 = signExtend
-            code1 +!!+ code2 +!!+ code3
-        elif dest.isRegValue then
-            let code1, src =
-                if src.isByteAccessible
-                        && src <> Reg AX
-                        && not (usingSameReg (src, dest)) then
-                    "", src
-                else
-                    moveRefOrVal utilReg src
-            let code2 = exchangeVal (Reg AX) dest
-            let code3 = binaryCalc code (Reg AX) src
-            let code4 = signExtend
-            let code5 = exchangeVal dest (Reg AX)
-            code1 +!!+ code2 +!!+ code3 +!!+ code4 +!!+ code5
-        elif dest.isAccessible then
-            let code1, src =
-                if src.isByteAccessible && not src.isMemory then
-                    "", src
-                else
+                elif dest.isMemory && src.isMemory
+                    || not src.isByteAccessible then
                     moveVal utilReg src
+                else
+                    "", src
             let code2 = binaryCalc code dest src
             code1 +!!+ code2
+        elif not dest.isMemory then
+            let dReg = dest.getRegister
+            let code1, src  =
+                if src.isByteAccessible
+                        && not (srcAddrAffectDestVal (src, dest)) then
+                    "", src
+                else
+                    moveValToMem tempMem src
+            let code2, dest = moveVal utilReg dest
+            let code3       = binaryCalc code dest src
+            let code4, _    = moveVal dReg dest
+            code1 +!!+ code2 +!!+ code3 +!!+ code4
         elif src.isByteAccessible
                 && not src.isMemory
                 && not (destAddrAffectSrcVal (src, dest)) then
@@ -47,11 +51,12 @@ module ByteInstruction =
             let code2       = binaryCalc code dest src
             code1 +!!+ code2
         else
-            let code1, src  = moveValToMem tempMem src
-            let code2, dest = moveRef utilReg dest
-            let code3       = exchangeVal (Reg AX) dest
-            let code4       = binaryCalc code (Reg AX) src
-            let code5       = exchangeVal dest (Reg AX)
+            let saveReg     = findFreeReg src dest
+            let code1       = storeRegVal saveReg
+            let code2, src  = moveVal saveReg src
+            let code3, dest = moveRef utilReg dest
+            let code4       = binaryCalc code dest src
+            let code5       = restoreRegVal saveReg
             code1 +!!+ code2 +!!+ code3 +!!+ code4 +!!+ code5
 
 

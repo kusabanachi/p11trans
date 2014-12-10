@@ -25,11 +25,15 @@ module InstructionAsm =
             "lea " + a1.text + ", " + a2.text
 
         let incDfrNum = function
-            | SP ->       2
+            | IncDDfr _
+            | DecDDfr _
+            | DDfr _    -> 2
+            | a when a.isUsing SP
+                        -> 2
             | _  ->
                 match itype with
-                | Word -> 2
-                | Byte -> 1
+                | Word  -> 2
+                | Byte  -> 1
 
         let incText r1 r2 num =
             leaText (Reg r1) (idfr r2 num)
@@ -43,7 +47,7 @@ module InstructionAsm =
             match ref with
             | IncDfr  sReg
             | IncDDfr sReg ->
-                let incNum = incDfrNum sReg
+                let incNum = incDfrNum ref
                 if sReg = SP then
                     "pop " + dest.text
                 elif sReg.isMemoryAccessible then
@@ -55,7 +59,7 @@ module InstructionAsm =
                       +!!+ movText dest (dfr midReg)
             | DecDfr  sReg
             | DecDDfr sReg ->
-                let decNum = -(incDfrNum sReg)
+                let decNum = -(incDfrNum ref)
                 if sReg.isMemoryAccessible then
                     incText sReg sReg decNum
                       +!!+ movText dest (dfr sReg)
@@ -82,7 +86,7 @@ module InstructionAsm =
 
             match sAddr with
             | IncDfr sReg ->
-                let incNum = incDfrNum sReg
+                let incNum = incDfrNum sAddr
                 if sReg.isMemoryAccessible then
                     (movText (Reg dReg) (Reg sReg)
                        +!!+ incText sReg sReg incNum,
@@ -97,7 +101,7 @@ module InstructionAsm =
                        +!!+ incText sReg utilReg incNum,
                      dfr dReg)
             | DecDfr sReg ->
-                let decNum = -(incDfrNum sReg)
+                let decNum = -(incDfrNum sAddr)
                 if sReg.isMemoryAccessible then
                     (incText sReg sReg decNum
                        +!!+ movText (Reg dReg) (Reg sReg),
@@ -188,7 +192,7 @@ module InstructionAsm =
 
             match sAddr with
             | IncDfr sReg ->
-                let incNum = incDfrNum sReg
+                let incNum = incDfrNum sAddr
                 if sReg.isMemoryAccessible then
                     pushText (dfr sReg)
                       +!!+ incText sReg sReg incNum
@@ -197,7 +201,7 @@ module InstructionAsm =
                       +!!+ incText sReg utilReg incNum
                       +!!+ pushText (dfr utilReg)
             | DecDfr sReg ->
-                let decNum = -(incDfrNum sReg)
+                let decNum = -(incDfrNum sAddr)
                 if sReg.isMemoryAccessible then
                     incText sReg sReg decNum
                       +!!+ pushText (dfr sReg)
@@ -231,7 +235,7 @@ module InstructionAsm =
 
             match dAddr with
             | IncDfr dReg ->
-                let incNum = incDfrNum dReg
+                let incNum = incDfrNum dAddr
                 if dReg.isMemoryAccessible then
                     popText (dfr dReg)
                       +!!+ incText dReg dReg incNum
@@ -240,7 +244,7 @@ module InstructionAsm =
                       +!!+ incText dReg utilReg incNum
                       +!!+ popText (dfr utilReg)
             | DecDfr dReg ->
-                let decNum = -(incDfrNum dReg)
+                let decNum = -(incDfrNum dAddr)
                 if dReg.isMemoryAccessible then
                     incText dReg dReg decNum
                       +!!+ popText (dfr dReg)
@@ -286,21 +290,21 @@ module InstructionAsm =
 
             match sAddr with
             | IncDfr sReg ->
-                let incNum = incDfrNum sReg
+                let incNum = incDfrNum sAddr
                 codeText dAddr (dfr sReg)
                   +!!+ incText sReg sReg incNum
             | DecDfr sReg ->
-                let decNum = -(incDfrNum sReg)
+                let decNum = -(incDfrNum sAddr)
                 incText sReg sReg decNum
                   +!!+ codeText dAddr (dfr sReg)
             | _ ->
                 match dAddr with
                 | IncDfr dReg ->
-                    let incNum = incDfrNum dReg
+                    let incNum = incDfrNum dAddr
                     codeText (dfr dReg) sAddr
                       +!!+ incText dReg dReg incNum
                 | DecDfr dReg ->
-                    let decNum = -(incDfrNum dReg)
+                    let decNum = -(incDfrNum dAddr)
                     incText dReg dReg decNum
                       +!!+ codeText (dfr dReg) sAddr
                 | _ ->
@@ -317,11 +321,11 @@ module InstructionAsm =
 
             match addr with
             | IncDfr reg ->
-                let incNum = incDfrNum reg
+                let incNum = incDfrNum addr
                 codeText (dfr reg)
                   +!!+ incText reg reg incNum
             | DecDfr reg ->
-                let decNum = -(incDfrNum reg)
+                let decNum = -(incDfrNum addr)
                 incText reg reg decNum
                   +!!+ codeText (dfr reg)
             | _ ->
@@ -331,12 +335,12 @@ module InstructionAsm =
         member this.resolveIncDec addr =
             match addr with
             | IncDfr reg ->
-                let incNum = incDfrNum reg
+                let incNum = incDfrNum addr
                 (movText (Reg utilReg) (Reg reg)
                    +!!+ incText reg reg incNum,
                  dfr utilReg)
             | DecDfr reg ->
-                let decNum = -(incDfrNum reg)
+                let decNum = -(incDfrNum addr)
                 (incText reg reg decNum,
                  dfr reg)
             | _ ->
