@@ -17,40 +17,44 @@ module Ack_i86_trans =
             let immVal num = Addres.Imm (Expr_Oct (int16 num))
             match code with
             // single operand code
-            | "clr"  -> addType  "and"  addr (immVal 0)
-            | "clrb" -> andbType "andb" addr (immVal 0)
-            | "com"  -> addType  "xor"  addr (immVal 0xffff)
-            | "comb" -> andbType "xorb" addr (immVal 0xff)
-            | "inc"  -> incType  "inc"  addr
-            | "dec"  -> incType  "dec"  addr
-            | "neg"  -> incType  "neg"  addr
-            | "adc"  -> addType  "adc"  addr (immVal 0)
-            | "adcb" -> andbType "adcb" addr (immVal 0)
-            | "sbc"  -> addType  "sbb"  addr (immVal 0)
-            | "sbcb" -> andbType "sbbb" addr (immVal 0)
-            | "tst"  -> cmpType  "test" addr (immVal 0xffff)
-            | "ror"  -> addType  "rcr"  addr (immVal 1)
-            | "rorb" -> andbType "rcrb" addr (immVal 1)
-            | "rol"  -> addType  "rcl"  addr (immVal 1)
-            | "rolb" -> andbType "rclb" addr (immVal 1)
-            | "asr"  -> addType  "sar"  addr (immVal 1)
-            | "asrb" -> andbType "sarb" addr (immVal 1)
-            | "asl"  -> addType  "sal"  addr (immVal 1)
-            | "aslb" -> andbType "salb" addr (immVal 1)
-            | "jmp"  -> incType  "jmp"  addr
-            | "rts"  -> rtsType         addr
+            | "clr"  -> addType  "and"   addr (immVal 0)
+            | "clrb" -> andbType "andb"  addr (immVal 0)
+            | "com"  -> addType  "xor"   addr (immVal 0xffff)
+            | "comb" -> andbType "xorb"  addr (immVal 0xff)
+            | "inc"  -> incType  "inc"   addr
+            | "dec"  -> incType  "dec"   addr
+            | "neg"  -> incType  "neg"   addr
+            | "adc"  -> addType  "adc"   addr (immVal 0)
+            | "adcb" -> andbType "adcb"  addr (immVal 0)
+            | "sbc"  -> addType  "sbb"   addr (immVal 0)
+            | "sbcb" -> andbType "sbbb"  addr (immVal 0)
+            | "tst"  -> cmpType  "test"  addr (immVal 0xffff)
+            | "tstb" -> cmpbType "testb" addr (immVal 0xff)
+            | "ror"  -> addType  "rcr"   addr (immVal 1)
+            | "rorb" -> andbType "rcrb"  addr (immVal 1)
+            | "rol"  -> addType  "rcl"   addr (immVal 1)
+            | "rolb" -> andbType "rclb"  addr (immVal 1)
+            | "asr"  -> addType  "sar"   addr (immVal 1)
+            | "asrb" -> andbType "sarb"  addr (immVal 1)
+            | "asl"  -> addType  "sal"   addr (immVal 1)
+            | "aslb" -> andbType "salb"  addr (immVal 1)
+            | "jmp"  -> incType  "jmp"   addr
+            | "rts"  -> rtsType          addr
             | _ -> sprintf "Not suported opcode : %s" code
 
         let doubleOp code dest src =
             match code with
             // double operand code
-            | "mov"  -> movType  "mov"  dest src
-            | "cmp"  -> cmpType  "cmp"  dest src
-            | "bit"  -> cmpType  "test" dest src
-            | "bis"  -> addType  "or"   dest src
-            | "bisb" -> andbType "orb"  dest src
-            | "add"  -> addType  "add"  dest src
-            | "sub"  -> addType  "sub"  dest src
+            | "mov"  -> movType  "mov"   dest src
+            | "movb" -> andbType "movb"  dest src
+            | "cmp"  -> cmpType  "cmp"   dest src
+            | "cmpb" -> cmpbType "cmpb"  dest src
+            | "bit"  -> cmpType  "test"  dest src
+            | "bitb" -> cmpbType "testb" dest src
+            | "bis"  -> addType  "or"    dest src
+            | "bisb" -> andbType "orb"   dest src
+            | "add"  -> addType  "add"   dest src
+            | "sub"  -> addType  "sub"   dest src
 
             //  Miscellaneous
             | "jsr"  -> jsrType         dest src

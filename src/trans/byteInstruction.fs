@@ -60,3 +60,35 @@ module ByteInstruction =
             code1 +!!+ code2 +!!+ code3 +!!+ code4 +!!+ code5
 
 
+    let cmpbType code dest src =
+        let dest = i86Addr dest
+        let src = i86Addr src
+
+        if dest.isByteAccessible
+                && not dest.isImmediate then
+            let code1, src =
+                if not dest.isMemory && not src.isByteAccessible then
+                    moveRefOrVal utilReg src
+                elif dest.isMemory && src.isMemory
+                    || not src.isByteAccessible then
+                    moveVal utilReg src
+                else
+                    "", src
+            let code2 = binaryCalc code dest src
+            code1 +!!+ code2
+        elif src.isByteAccessible
+                && not (destAddrAffectSrcVal (src, dest)) then
+            let code1, dest =
+                if not src.isMemory then
+                    moveRefOrVal utilReg dest
+                else
+                    moveVal utilReg dest
+            let code2       = binaryCalc code dest src
+            code1 +!!+ code2
+        else
+            let code1, src  = moveValToMem tempMem src
+            let code2, dest = moveVal utilReg dest
+            let code3       = binaryCalc code dest src
+            code1 +!!+ code2 +!!+ code3
+
+
