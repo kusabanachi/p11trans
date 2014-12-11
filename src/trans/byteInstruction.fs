@@ -63,32 +63,43 @@ module ByteInstruction =
     let cmpbType code dest src =
         let dest = i86Addr dest
         let src = i86Addr src
+        let binaryCalc' d s =
+            if code <> "cmpb" then
+                binaryCalc code d s
+            else
+                binaryCalc code s d
+        let destIsAccessible =
+            dest.isByteAccessible
+                && not (dest.isImmediate && code <> "cmpb")
+        let srcIsAccessible =
+            src.isByteAccessible
+                && not (src.isImmediate && code = "cmpb")
 
-        if dest.isByteAccessible
-                && not dest.isImmediate then
+        if destIsAccessible then
             let code1, src =
-                if not dest.isMemory && not src.isByteAccessible then
+                if not dest.isMemory && not srcIsAccessible then
                     moveRefOrVal utilReg src
                 elif dest.isMemory && src.isMemory
-                    || not src.isByteAccessible then
+                        || not srcIsAccessible then
                     moveVal utilReg src
                 else
                     "", src
-            let code2 = binaryCalc code dest src
+            let code2 = binaryCalc' dest src
             code1 +!!+ code2
-        elif src.isByteAccessible
+        elif srcIsAccessible
+                && not (srcAddrAffectDestVal (src, dest))
                 && not (destAddrAffectSrcVal (src, dest)) then
             let code1, dest =
                 if not src.isMemory then
                     moveRefOrVal utilReg dest
                 else
                     moveVal utilReg dest
-            let code2       = binaryCalc code dest src
+            let code2       = binaryCalc' dest src
             code1 +!!+ code2
         else
             let code1, src  = moveValToMem tempMem src
             let code2, dest = moveVal utilReg dest
-            let code3       = binaryCalc code dest src
+            let code3       = binaryCalc' dest src
             code1 +!!+ code2 +!!+ code3
 
 
