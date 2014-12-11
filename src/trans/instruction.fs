@@ -1,10 +1,10 @@
 namespace Ack_i86
 
-module Instruction =
+open Address
+open V6as.Expres
+open WordInstructionAsm
 
-    open Address
-    open V6as.Expres
-    open WordInstructionAsm
+module Instruction =
 
     let private findFreeReg (a1:addr) (a2:addr) =
         let notUsing reg =
@@ -32,27 +32,46 @@ module Instruction =
             when dest.isUsing srcReg -> true
         | _                          -> false
 
-    let usingSameReg = function
-        | Reg srcReg      , dest: addr
-        | IncDfr srcReg   , dest
-        | DecDfr srcReg   , dest
-        | Dfr (srcReg, _) , dest
-        | IncDDfr srcReg  , dest
-        | DecDDfr srcReg  , dest
-        | DDfr (srcReg, _), dest
-            when dest.isUsing srcReg -> true
-        | _                          -> false
 
-
-    let movType code dest src =
+    let addType code dest src =
         let dest = i86Addr dest
         let src = i86Addr src
+
+        if dest.isAccessible then
+            let code1, src =
+                if not dest.isMemory && not src.isAccessible then
+                    moveRefOrVal utilReg src
+                elif dest.isMemory && src.isMemory
+                        || destAddrAffectSrcVal (src, dest) then
+                    moveVal utilReg src
+                else
+                    "", src
+            let code2 = binaryCalc code dest src
+            code1 +!!+ code2
+        elif not src.isMemory
+                 && not (destAddrAffectSrcVal (src, dest)) then
+            let code1, dest = moveRef utilReg dest
+            let code2       = binaryCalc code dest src
+            code1 +!!+ code2
+        else
+            let saveReg = findFreeReg src dest
+            let code1       = storeRegVal saveReg
+            let code2, src  = moveVal saveReg src
+            let code3, dest = moveRef utilReg dest
+            let code4       = binaryCalc code dest src
+            let code5       = restoreRegVal saveReg
+            code1 +!!+ code2 +!!+ code3 +!!+ code4 +!!+ code5
+
+
+    let movType code i_dest i_src =
+        let dest = i86Addr i_dest
+        let src = i86Addr i_src
 
         if dest = DecDfr SP then
             pushVal src
         elif src = IncDfr SP && not (dest.isUsing SP) then
             popValTo dest
-        elif dest = dfr SP then
+        elif dest = dfr SP && not src.isImmediate then
             if not (src.isUsing SP) then
                 let code1 = popValTo (Reg utilReg)
                 let code2 = pushVal src
@@ -62,76 +81,34 @@ module Instruction =
                 let code2 = popValTo (namedMem tempMem)
                 let code3 = pushVal src
                 code1 +!!+ code2 +!!+ code3
-        elif src.isMemory && dest.isMemory
-                || destAddrAffectSrcVal (src, dest) then
-            if dest.isAccessible then
-                let code1, src = moveVal utilReg src
-                let code2      = binaryCalc code dest src
-                code1 +!!+ code2
-            elif not (dest.isUsing SP) then
-                let code1 = pushVal src
-                let code2 = popValTo dest
-                code1 +!!+ code2
-            else
-                let saveReg = findFreeReg src dest
-                let code1       = storeRegVal saveReg
-                let code2, src  = moveVal saveReg src
-                let code3, dest = moveRef utilReg dest
-                let code4       = binaryCalc code dest src
-                let code5       = restoreRegVal saveReg
-                code1 +!!+ code2 +!!+ code3 +!!+ code4 +!!+ code5
-        elif not dest.isAccessible then
-            let code1, dest = moveRef utilReg dest
-            let code2       = binaryCalc code dest src
-            code1 +!!+ code2
-        elif not src.isAccessible then
+        elif not dest.isMemory then
+            let dReg = dest.getRegister
             let src =
-                match src, dest with
-                | IncDfr  srcReg,  Reg destReg
-                    when srcReg = destReg -> dfr srcReg
-                | IncDDfr srcReg,  Reg destReg
-                    when srcReg = destReg -> ddfr srcReg
-                | _                       -> src
-            let code1, src = moveRef utilReg src
-            let code2      = binaryCalc code dest src
+                match src with
+                | IncDfr sReg when sReg = dReg ->
+                    dfr sReg
+                | IncDDfr sReg when sReg = dReg ->
+                    ddfr sReg
+                | _ ->
+                    src
+            let code1, src =
+                if not src.isAccessible then
+                    moveRefOrVal utilReg src
+                else
+                    "", src
+            let code2 = binaryCalc code dest src
+            code1 +!!+ code2
+        elif dest.isAccessible then
+            addType code i_dest i_src
+        elif not src.isMemory
+                 && not (destAddrAffectSrcVal (src, dest)) then
+            addType code i_dest i_src
+        elif not (dest.isUsing SP) then
+            let code1 = pushVal src
+            let code2 = popValTo dest
             code1 +!!+ code2
         else
-            let src =
-                match src, dest with
-                | IncDfr srcReg,  Reg destReg
-                    when srcReg = destReg -> dfr srcReg
-                | _                       -> src
-            binaryCalc code dest src
-
-
-    let addType code dest src =
-        let dest = i86Addr dest
-        let src = i86Addr src
-
-        if src.isMemory && dest.isMemory
-                || destAddrAffectSrcVal (src, dest) then
-            if dest.isAccessible then
-                let code1, src = moveVal utilReg src
-                let code2      = binaryCalc code dest src
-                code1 +!!+ code2
-            else
-                let saveReg = findFreeReg src dest
-                let code1       = storeRegVal saveReg
-                let code2, src  = moveVal saveReg src
-                let code3, dest = moveRef utilReg dest
-                let code4       = binaryCalc code dest src
-                let code5       = restoreRegVal saveReg
-                code1 +!!+ code2 +!!+ code3 +!!+ code4 +!!+ code5
-        elif not dest.isAccessible then
-            let code1, dest = moveRef utilReg dest
-            let code2       = binaryCalc code dest src
-            code1 +!!+ code2
-        elif not src.isAccessible then
-            let code1, src = moveRef utilReg src
-            let code2      = binaryCalc code dest src
-            code1 +!!+ code2
-        else
-            binaryCalc code dest src
+            addType code i_dest i_src
 
 
     let cmpType code dest src =
@@ -142,60 +119,40 @@ module Instruction =
                 binaryCalc code d s
             else
                 binaryCalc code s d
+        let destIsAccessible =
+            dest.isAccessible
+                && not (dest.isImmediate && code <> "cmp")
+        let srcIsAccessible =
+            src.isAccessible
+                && not (src.isImmediate && code = "cmp")
 
-        let moveSrcAndDestAndCalc =
+        if destIsAccessible then
+            let code1, src =
+                if not dest.isMemory && not srcIsAccessible then
+                    moveRefOrVal utilReg src
+                elif dest.isMemory && src.isMemory
+                        || not srcIsAccessible
+                        || destAddrAffectSrcVal (src, dest) then
+                    moveVal utilReg src
+                else
+                    "", src
+            let code2 = binaryCalc' dest src
+            code1 +!!+ code2
+        elif srcIsAccessible
+                && not (srcAddrAffectDestVal (src, dest))
+                && not (destAddrAffectSrcVal (src, dest)) then
+            let code1, dest =
+                if not src.isMemory then
+                    moveRefOrVal utilReg dest
+                else
+                    moveVal utilReg dest
+            let code2       = binaryCalc' dest src
+            code1 +!!+ code2
+        else
             let code1, src  = moveValToMem tempMem src
             let code2, dest = moveVal utilReg dest
             let code3       = binaryCalc' dest src
             code1 +!!+ code2 +!!+ code3
-
-
-        if dest.isImmediate && code <> "cmp" then
-            if src.isAccessible then
-                let code1, dest = moveVal utilReg dest
-                let code2       = binaryCalc' dest src
-                code1 +!!+ code2
-            else
-                moveSrcAndDestAndCalc
-        elif src.isImmediate && code = "cmp" then
-            if dest.isAccessible then
-                let code1, src  = moveVal utilReg src
-                let code2       = binaryCalc' dest src
-                code1 +!!+ code2
-            else
-                moveSrcAndDestAndCalc
-        elif src.isMemory && dest.isMemory
-                || destAddrAffectSrcVal (src, dest) then
-            if dest.isAccessible then
-                let code1, src = moveVal utilReg src
-                let code2      = binaryCalc' dest src
-                code1 +!!+ code2
-            elif src.isAccessible
-                    && not (src.isIncrement && srcAddrAffectDestVal (src, dest))
-                    && not (destAddrAffectSrcVal (src, dest)) then
-                let code1, src =
-                    match src with
-                    | DecDfr  sReg ->
-                        incrementReg sReg -2, dfr sReg
-                    | DecDDfr sReg ->
-                        incrementReg sReg -2, ddfr sReg
-                    | _              ->
-                        "", src
-                let code2, dest = moveVal utilReg dest
-                let code3       = binaryCalc' dest src
-                code1 +!!+ code2 +!!+ code3
-            else
-                moveSrcAndDestAndCalc
-        elif not dest.isAccessible then
-            let code1, dest = moveRef utilReg dest
-            let code2       = binaryCalc' dest src
-            code1 +!!+ code2
-        elif not src.isAccessible then
-            let code1, src = moveRef utilReg src
-            let code2      = binaryCalc' dest src
-            code1 +!!+ code2
-        else
-            binaryCalc' dest src
 
 
     let incType code addr =
@@ -212,17 +169,6 @@ module Instruction =
     let mulType dest src =
         let dest = i86Addr dest
         let src = i86Addr src
-
-        let swapReg addr reg =
-            match addr with
-            | Reg _         -> Reg reg
-            | IncDfr _      -> IncDfr reg
-            | DecDfr _      -> DecDfr reg
-            | Dfr (_, e)    -> Dfr (reg, e)
-            | IncDDfr _     -> IncDDfr reg
-            | DecDDfr _     -> DecDDfr reg
-            | DDfr (_, e)   -> DDfr (reg, e)
-            | x             -> x
 
         match dest with
         | Reg AX ->
@@ -270,9 +216,11 @@ module Instruction =
                         || (src.isUsing AX && (swapReg src dReg).isAccessible) then
                     let c11, _ = moveVal nextR (Reg DX)
                     let c12    = exchangeVal (Reg AX) dest
-                    let src' = match src with
-                               | Reg r when r = dReg -> Reg AX
-                               | _                   -> swapReg src dReg
+                    let src' =
+                        if src = Reg dReg then
+                            Reg AX
+                        else
+                            swapReg src dReg
                     c11 +!!+ c12, src'
                 elif src = Reg nextR then
                     let c11 = exchangeVal (Reg DX) (Reg nextR)
@@ -301,9 +249,11 @@ module Instruction =
                         || (src.isUsing AX && (swapReg src dReg).isAccessible) then
                     let c11, dxSv = moveVal utilReg (Reg DX)
                     let c12       = exchangeVal (Reg AX) dest
-                    let src' = match src with
-                               | Reg r when r = dReg -> Reg AX
-                               | _                   -> swapReg src dReg
+                    let src' =
+                        if src = Reg dReg then
+                            Reg AX
+                        else
+                            swapReg src dReg
                     c11 +!!+ c12, src', dxSv
                 elif src.isImmediate then
                     let c11, dxSv = moveVal utilReg (Reg DX)
