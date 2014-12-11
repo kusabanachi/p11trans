@@ -60,6 +60,42 @@ module ByteInstruction =
             code1 +!!+ code2 +!!+ code3 +!!+ code4 +!!+ code5
 
 
+    let movbType code i_dest i_src =
+        let dest = i86Addr i_dest
+        let src = i86Addr i_src
+
+        match dest with
+        | Reg AX ->
+            let code1, src =
+                if src.isByteAccessible then
+                    "", src
+                else
+                    moveRefOrVal utilReg src
+            let code2 = binaryCalc code dest src
+            let code3 = signExtend
+            code1 +!!+ code2 +!!+ code3
+        | Reg dReg ->
+            let code1, src =
+                if src = Reg dReg then
+                    "", Reg AX
+                elif src.isUsing AX
+                        && (swapReg src dReg).isByteAccessible then
+                    "", swapReg src dReg
+                elif src.isByteAccessible
+                        && not (src.isUsing dReg)
+                        && not (src.isUsing AX) then
+                    "", src
+                else
+                    moveRefOrVal utilReg src
+            let code2 = exchangeVal (Reg AX) dest
+            let code3 = binaryCalc code (Reg AX) src
+            let code4 = signExtend
+            let code5 = exchangeVal dest (Reg AX)
+            code1 +!!+ code2 +!!+ code3 +!!+ code4 +!!+ code5
+        | _ ->
+            andbType code i_dest i_src
+
+
     let cmpbType code dest src =
         let dest = i86Addr dest
         let src = i86Addr src

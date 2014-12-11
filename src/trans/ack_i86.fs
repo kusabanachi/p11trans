@@ -46,7 +46,7 @@ module Ack_i86_trans =
             match code with
             // double operand code
             | "mov"  -> movType  "mov"   dest src
-            | "movb" -> andbType "movb"  dest src
+            | "movb" -> movbType "movb"  dest src
             | "cmp"  -> cmpType  "cmp"   dest src
             | "cmpb" -> cmpbType "cmpb"  dest src
             | "bit"  -> cmpType  "test"  dest src

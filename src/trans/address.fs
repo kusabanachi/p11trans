@@ -175,3 +175,14 @@ module Address =
     let ddfr reg     = DDfr (reg, None)
     let namedMem name = Abs (Expr_Sym name)
 
+    let swapReg addr reg =
+        match addr with
+        | Reg _         -> Reg reg
+        | IncDfr _      -> IncDfr reg
+        | DecDfr _      -> DecDfr reg
+        | Dfr (_, e)    -> Dfr (reg, e)
+        | IncDDfr _     -> IncDDfr reg
+        | DecDDfr _     -> DecDDfr reg
+        | DDfr (_, e)   -> DDfr (reg, e)
+        | x             -> x
+
