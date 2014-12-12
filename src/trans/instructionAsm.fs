@@ -39,6 +39,13 @@ module InstructionAsm =
             leaText (Reg r1) (idfr r2 num)
 
 
+        static let mutable _uniqNum = 999
+        static let uniqLabel (prefix:string) =
+            let num: int32 = _uniqNum
+            _uniqNum <- _uniqNum - 1
+            sprintf "_%s%03d" prefix.[..2] num
+
+
         let moveReferredVal (dReg:reg) ref =
             let midReg =
                 if dReg.isMemoryAccessible then dReg else utilReg
@@ -365,6 +372,21 @@ module InstructionAsm =
         member this.systemCall expr =
             "int 7" +!!+ Pseudo.data1 [expr]
 
+        member this.shftLeftOrShiftRight (dAddr:addr) =
+            let label1 = uniqLabel "ash"
+            let label2 = label1 + "e"
+            "testb cl, #0x20"            +!!+
+            "jne " + label1              +!!+  // jne .+11; nop
+            "andb cl, #0x1f"             +!!+
+            "sal " + dAddr.text + ", cl" +!!+
+            "jmp " + label2              +!!+  // jmp .+10; nop
+            label1 + ": "                +
+            "orb cl, #0xc0"              +!!+
+            "negb cl"                    +!!+
+            "sar " + dAddr.text + ", cl" +!!+
+            label2 + ": "
+
+
         member this.storePCtoRegAndJmpToDest (reg:addr) (dest:addr) =
             "call 8f"
               +!!+ "8: pop " + reg.text
@@ -417,6 +439,8 @@ module WordInstructionAsm =
 
     let systemCall = asm.systemCall
 
+    let shftLeftOrShiftRight = asm.shftLeftOrShiftRight
+
     let storePCtoRegAndJmpToDest = asm.storePCtoRegAndJmpToDest
 
 
@@ -462,6 +486,8 @@ module ByteInstructionAsm =
     let exchangeVal = asm.exchangeVal
 
     let systemCall = asm.systemCall
+
+    let shftLeftOrShiftRight = asm.shftLeftOrShiftRight
 
     let storePCtoRegAndJmpToDest = asm.storePCtoRegAndJmpToDest
 

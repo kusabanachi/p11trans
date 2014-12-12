@@ -306,6 +306,26 @@ module Instruction =
             failwithf "Invalid address"
 
 
+    let ashType dest src =
+        let dest = i86Addr dest
+        let src = i86Addr src
+
+        let code1, cxSv =
+            if src <> Reg CX then
+                let c11, src = moveVal utilReg src
+                let c12      = exchangeVal (Reg CX) src
+                c11 +!!+ c12, Reg utilReg
+            else
+                moveVal utilReg (Reg CX)
+        let dest = if dest = Reg CX then
+                       cxSv
+                   else
+                       dest
+        let code2    = shftLeftOrShiftRight dest
+        let code3, _ = moveVal CX cxSv
+        code1 +!!+ code2 +!!+ code3
+
+
     let sysType = systemCall
 
 
