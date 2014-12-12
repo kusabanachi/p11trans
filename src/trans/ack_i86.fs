@@ -52,6 +52,7 @@ module Ack_i86_trans =
             | "bit"  -> cmpType  "test"  dest src
             | "bitb" -> cmpbType "testb" dest src
             | "bic"  -> bicType          dest src
+            | "bicb" -> bicbType         dest src
             | "bis"  -> addType  "or"    dest src
             | "bisb" -> andbType "orb"   dest src
             | "add"  -> addType  "add"   dest src

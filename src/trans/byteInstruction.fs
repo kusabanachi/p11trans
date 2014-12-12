@@ -139,3 +139,32 @@ module ByteInstruction =
             code1 +!!+ code2 +!!+ code3
 
 
+    let bicbType dest src =
+        let dest = i86Addr dest
+        let src = i86Addr src
+
+        if dest.isByteAccessible then
+            let code1, src = moveVal utilReg src
+            let code2      = invert src
+            let code3      = binaryCalc "andb" dest src
+            code1 +!!+ code2 +!!+ code3
+        elif not dest.isMemory then
+            let dReg = dest.getRegister
+            let code1, src  = moveValToMem tempMem src
+            let code2       = invert src
+            let code3, dest = moveVal utilReg dest
+            let code4       = binaryCalc "andb" dest src
+            let code5, _    = moveVal dReg dest
+            code1 +!!+ code2 +!!+ code3 +!!+ code4 +!!+ code5
+        else
+            let saveReg = findFreeReg src dest
+            let code1       = storeRegVal saveReg
+            let code2, src  = moveVal saveReg src
+            let code3       = invert src
+            let code4, dest = moveRef utilReg dest
+            let code5       = binaryCalc "andb" dest src
+            let code6       = restoreRegVal saveReg
+            code1 +!!+ code2 +!!+ code3
+              +!!+ code4 +!!+ code5 +!!+ code6
+
+
