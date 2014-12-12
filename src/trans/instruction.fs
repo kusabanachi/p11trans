@@ -155,6 +155,27 @@ module Instruction =
             code1 +!!+ code2 +!!+ code3
 
 
+    let bicType dest src =
+        let dest = i86Addr dest
+        let src = i86Addr src
+
+        if dest.isAccessible then
+            let code1, src = moveVal utilReg src
+            let code2      = invert src
+            let code3      = binaryCalc "and" dest src
+            code1 +!!+ code2 +!!+ code3
+        else
+            let saveReg = findFreeReg src dest
+            let code1       = storeRegVal saveReg
+            let code2, src  = moveVal saveReg src
+            let code3       = invert src
+            let code4, dest = moveRef utilReg dest
+            let code5       = binaryCalc "and" dest src
+            let code6       = restoreRegVal saveReg
+            code1 +!!+ code2 +!!+ code3
+              +!!+ code4 +!!+ code5 +!!+ code6
+
+
     let incType code addr =
         let addr = i86Addr addr
 

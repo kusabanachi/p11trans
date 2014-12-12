@@ -353,6 +353,9 @@ module InstructionAsm =
         member this.restoreRegVal reg =
             movText (Reg reg) (Abs (Expr_Sym tempMem))
 
+        member this.invert (addr:addr) =
+            "not " + addr.text
+
         member this.signExtend =
             "cbw"
 
@@ -406,6 +409,8 @@ module WordInstructionAsm =
 
     let restoreRegVal = asm.restoreRegVal
 
+    let invert = asm.invert
+
     let signExtend = asm.signExtend
 
     let exchangeVal = asm.exchangeVal
@@ -449,6 +454,8 @@ module ByteInstructionAsm =
     let storeRegVal = asm.storeRegVal
 
     let restoreRegVal = asm.restoreRegVal
+
+    let invert = asm.invert
 
     let signExtend = asm.signExtend
 
