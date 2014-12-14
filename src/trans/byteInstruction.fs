@@ -168,3 +168,19 @@ module ByteInstruction =
               +!!+ code4 +!!+ code5 +!!+ code6
 
 
+    let incbType code addr =
+        let addr = i86Addr addr
+
+        if addr.isByteAccessible then
+            unaryCalc code addr
+        elif addr.isMemory then
+            let code1, addr = moveRef utilReg addr
+            let code2       = unaryCalc code addr
+            code1 +!!+ code2
+        else
+            let reg = addr.getRegister
+            let code1, addr = moveVal utilReg addr
+            let code2       = unaryCalc code addr
+            let code3, _    = moveVal reg addr
+            code1 +!!+ code2 +!!+ code3
+

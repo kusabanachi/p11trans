@@ -22,8 +22,11 @@ module Ack_i86_trans =
             | "com"  -> addType  "xor"   addr (immVal 0xffff)
             | "comb" -> andbType "xorb"  addr (immVal 0xff)
             | "inc"  -> incType  "inc"   addr
+            | "incb" -> incbType "incb"  addr
             | "dec"  -> incType  "dec"   addr
+            | "decb" -> incbType "decb"  addr
             | "neg"  -> incType  "neg"   addr
+            | "negb" -> incbType "negb"  addr
             | "adc"  -> addType  "adc"   addr (immVal 0)
             | "adcb" -> andbType "adcb"  addr (immVal 0)
             | "sbc"  -> addType  "sbb"   addr (immVal 0)
@@ -57,6 +60,7 @@ module Ack_i86_trans =
             | "bisb" -> andbType "orb"   dest src
             | "add"  -> addType  "add"   dest src
             | "sub"  -> addType  "sub"   dest src
+            | "xor"  -> addType  "xor"   dest src
 
             //  Miscellaneous
             | "jsr"  -> jsrType         dest src
