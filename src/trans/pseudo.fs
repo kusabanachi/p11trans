@@ -12,9 +12,12 @@ module Pseudo =
 
     let even = ".align 2"
 
-    let globalSym names =
-        let namesStr = String.concat ", " names
-        ".extern " + namesStr
+    let globalSym (names: string list) =
+        if not names.IsEmpty then
+            let namesStr = String.concat ", " names
+            ".extern " + namesStr
+        else
+            ""
 
     let text = ".sect .text"
     let data = ".sect .data"
