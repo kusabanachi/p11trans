@@ -382,11 +382,14 @@ module InstructionAsm =
 
 
         member this.storePCtoRegAndJmpToDest (reg:addr) (dest:addr) =
-            "call 8f"
-              +!!+ "8: pop " + reg.text
-              +!!+ "add " + reg.text + ", #7"
-              +!!+ "jmp " + dest.text
-              +!!+ "nop"
+            let label1 = uniqName "jsr"
+            let label2 = label1 + "e"
+            "call " + label1             +!!+
+            nameLabel label1 + " pop " + reg.text +!!+
+            "add " + reg.text + ", "
+              + "#" + label2 + " - " + label1  +!!+   // add reg, #7
+            "jmp " + dest.text           +!!+   // nop
+            nameLabel label2
 
 
 
