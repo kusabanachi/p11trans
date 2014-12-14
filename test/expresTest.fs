@@ -20,7 +20,7 @@ type ExpresTest() =
             [| ( "1 * 91. - 2f",
                  (Expr_Op ('-', Expr_Op ('*', Expr_Oct 1s, Expr_Dec 91s), Expr_Lbl "2f"), (TypeText, 91s), "") ) |]
             [| ( "1f\/1", (Expr_Op ('/' , Expr_Lbl "1f", Expr_Oct 1s), (TypeText, 0s), "") ) |]
-            [| ( "1&~zzz", (Expr_Op ('&', Expr_Oct 1s, Expr_Sym "zzz"), (TypeAbsolute, 0s), "") ) |]
+            [| ( "1&~zzz", (Expr_Op ('&', Expr_Oct 1s, Expr_Sym "~zzz"), (TypeAbsolute, 0s), "") ) |]
             [| ( "1|1", (Expr_Op ('|', Expr_Oct 1s, Expr_Oct 1s), (TypeAbsolute, 1s), "") ) |]
             [| ( "1\>1", (Expr_Op ('>', Expr_Oct 1s, Expr_Oct 1s), (TypeAbsolute, 0s), "") ) |]
             [| ( "1\<1", (Expr_Op ('<', Expr_Oct 1s, Expr_Oct 1s), (TypeAbsolute, 2s), "") ) |]

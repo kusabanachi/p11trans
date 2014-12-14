@@ -202,10 +202,10 @@ type ReadOpTest() =
 
     static member SymbolTestData =
         [|
-            [| ( "konichiwa!", (Token_Symbol "konichiw", "!") ) |]
-            [| ( "~m~m~m#m", (Token_Symbol "m~m~m", "#m") ) |]
+            [| ( "konichiwa!", (Token_Symbol "konichiwa", "!") ) |]
+            [| ( "~m~m~m#m", (Token_Symbol "~m~m~m", "#m") ) |]
             [| ( "...2.", (Token_Symbol "...2.", "") ) |]
-            [| ( "ja_JP.UTF-8", (Token_Symbol "ja_JP.UT", "-8") ) |]
+            [| ( "ja_JP.UTF-8", (Token_Symbol "ja_JP.UTF", "-8") ) |]
         |]
 
     [<TestCaseSource("SymbolTestData")>]

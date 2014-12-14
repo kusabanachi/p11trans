@@ -2,6 +2,7 @@ namespace Ack_i86
 
 open Express
 open ExpressionType
+open Label
 
 module Assign =
 
@@ -35,11 +36,16 @@ module Assign =
         | _ ->
             None
 
-    let assign symStr ex =
-        if symStr <> "." then
+    let assign (symStr: string) ex =
+        if symStr.[0] = '~' then
+            let symStr' = uniqName (symStr.Replace('~', '.'))
+            symStr' + " = " + expr ex
+        elif symStr <> "." then
             symStr + " = " + expr ex
         else
             match tryEraseLocationCounter ex with
-            | Some ex' -> ".space " + expr ex'
-            | _ -> failwith "the assignment of location counter was not able to translated"
+            | Some ex' ->
+                ".space " + expr ex'
+            | _ ->
+                failwith "the assignment of location counter was not able to translated"
 

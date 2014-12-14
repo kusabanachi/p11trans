@@ -187,12 +187,6 @@ module ReadOp =
             else
                 symbolAndRest (symAcc + rest.[0..0]) rest.[1..]
         let symName, rest = symbolAndRest "" src
-        let symName = symName |> function
-            | s when s.[0] = '~' -> s.[1..]
-            | _ -> symName
-        let symName = symName |> function
-            | s when s.Length > 8 -> s.[..7]
-            | _ -> symName
         Some( Token_Symbol symName, rest )
 
     let rec readOp = function
