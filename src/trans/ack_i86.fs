@@ -67,6 +67,8 @@ module Ack_i86_trans =
             | "mul"  -> mulType         dest src
             | "ash"
             | "als"  -> ashType         dest src
+            | "ashc"
+            | "alsc" -> ashcType        dest src
 
             | _ -> sprintf "Not suported opcode : %s" code
 

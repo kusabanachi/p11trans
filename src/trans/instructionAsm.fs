@@ -366,7 +366,7 @@ module InstructionAsm =
         member this.systemCall expr =
             "int 7" +!!+ Pseudo.data1 [expr]
 
-        member this.shftLeftOrShiftRight (dAddr:addr) =
+        member this.shftLeftOrRight (dAddr:addr) =
             let label1 = uniqName "ash"
             let label2 = label1 + "e"
             "testb cl, #0x20"            +!!+
@@ -378,6 +378,30 @@ module InstructionAsm =
             "orb cl, #0xc0"              +!!+
             "negb cl"                    +!!+
             "sar " + dAddr.text + ", cl" +!!+
+            nameLabel label2
+
+
+        member this.shftLeftOrRight32bit (upper:addr) (lower:addr) =
+            let label1 = uniqName "ashc"
+            let label2 = label1 + "e"
+            let lShiftLabel = uniqName "lsft"
+            let rShiftLabel = uniqName "rsft"
+            "testb cl, #0x20"            +!!+
+            "jne " + label1              +!!+
+            "and cx, #0x1f"              +!!+
+            "je " + label2               +!!+
+            nameLabel lShiftLabel        +!!+
+            "sal " + lower.text + ", #1" +!!+
+            "rcl " + upper.text + ", #1" +!!+
+            "loop " + lShiftLabel        +!!+
+            "jmp " + label2              +!!+
+            nameLabel label1             +!!+
+            "or cx, #0xffc0"             +!!+
+            "neg cx"                     +!!+
+            nameLabel rShiftLabel        +!!+
+            "sar " + upper.text + ", #1" +!!+
+            "rcr " + lower.text + ", #1" +!!+
+            "loop " + rShiftLabel        +!!+
             nameLabel label2
 
 
@@ -436,7 +460,9 @@ module WordInstructionAsm =
 
     let systemCall = asm.systemCall
 
-    let shftLeftOrShiftRight = asm.shftLeftOrShiftRight
+    let shftLeftOrRight = asm.shftLeftOrRight
+
+    let shftLeftOrRight32bit = asm.shftLeftOrRight32bit
 
     let storePCtoRegAndJmpToDest = asm.storePCtoRegAndJmpToDest
 
@@ -484,7 +510,9 @@ module ByteInstructionAsm =
 
     let systemCall = asm.systemCall
 
-    let shftLeftOrShiftRight = asm.shftLeftOrShiftRight
+    let shftLeftOrRight = asm.shftLeftOrRight
+
+    let shftLeftOrRight32bit = asm.shftLeftOrRight32bit
 
     let storePCtoRegAndJmpToDest = asm.storePCtoRegAndJmpToDest
 

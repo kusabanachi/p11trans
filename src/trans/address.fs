@@ -167,6 +167,7 @@ module Address =
         | CX -> SI
         | SI -> DI
         | DI -> BP
+        | BP -> SP
         | _  -> failwith "Invalid register"
 
 
