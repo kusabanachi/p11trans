@@ -65,6 +65,7 @@ module Ack_i86_trans =
             //  Miscellaneous
             | "jsr"  -> jsrType         dest src
             | "mul"  -> mulType         dest src
+            | "div"  -> divType         dest src
             | "ash"
             | "als"  -> ashType         dest src
             | "ashc"

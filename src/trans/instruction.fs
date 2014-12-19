@@ -306,6 +306,73 @@ module Instruction =
             failwithf "Invalid address"
 
 
+    let divType dest src =
+        let dest = i86Addr dest
+        let src = i86Addr src
+
+        let conditionCheck, src, endLabel =
+            let c1, src =
+                if not src.isAccessible
+                        || src.isIncrement
+                        || src.isDecrement then
+                    moveVal utilReg src
+                else
+                    "", src
+            let c2, endL = divConditionCheck dest src
+            c1 +!!+ c2, src, endL
+
+        match dest with
+        | Reg AX ->
+            let code1, src =
+                if src.isImmediate || not src.isAccessible then
+                    moveRefOrVal utilReg src
+                elif src = Reg AX then
+                    "", Reg DX
+                elif src = Reg DX then
+                    "", Reg AX
+                else
+                    "", src
+            let code2 = exchangeVal (Reg AX) (Reg DX)
+            let code3 = unaryCalc "idiv" src
+            conditionCheck
+              +!!+ code1 +!!+ code2 +!!+ code3
+              +!!+ Label.nameLabel endLabel
+        | Reg dReg when dReg = CX || dReg = DI ->
+            let nextR = nextReg dReg
+            let swapCode addr reg =
+                let swapped = swapReg addr reg
+                if swapped.isAccessible then
+                    "", swapped
+                else
+                    moveRefOrVal utilReg src
+
+            let code1, src =
+                if src.isUsing AX then
+                    swapCode src nextR
+                elif src.isUsing dReg then
+                    swapCode src DX
+                elif src.isUsing DX then
+                    swapCode src dReg
+                elif src.isUsing nextR then
+                    swapCode src AX
+                elif src.isImmediate || not src.isAccessible then
+                    moveRefOrVal utilReg src
+                else
+                    "", src
+            let code2 = exchangeVal (Reg DX) (Reg dReg)
+            let code3 = exchangeVal (Reg AX) (Reg nextR)
+            let code4 = unaryCalc "idiv" src
+            let code5 = exchangeVal (Reg dReg) (Reg AX)
+            let code6 = exchangeVal (Reg nextR) (Reg DX)
+            let code7 = exchangeVal (Reg AX) (Reg DX)
+            conditionCheck
+              +!!+ code1 +!!+ code2 +!!+ code3 +!!+ code4
+              +!!+ code5 +!!+ code6 +!!+ code7
+              +!!+ Label.nameLabel endLabel
+        | _ ->
+            ""
+
+
     let ashType dest src =
         let dest = i86Addr dest
         let src = i86Addr src

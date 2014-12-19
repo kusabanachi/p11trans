@@ -416,6 +416,28 @@ module InstructionAsm =
             nameLabel label2
 
 
+        member this.divConditionCheck (dest:addr) src =
+            let label1 = uniqName "div"
+            let label2 = label1 + "e"
+            let destT = dest.text
+            let buf =
+                if src <> Reg utilReg then
+                    Reg utilReg
+                else
+                    Abs (Expr_Sym tempMem)
+            let bufT = buf.text
+            movText buf src              +!!+
+            "xor " + bufT + ", " + destT +!!+
+            movText buf src              +!!+
+            "jns " + label1              +!!+
+            "neg " + bufT                +!!+
+            nameLabel label1             +!!+
+            "sub " + bufT + ", " + destT +!!+
+            "xor " + bufT + ", " + destT +!!+
+            "jle " + label2,
+            label2
+
+
 
 module WordInstructionAsm =
 
@@ -466,6 +488,9 @@ module WordInstructionAsm =
 
     let storePCtoRegAndJmpToDest = asm.storePCtoRegAndJmpToDest
 
+    let divConditionCheck = asm.divConditionCheck
+
+
 
 module ByteInstructionAsm =
 
@@ -515,4 +540,6 @@ module ByteInstructionAsm =
     let shftLeftOrRight32bit = asm.shftLeftOrRight32bit
 
     let storePCtoRegAndJmpToDest = asm.storePCtoRegAndJmpToDest
+
+    let divConditionCheck = asm.divConditionCheck
 
