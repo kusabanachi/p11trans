@@ -43,6 +43,7 @@ module Ack_i86_trans =
             | "aslb" -> andbType "salb"  addr (immVal 1)
             | "jmp"  -> incType  "jmp"   addr
             | "rts"  -> rtsType          addr
+            | "sxt"  -> sxtType          addr
             | _ -> sprintf "Not suported opcode : %s" code
 
         let doubleOp code dest src =

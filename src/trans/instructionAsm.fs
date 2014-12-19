@@ -369,6 +369,7 @@ module InstructionAsm =
         member this.shftLeftOrRight (dAddr:addr) =
             let label1 = uniqName "ash"
             let label2 = label1 + "e"
+
             "testb cl, #0x20"            +!!+
             "jne " + label1              +!!+  // jne .+11; nop
             "andb cl, #0x1f"             +!!+
@@ -386,6 +387,7 @@ module InstructionAsm =
             let label2 = label1 + "e"
             let lShiftLabel = uniqName "lsft"
             let rShiftLabel = uniqName "rsft"
+
             "testb cl, #0x20"            +!!+
             "jne " + label1              +!!+
             "and cx, #0x1f"              +!!+
@@ -408,11 +410,13 @@ module InstructionAsm =
         member this.storePCtoRegAndJmpToDest (reg:addr) (dest:addr) =
             let label1 = uniqName "jsr"
             let label2 = label1 + "e"
-            "call " + label1             +!!+
-            nameLabel label1 + " pop " + reg.text +!!+
+
+            "call " + label1                  +!!+
+            nameLabel label1                  +!!+
+            "pop " + reg.text                 +!!+
             "add " + reg.text + ", "
-              + "#" + label2 + " - " + label1  +!!+   // add reg, #7
-            "jmp " + dest.text           +!!+   // nop
+              + "#" + label2 + " - " + label1 +!!+
+            "jmp " + dest.text                +!!+
             nameLabel label2
 
 
@@ -426,6 +430,7 @@ module InstructionAsm =
                 else
                     Abs (Expr_Sym tempMem)
             let bufT = buf.text
+
             movText buf src              +!!+
             "xor " + bufT + ", " + destT +!!+
             movText buf src              +!!+
@@ -436,6 +441,15 @@ module InstructionAsm =
             "xor " + bufT + ", " + destT +!!+
             "jle " + label2,
             label2
+
+
+        member this.fillWithNFlag (addr:addr) =
+            let label = uniqName "sxt"
+
+            "and " + addr.text + ", #0"     +!!+
+            "jns " + label                  +!!+
+            "or " + addr.text + ", #0xffff" +!!+
+            nameLabel label
 
 
 
@@ -490,6 +504,8 @@ module WordInstructionAsm =
 
     let divConditionCheck = asm.divConditionCheck
 
+    let fillWithNFlag = asm.fillWithNFlag
+
 
 
 module ByteInstructionAsm =
@@ -542,4 +558,6 @@ module ByteInstructionAsm =
     let storePCtoRegAndJmpToDest = asm.storePCtoRegAndJmpToDest
 
     let divConditionCheck = asm.divConditionCheck
+
+    let fillWithNFlag = asm.fillWithNFlag
 

@@ -447,3 +447,17 @@ module Instruction =
             code1 +!!+ code2 +!!+ code3
 
 
+    let sxtType addr =
+        let addr = i86Addr addr
+
+        let code1, addr =
+            if not addr.isAccessible
+                    || addr.isIncrement
+                    || addr.isDecrement then
+                moveRef utilReg addr
+            else
+                "", addr
+        let code2 = fillWithNFlag addr
+        code1 +!!+ code2
+
+
