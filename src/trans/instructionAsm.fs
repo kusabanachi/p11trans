@@ -354,17 +354,22 @@ module InstructionAsm =
         member this.restoreRegVal reg =
             movText (Reg reg) (Abs (Expr_Sym tempMem))
 
+
         member this.invert (addr:addr) =
             "not " + addr.text
+
 
         member this.signExtend =
             "cbw"
 
+
         member this.exchangeVal (dAddr:addr) (sAddr:addr) =
             "xchg " + dAddr.text + ", " + sAddr.text
 
+
         member this.systemCall expr =
             "int 7" +!!+ Pseudo.data1 [expr]
+
 
         member this.shftLeftOrRight (dAddr:addr) =
             let label1 = uniqName "ash"

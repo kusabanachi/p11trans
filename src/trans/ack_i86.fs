@@ -16,7 +16,6 @@ module Ack_i86_trans =
         let singleOp code addr =
             let immVal num = Addres.Imm (Expr_Oct (int16 num))
             match code with
-            // single operand code
             | "clr"  -> addType  "and"   addr (immVal 0)
             | "clrb" -> andbType "andb"  addr (immVal 0)
             | "com"  -> addType  "xor"   addr (immVal 0xffff)
@@ -31,8 +30,6 @@ module Ack_i86_trans =
             | "adcb" -> andbType "adcb"  addr (immVal 0)
             | "sbc"  -> addType  "sbb"   addr (immVal 0)
             | "sbcb" -> andbType "sbbb"  addr (immVal 0)
-            | "tst"  -> cmpType  "test"  addr (immVal 0xffff)
-            | "tstb" -> cmpbType "testb" addr (immVal 0xff)
             | "ror"  -> addType  "rcr"   addr (immVal 1)
             | "rorb" -> andbType "rcrb"  addr (immVal 1)
             | "rol"  -> addType  "rcl"   addr (immVal 1)
@@ -43,13 +40,14 @@ module Ack_i86_trans =
             | "aslb" -> andbType "salb"  addr (immVal 1)
             | "jmp"  -> incType  "jmp"   addr
             | "swab" -> addType  "rol"   addr (immVal 8)
+            | "tst"  -> cmpType  "test"  addr (immVal 0xffff)
+            | "tstb" -> cmpbType "testb" addr (immVal 0xff)
             | "rts"  -> rtsType          addr
             | "sxt"  -> sxtType          addr
             | _ -> sprintf "Not suported opcode : %s" code
 
         let doubleOp code dest src =
             match code with
-            // double operand code
             | "mov"  -> movType  "mov"   dest src
             | "movb" -> movbType "movb"  dest src
             | "cmp"  -> cmpType  "cmp"   dest src
@@ -62,18 +60,18 @@ module Ack_i86_trans =
             | "bisb" -> andbType "orb"   dest src
             | "add"  -> addType  "add"   dest src
             | "sub"  -> addType  "sub"   dest src
-            | "xor"  -> addType  "xor"   dest src
 
-            //  Miscellaneous
-            | "jsr"  -> jsrType         dest src
-            | "mul"  -> mulType         dest src
-            | "div"  -> divType         dest src
+            | "jsr"  -> jsrType          dest src
             | "ash"
-            | "als"  -> ashType         dest src
+            | "als"  -> ashType          dest src
             | "ashc"
-            | "alsc" -> ashcType        dest src
-            | "sob"  -> sobType         dest src
-
+            | "alsc" -> ashcType         dest src
+            | "mul"
+            | "mpy"  -> mulType          dest src
+            | "div"
+            | "dvd"  -> divType          dest src
+            | "xor"  -> addType  "xor"   dest src
+            | "sob"  -> sobType          dest src
             | _ -> sprintf "Not suported opcode : %s" code
 
         let exprOp code expr =
@@ -94,10 +92,10 @@ module Ack_i86_trans =
             | "bvc"  -> incType "jno"  addr
             | "bvs"  -> incType "jo"   addr
             | "bhis" -> incType "jae"  addr
-            | "bec"  -> incType "jnc"  addr
+            | "bec"
             | "bcc"  -> incType "jnc"  addr
             | "blo"  -> incType "jb"   addr
-            | "bcs"  -> incType "jc"   addr
+            | "bcs"
             | "bes"  -> incType "jc"   addr
 
             | "jbr"  -> incType "jmp"  addr
