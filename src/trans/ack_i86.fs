@@ -120,7 +120,8 @@ module Ack_i86_trans =
             | "jcs"  -> incType "jc"   addr
             | "jes"  -> incType "jc"   addr
 
-            | "sys"  -> sysType expr
+            | "sys"  -> sysType  expr
+            | "mark" -> markType expr
             | _ -> sprintf "Not suported opcode : %s" code
 
 

@@ -3,6 +3,7 @@ namespace Ack_i86
 open Address
 open V6as.Expres
 open WordInstructionAsm
+open ExpressionType
 
 module Instruction =
 
@@ -458,6 +459,15 @@ module Instruction =
             else
                 "", addr
         let code2 = fillWithNFlag addr
+        code1 +!!+ code2
+
+
+    let markType expr =
+        let twofoldExpr = Expr_Op ('*', expr, Expr_Oct 2s)
+        let regR5 = V6as.Addres.Reg V6as.Addres.R5
+
+        let code1 = binaryCalc "add" (Reg SP) (Imm twofoldExpr)
+        let code2 = rtsType regR5
         code1 +!!+ code2
 
 
