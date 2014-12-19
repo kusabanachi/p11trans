@@ -42,6 +42,7 @@ module Ack_i86_trans =
             | "asl"  -> addType  "sal"   addr (immVal 1)
             | "aslb" -> andbType "salb"  addr (immVal 1)
             | "jmp"  -> incType  "jmp"   addr
+            | "swab" -> addType  "rol"   addr (immVal 8)
             | "rts"  -> rtsType          addr
             | "sxt"  -> sxtType          addr
             | _ -> sprintf "Not suported opcode : %s" code
@@ -143,7 +144,6 @@ module Ack_i86_trans =
             | Common (name,expr)         -> Pseudo.common name expr
             | Expr expr                  -> Pseudo.data2 expr
             | Eos c                      -> eos c
-            | x                          -> sprintf "Not suported statement : %A" x
 
         let stringList = List.map transStatement pdp11as
         System.String.Concat stringList
