@@ -26,7 +26,8 @@ module Opline =
             Str s, rest
         | Token_Symbol sym ->
             match symType sym with
-            | 5s | 7s | 10s | 11s | 12s | 24s -> (* double *)
+            | 5s | 7s | 10s | 11s | 12s | 24s (* double *)
+            | 25s -> (* sob *)
                 let lhs, rest' = addres rest
                 let rest'' = readComma rest'
                 let rhs, rest''' = addres rest''
@@ -72,11 +73,6 @@ module Opline =
                 Data, rest
             | 23s -> (* .bss *)
                 Bss, rest
-            | 25s -> (* sob *)
-                let e1, _, rest' = expres rest
-                let rest'' = readComma rest'
-                let e2, _, rest''' = expres rest''
-                Sob (e1, e2), rest'''
             | 26s -> (* .comm *)
                 match readOp rest with
                 | Token_Symbol sym, rest' ->

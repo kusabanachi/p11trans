@@ -461,3 +461,15 @@ module Instruction =
         code1 +!!+ code2
 
 
+    let sobType expr src =
+        let src = i86Addr src
+        let expr = i86Addr expr
+
+        if src = Reg CX then
+            unaryCalc "loop" expr
+        else
+            let code1 = unaryCalc "dec" src
+            let code2 = unaryCalc "jne" expr
+            code1 +!!+ code2
+
+

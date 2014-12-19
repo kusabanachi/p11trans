@@ -21,7 +21,6 @@ module StatementType =
         | Text
         | Data
         | Bss
-        | Sob of expression * expression
         | Common of string * expression
         | Expr of expression
         | ExprOp of string * expression

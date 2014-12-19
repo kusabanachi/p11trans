@@ -22,7 +22,7 @@ type OplineTest() =
             [| ( ".text hoge", (Text, " hoge") ) |]
             [| ( ".data", (Data, "") ) |]
             [| ( ".bss", (Bss, "") ) |]
-            [| ( "sob r0,2b", (Sob(Expr_Sym "r0", Expr_Lbl "2b"), "") ) |]
+            [| ( "sob r0,2b", (DoubleOp("sob", Reg R0, Rel(Expr_Lbl "2b")), "") ) |]
             [| ( ".comm _errno,2", (Common("_errno", Expr_Oct 2s), "") ) |]
             [| ( "sys exec; 2f; 1f", (ExprOp("sys", Expr_Sym "exec"), "; 2f; 1f") ) |]
             [| ( "sys exec; 2f; 1f", (ExprOp("sys", Expr_Sym "exec"), "; 2f; 1f") ) |]
