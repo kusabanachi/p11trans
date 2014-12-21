@@ -44,6 +44,13 @@ module Ack_i86_trans =
             | "tstb" -> cmpbType "testb" addr (immVal 0xff)
             | "rts"  -> rtsType          addr
             | "sxt"  -> sxtType          addr
+
+            | "clrf"
+            | "negf"
+            | "absf"
+            | "tstf"
+            | "ldfps"
+            | "stfps" -> "nop"
             | _ -> sprintf "Not suported opcode : %s" code
 
         let doubleOp code dest src =
@@ -72,12 +79,25 @@ module Ack_i86_trans =
             | "dvd"  -> divType          dest src
             | "xor"  -> addType  "xor"   dest src
             | "sob"  -> sobType          dest src
+
+            | "movf"
+            | "movif"
+            | "movfi"
+            | "movof"
+            | "movfo"
+            | "addf"
+            | "subf"
+            | "mulf"
+            | "divf"
+            | "cmpf"
+            | "modf"
+            | "movie"
+            | "movei"  -> "nop"
             | _ -> sprintf "Not suported opcode : %s" code
 
         let exprOp code expr =
             let addr = Addres.Rel expr
             match code with
-            // branch code
             | "br"   -> incType "jmp"  addr
             | "bne"  -> incType "jne"  addr
             | "beq"  -> incType "je"   addr
