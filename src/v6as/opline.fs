@@ -21,8 +21,6 @@ module Opline =
         let token, rest = readOp src
         match token with
         | Token_String s ->
-            printfn "%A" s
-            printfn "%A" token
             Str s, rest
         | Token_Symbol sym ->
             match symType sym with
