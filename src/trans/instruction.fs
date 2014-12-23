@@ -4,6 +4,7 @@ open Address
 open V6as.Expres
 open WordInstructionAsm
 open ExpressionType
+open ConditionCode
 
 module Instruction =
 
@@ -481,5 +482,26 @@ module Instruction =
             let code1 = unaryCalc "dec" src
             let code2 = unaryCalc "jne" expr
             code1 +!!+ code2
+
+
+    let flagClear flag =
+        if flag = condFlag.Carry then
+            clearCarryFlag
+        else
+            let code1    = loadFlag
+            let code2, _ = moveVal utilReg (Reg SP)
+            let code3    = clearFlagBit (dfr utilReg) flag
+            let code4    = saveFlag
+            code1 +!!+ code2 +!!+ code3 +!!+ code4
+
+    let flagSet flag =
+        if flag = condFlag.Carry then
+            setCarryFlag
+        else
+            let code1    = loadFlag
+            let code2, _ = moveVal utilReg (Reg SP)
+            let code3    = setFlagBit (dfr utilReg) flag
+            let code4    = saveFlag
+            code1 +!!+ code2 +!!+ code3 +!!+ code4
 
 

@@ -2,6 +2,7 @@ namespace V6as
 
 open Addres
 open ExpressionType
+open ConditionCode
 
 module StatementType =
 
@@ -26,4 +27,6 @@ module StatementType =
         | ExprOp of string * expression
         | SingleOp of string * addr
         | DoubleOp of string * addr * addr
+        | FlagClear of condFlag
+        | FlagSet of condFlag
 

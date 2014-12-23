@@ -72,7 +72,7 @@ module Express =
         | Expr_Dec num ->
             Convert.ToString num
         | Expr_Oct num ->
-            if num < 10s then
+            if abs num < 10s then
                 Convert.ToString num
             else
                 "0" + Convert.ToString (num, 8)

@@ -5,6 +5,7 @@ open ReadOp
 open Expres
 open Addres
 open StatementType
+open ConditionCode
 
 module Opline =
 
@@ -17,6 +18,24 @@ module Opline =
             match readOp src with
             | Token_Meta ',', rest -> rest
             | _ -> failwith AddressError
+
+
+        let (|FClear|_|) (src:string, exprVal) =
+            let eVal = int exprVal
+            if eVal &&& 0o360 = 0o240
+                    && src.Contains "cl" then
+                Some (enum (eVal &&& 0xf))
+            else
+                None
+
+        let (|FSet|_|) (src:string, exprVal) =
+            let eVal = int exprVal
+            if eVal &&& 0o360 = 0o260
+                    && src.Contains "se" then
+                Some (enum (eVal &&& 0xf))
+            else
+                None
+
 
         let token, rest = readOp src
         match token with
@@ -93,8 +112,12 @@ module Opline =
                 let reg, rest' = readReg rest
                 SingleOp (sym, Reg reg), rest'
             | _ ->
-                let e, _, rest = expres src
-                Expr e, rest
+                let e, (_, eVal), rest = expres src
+                (match src, eVal with
+                 |FClear flag -> FlagClear flag
+                 |FSet flag   -> FlagSet flag
+                 | _          -> Expr e
+                 , rest)
         | _ ->
             let e, _, rest = expres src
             Expr e, rest

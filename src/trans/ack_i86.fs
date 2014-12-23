@@ -163,6 +163,8 @@ module Ack_i86_trans =
             | Common (name,expr)         -> Pseudo.common name expr
             | Expr expr                  -> Pseudo.data2 expr
             | Eos c                      -> eos c
+            | FlagClear flag             -> flagClear flag
+            | FlagSet flag               -> flagSet flag
 
         let stringList = List.map transStatement pdp11as
         System.String.Concat stringList

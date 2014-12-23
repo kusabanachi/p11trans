@@ -4,6 +4,7 @@ open Address
 open ExpressionType
 open Eos
 open Label
+open ConditionCode
 
 module InstructionAsm =
 
@@ -79,6 +80,18 @@ module InstructionAsm =
                 movText dest ref
             | RelDfr expr ->
                 movText dest (Rel expr)
+
+
+        let flagBit (flag:condFlag) =
+            Array.fold
+                (fun acc (f, bit) ->
+                     if flag.HasFlag f then
+                         acc ||| bit
+                     else
+                         acc)
+                0
+                [|condFlag.Carry, 0x1; condFlag.Overflow, 0x800;
+                  condFlag.Zero, 0x40; condFlag.Negative, 0x80|]
 
 
         member this.moveRef (dReg:reg) sAddr =
@@ -371,6 +384,34 @@ module InstructionAsm =
             "int 7" +!!+ Pseudo.data1 [expr]
 
 
+        member this.clearCarryFlag =
+            "clc"
+
+
+        member this.setCarryFlag =
+            "stc"
+
+
+        member this.loadFlag =
+            "pushf"
+
+
+        member this.saveFlag =
+            "popf"
+
+
+        member this.clearFlagBit dAddr flag =
+            let maskBit = int16 ~~~(flagBit flag)
+            let maskImm = Imm (Expr_Oct maskBit)
+            this.binaryCalc "and" dAddr maskImm
+
+
+        member this.setFlagBit dAddr flag =
+            let setBit = int16 (flagBit flag)
+            let setImm = Imm (Expr_Oct setBit)
+            this.binaryCalc "or" dAddr setImm
+
+
         member this.shftLeftOrRight (dAddr:addr) =
             let label1 = uniqName "ash"
             let label2 = label1 + "e"
@@ -501,6 +542,18 @@ module WordInstructionAsm =
 
     let systemCall = asm.systemCall
 
+    let clearCarryFlag = asm.clearCarryFlag
+
+    let setCarryFlag = asm.setCarryFlag
+
+    let loadFlag = asm.loadFlag
+
+    let saveFlag = asm.saveFlag
+
+    let clearFlagBit = asm.clearFlagBit
+
+    let setFlagBit = asm.setFlagBit
+
     let shftLeftOrRight = asm.shftLeftOrRight
 
     let shftLeftOrRight32bit = asm.shftLeftOrRight32bit
@@ -555,6 +608,18 @@ module ByteInstructionAsm =
     let exchangeVal = asm.exchangeVal
 
     let systemCall = asm.systemCall
+
+    let clearCarryFlag = asm.clearCarryFlag
+
+    let setCarryFlag = asm.setCarryFlag
+
+    let loadFlag = asm.loadFlag
+
+    let saveFlag = asm.saveFlag
+
+    let clearFlagBit = asm.clearFlagBit
+
+    let setFlagBit = asm.setFlagBit
 
     let shftLeftOrRight = asm.shftLeftOrRight
 
