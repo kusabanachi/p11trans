@@ -1,6 +1,7 @@
 namespace Ack_i86
 
 open Address
+open TransStatus
 open ExpressionType
 open Eos
 open Label
@@ -17,90 +18,100 @@ module InstructionAsm =
             i1 + i2
 
 
-    type instructionType = | Word | Byte
+    let private movText (a1:addr) (a2:addr) =
+        "mov " + a1.text + ", " + a2.text
 
-    type instructionAsm (itype: instructionType) =
-        let movText (a1:addr) (a2:addr) =
-            "mov " + a1.text + ", " + a2.text
+    let private leaText (a1:addr) (a2:addr) =
+        "lea " + a1.text + ", " + a2.text
 
-        let leaText (a1:addr) (a2:addr) =
-            "lea " + a1.text + ", " + a2.text
+    let private incDfrNum addr state =
+        match addr with
+        | IncDDfr _
+        | DecDDfr _
+        | DDfr _    -> 2
+        | a when a.isUsing SP
+                    -> 2
+        | _  ->
+            match state.iType with
+            | Word  -> 2
+            | Byte  -> 1
 
-        let incDfrNum = function
-            | IncDDfr _
-            | DecDDfr _
-            | DDfr _    -> 2
-            | a when a.isUsing SP
-                        -> 2
-            | _  ->
-                match itype with
-                | Word  -> 2
-                | Byte  -> 1
-
-        let incText r1 r2 num =
-            leaText (Reg r1) (idfr r2 num)
+    let private incText r1 r2 num =
+        leaText (Reg r1) (idfr r2 num)
 
 
-        let moveReferredVal (dReg:reg) ref =
-            let midReg =
-                if dReg.isMemoryAccessible then dReg else utilReg
-            let dest = Reg dReg
+    let private moveReferredVal (dReg: reg) ref state =
+        let midReg =
+            if dReg.isMemoryAccessible then dReg else utilReg
+        let dest = Reg dReg
 
-            match ref with
-            | IncDfr  sReg
-            | IncDDfr sReg ->
-                let incNum = incDfrNum ref
-                if sReg = SP then
-                    "pop " + dest.text
-                elif sReg.isMemoryAccessible then
-                    movText dest (dfr sReg)
-                      +!!+ incText sReg sReg incNum
-                else
-                    movText (Reg midReg) (Reg sReg)
-                      +!!+ incText sReg midReg incNum
-                      +!!+ movText dest (dfr midReg)
-            | DecDfr  sReg
-            | DecDDfr sReg ->
-                let decNum = -(incDfrNum ref)
-                if sReg.isMemoryAccessible then
-                    incText sReg sReg decNum
-                      +!!+ movText dest (dfr sReg)
-                else
-                    movText (Reg midReg) (Reg sReg)
-                      +!!+ incText sReg midReg decNum
-                      +!!+ movText dest (idfr midReg decNum)
-            | Dfr  (sReg, expr)
-            | DDfr (sReg, expr) ->
-                if sReg.isMemoryAccessible then
-                    movText dest (Dfr (sReg, expr))
-                else
-                    movText (Reg midReg) (Reg sReg)
-                      +!!+ movText dest (Dfr (midReg, expr))
-            | Reg _ | Rel _ | Abs _ | Imm _ ->
-                movText dest ref
-            | RelDfr expr ->
-                movText dest (Rel expr)
-
-
-        let flagBit (flag:condFlag) =
-            Array.fold
-                (fun acc (f, bit) ->
-                     if flag.HasFlag f then
-                         acc ||| bit
-                     else
-                         acc)
-                0
-                [|condFlag.Carry, 0x1; condFlag.Overflow, 0x800;
-                  condFlag.Zero, 0x40; condFlag.Negative, 0x80|]
+        match ref with
+        | IncDfr  sReg
+        | IncDDfr sReg ->
+            let incNum = incDfrNum ref state
+            if sReg = SP then
+                "pop " + dest.text
+            elif sReg.isMemoryAccessible then
+                movText dest (dfr sReg)
+                  +!!+ incText sReg sReg incNum
+            else
+                movText (Reg midReg) (Reg sReg)
+                  +!!+ incText sReg midReg incNum
+                  +!!+ movText dest (dfr midReg)
+        | DecDfr  sReg
+        | DecDDfr sReg ->
+            let decNum = -(incDfrNum ref state)
+            if sReg.isMemoryAccessible then
+                incText sReg sReg decNum
+                  +!!+ movText dest (dfr sReg)
+            else
+                movText (Reg midReg) (Reg sReg)
+                  +!!+ incText sReg midReg decNum
+                  +!!+ movText dest (idfr midReg decNum)
+        | Dfr  (sReg, expr)
+        | DDfr (sReg, expr) ->
+            if sReg.isMemoryAccessible then
+                movText dest (Dfr (sReg, expr))
+            else
+                movText (Reg midReg) (Reg sReg)
+                  +!!+ movText dest (Dfr (midReg, expr))
+        | Reg _ | Rel _ | Abs _ | Imm _ ->
+            movText dest ref
+        | RelDfr expr ->
+            movText dest (Rel expr)
 
 
-        member this.moveRef (dReg:reg) sAddr =
-            let midReg =
-                if dReg.isMemoryAccessible then dReg else utilReg
+    let private flagBit (flag: condFlag) =
+        Array.fold
+            (fun acc (f, bit) ->
+                 if flag.HasFlag f then
+                     acc ||| bit
+                 else
+                     acc)
+            0
+            [|condFlag.Carry, 0x1; condFlag.Overflow, 0x800;
+              condFlag.Zero, 0x40; condFlag.Negative, 0x80|]
 
+
+    let private addressFromArg arg state =
+        match arg with
+        | ArgSrc       -> state.srcAddress
+        | ArgDest      -> state.destAddress
+        | ArgTempReg   -> Reg state.tempReg.Value
+        | ArgTempMem   -> Abs (Expr_Sym tempMem)
+        | ArgAddr addr -> addr
+        | ArgReg reg   -> Reg reg
+
+
+    let moveRef (dReg: reg) sArg state =
+        let sAddr = addressFromArg sArg state
+        let midReg =
+            if dReg.isMemoryAccessible then dReg else utilReg
+
+        let code, ref =
             match sAddr with
             | IncDfr sReg ->
-                let incNum = incDfrNum sAddr
+                let incNum = incDfrNum sAddr state
                 if sReg.isMemoryAccessible then
                     (movText (Reg dReg) (Reg sReg)
                        +!!+ incText sReg sReg incNum,
@@ -115,7 +126,7 @@ module InstructionAsm =
                        +!!+ incText sReg utilReg incNum,
                      dfr dReg)
             | DecDfr sReg ->
-                let decNum = -(incDfrNum sAddr)
+                let decNum = -(incDfrNum sAddr state)
                 if sReg.isMemoryAccessible then
                     (incText sReg sReg decNum
                        +!!+ movText (Reg dReg) (Reg sReg),
@@ -136,16 +147,26 @@ module InstructionAsm =
             | DecDDfr _
             | DDfr    _
             | RelDfr  _ ->
-                (moveReferredVal dReg sAddr,
+                (moveReferredVal dReg sAddr state,
                  dfr dReg)
             | _ ->
                 failwithf "Invalid address"
 
+        let state' =
+            match sArg with
+            | ArgSrc  -> {state with srcAddress = ref}
+            | ArgDest -> {state with destAddress = ref}
+            | _       -> state
 
-        member this.moveVal (dReg:reg) sAddr =
-            let midReg =
-                if dReg.isMemoryAccessible then dReg else utilReg
+        code, state'
 
+
+    let moveVal (dReg: reg) sArg state =
+        let sAddr = addressFromArg sArg state
+        let midReg =
+            if dReg.isMemoryAccessible then dReg else utilReg
+
+        let code =
             match sAddr with
             | IncDfr _
             | DecDfr _
@@ -154,59 +175,75 @@ module InstructionAsm =
             | Rel    _
             | Abs    _
             | Imm    _ ->
-                (moveReferredVal dReg sAddr,
-                 Reg dReg)
+                moveReferredVal dReg sAddr state
             | IncDDfr _
             | DecDDfr _
             | DDfr    _
             | RelDfr  _ ->
-                (moveReferredVal midReg sAddr
-                   +!!+ movText (Reg dReg) (dfr midReg),
-                 Reg dReg)
+                moveReferredVal midReg sAddr state
+                  +!!+ movText (Reg dReg) (dfr midReg)
+
+        let state' =
+            match sArg with
+            | ArgSrc  -> {state with srcAddress = Reg dReg}
+            | ArgDest -> {state with destAddress = Reg dReg}
+            | _       -> state
+
+        code, state'
 
 
-        member this.moveRefOrVal dReg sAddr =
-            match sAddr with
-            | Reg _
-            | Imm _
-            | IncDfr SP ->
-                this.moveVal dReg sAddr
-            | _ ->
-                this.moveRef dReg sAddr
+    let moveRefOrVal dReg sArg state =
+        let sAddr = addressFromArg sArg state
+        match sAddr with
+        | Reg _
+        | Imm _
+        | IncDfr SP ->
+            moveVal dReg sArg state
+        | _ ->
+            moveRef dReg sArg state
 
 
-        member this.moveValToMem symbol sAddr =
-            let destMem = Abs (Expr_Sym symbol)
+    let moveValToMem symbol sArg state =
+        let sAddr = addressFromArg sArg state
+        let destMem = Abs (Expr_Sym symbol)
 
+        let code =
             match sAddr with
             | IncDfr _
             | DecDfr _
             | Dfr    _
             | Rel    _
             | Abs    _ ->
-                (moveReferredVal utilReg sAddr
-                   +!!+ movText destMem (Reg utilReg),
-                 destMem)
+                moveReferredVal utilReg sAddr state
+                  +!!+ movText destMem (Reg utilReg)
             | IncDDfr _
             | DecDDfr _
             | DDfr    _
             | RelDfr  _ ->
-                (moveReferredVal utilReg sAddr
-                   +!!+ movText (Reg utilReg) (dfr utilReg)
-                   +!!+ movText destMem (Reg utilReg),
-                 destMem)
+                moveReferredVal utilReg sAddr state
+                  +!!+ movText (Reg utilReg) (dfr utilReg)
+                  +!!+ movText destMem (Reg utilReg)
             | Reg _
             | Imm _ ->
-                (movText destMem sAddr,
-                 destMem)
+                movText destMem sAddr
+
+        let state' =
+            match sArg with
+            | ArgSrc  -> {state with srcAddress = destMem}
+            | ArgDest -> {state with destAddress = destMem}
+            | _       -> state
+
+        code, state'
 
 
-        member this.pushVal sAddr =
-            let pushText (a:addr) = "push " + a.text
+    let pushVal sArg state =
+        let sAddr = addressFromArg sArg state
+        let pushText (a:addr) = "push " + a.text
 
+        let code =
             match sAddr with
             | IncDfr sReg ->
-                let incNum = incDfrNum sAddr
+                let incNum = incDfrNum sAddr state
                 if sReg.isMemoryAccessible then
                     pushText (dfr sReg)
                       +!!+ incText sReg sReg incNum
@@ -215,7 +252,7 @@ module InstructionAsm =
                       +!!+ incText sReg utilReg incNum
                       +!!+ pushText (dfr utilReg)
             | DecDfr sReg ->
-                let decNum = -(incDfrNum sAddr)
+                let decNum = -(incDfrNum sAddr state)
                 if sReg.isMemoryAccessible then
                     incText sReg sReg decNum
                       +!!+ pushText (dfr sReg)
@@ -233,7 +270,7 @@ module InstructionAsm =
             | DecDDfr _
             | DDfr    _
             | RelDfr  _ ->
-                moveReferredVal utilReg sAddr
+                moveReferredVal utilReg sAddr state
                   +!!+ pushText (dfr utilReg)
             | Reg _
             | Rel _
@@ -243,13 +280,23 @@ module InstructionAsm =
                 movText (Reg utilReg) sAddr
                   +!!+ pushText (Reg utilReg)
 
+        let state' =
+            match sArg with
+            | ArgSrc  -> {state with srcAddress = dfr SP}
+            | ArgDest -> {state with destAddress = dfr SP}
+            | _       -> state
 
-        member this.popValTo dAddr =
-            let popText (a:addr) = "pop " + a.text
+        code, state'
 
+
+    let popValTo dArg state =
+        let dAddr = addressFromArg dArg state
+        let popText (a:addr) = "pop " + a.text
+
+        let code =
             match dAddr with
             | IncDfr dReg ->
-                let incNum = incDfrNum dAddr
+                let incNum = incDfrNum dAddr state
                 if dReg.isMemoryAccessible then
                     popText (dfr dReg)
                       +!!+ incText dReg dReg incNum
@@ -258,7 +305,7 @@ module InstructionAsm =
                       +!!+ incText dReg utilReg incNum
                       +!!+ popText (dfr utilReg)
             | DecDfr dReg ->
-                let decNum = -(incDfrNum dAddr)
+                let decNum = -(incDfrNum dAddr state)
                 if dReg.isMemoryAccessible then
                     incText dReg dReg decNum
                       +!!+ popText (dfr dReg)
@@ -276,7 +323,7 @@ module InstructionAsm =
             | DecDDfr _
             | DDfr    _
             | RelDfr  _ ->
-                moveReferredVal utilReg dAddr
+                moveReferredVal utilReg dAddr state
                   +!!+ popText (dfr utilReg)
             | Reg _
             | Rel _
@@ -285,137 +332,208 @@ module InstructionAsm =
             | _ ->
                 failwithf "Invalid address: pop to %A" dAddr
 
+        code, state
 
-        member this.incrementReg (reg:reg) num =
+
+    let incrementReg (reg: reg) num state =
+        let code =
             if reg.isMemoryAccessible then
                 leaText (Reg reg) (idfr reg num)
             else
                 movText (Reg utilReg) (Reg reg)
                   +!!+ leaText (Reg reg) (idfr utilReg num)
 
+        code, state
 
-        member this.binaryCalc codeStr (dAddr:addr) (sAddr:addr) =
-            let codeText (a1:addr) (a2:addr) =
-                match itype with
-                | Word ->
-                    codeStr + " " + a1.text + ", " + a2.text
-                | Byte ->
-                    codeStr + " " + a1.byteText + ", " + a2.byteText
 
-            match sAddr with
-            | IncDfr sReg ->
-                let incNum = incDfrNum sAddr
-                codeText dAddr (dfr sReg)
-                  +!!+ incText sReg sReg incNum
-            | DecDfr sReg ->
-                let decNum = -(incDfrNum sAddr)
-                incText sReg sReg decNum
-                  +!!+ codeText dAddr (dfr sReg)
+    let binaryCalc codeStr dArg sArg state =
+        let dAddr = addressFromArg dArg state
+        let sAddr = addressFromArg sArg state
+        let codeText (a1:addr) (a2:addr) =
+            match state.iType with
+            | Word ->
+                codeStr + " " + a1.text + ", " + a2.text
+            | Byte ->
+                codeStr + " " + a1.byteText + ", " + a2.byteText
+
+        match sAddr with
+        | IncDfr sReg ->
+            let incNum = incDfrNum sAddr state
+            codeText dAddr (dfr sReg),
+            {state with postProcess = incrementReg sReg incNum :: state.postProcess}
+        | DecDfr sReg ->
+            let decNum = -(incDfrNum sAddr state)
+            incText sReg sReg decNum
+              +!!+ codeText dAddr (dfr sReg),
+            state
+        | _ ->
+            match dAddr with
+            | IncDfr dReg ->
+                let incNum = incDfrNum dAddr state
+                codeText (dfr dReg) sAddr,
+                {state with postProcess = incrementReg dReg incNum :: state.postProcess}
+            | DecDfr dReg ->
+                let decNum = -(incDfrNum dAddr state)
+                incText dReg dReg decNum
+                  +!!+ codeText (dfr dReg) sAddr,
+                state
             | _ ->
-                match dAddr with
-                | IncDfr dReg ->
-                    let incNum = incDfrNum dAddr
-                    codeText (dfr dReg) sAddr
-                      +!!+ incText dReg dReg incNum
-                | DecDfr dReg ->
-                    let decNum = -(incDfrNum dAddr)
-                    incText dReg dReg decNum
-                      +!!+ codeText (dfr dReg) sAddr
-                | _ ->
-                    codeText dAddr sAddr
+                codeText dAddr sAddr, state
 
 
-        member this.unaryCalc codeStr addr =
-            let codeText (a:addr) =
-                match itype with
-                | Word ->
-                    codeStr + " " + a.text
-                | Byte ->
-                    codeStr + " " + a.byteText
+    let unaryCalc codeStr sArg state =
+        let addr = addressFromArg sArg state
+        let codeText (a:addr) =
+            match state.iType with
+            | Word ->
+                codeStr + " " + a.text
+            | Byte ->
+                codeStr + " " + a.byteText
 
+        match addr with
+        | IncDfr reg ->
+            let incNum = incDfrNum addr state
+            codeText (dfr reg),
+            {state with postProcess = incrementReg reg incNum :: state.postProcess}
+        | DecDfr reg ->
+            let decNum = -(incDfrNum addr state)
+            incText reg reg decNum
+              +!!+ codeText (dfr reg),
+            state
+        | _ ->
+            codeText addr, state
+
+
+    let resolveIncDec arg state =
+        let addr = addressFromArg arg state
+
+        let code, addr' =
             match addr with
             | IncDfr reg ->
-                let incNum = incDfrNum addr
-                codeText (dfr reg)
-                  +!!+ incText reg reg incNum
-            | DecDfr reg ->
-                let decNum = -(incDfrNum addr)
-                incText reg reg decNum
-                  +!!+ codeText (dfr reg)
-            | _ ->
-                codeText addr
-
-
-        member this.resolveIncDec addr =
-            match addr with
-            | IncDfr reg ->
-                let incNum = incDfrNum addr
+                let incNum = incDfrNum addr state
                 (movText (Reg utilReg) (Reg reg)
                    +!!+ incText reg reg incNum,
                  dfr utilReg)
             | DecDfr reg ->
-                let decNum = -(incDfrNum addr)
+                let decNum = -(incDfrNum addr state)
                 (incText reg reg decNum,
                  dfr reg)
             | _ ->
                 ("", addr)
 
+        let state' =
+            match arg with
+            | ArgSrc  -> {state with srcAddress = addr'}
+            | ArgDest -> {state with destAddress = addr'}
+            | _       -> state
 
-        member this.storeRegVal reg =
-            movText (Abs (Expr_Sym tempMem)) (Reg reg)
-
-        member this.restoreRegVal reg =
-            movText (Reg reg) (Abs (Expr_Sym tempMem))
-
-
-        member this.invert (addr:addr) =
-            "not " + addr.text
+        code, state'
 
 
-        member this.signExtend =
-            "cbw"
+    let storeTempReg state =
+        let tmpReg = Reg state.tempReg.Value
+        movText (Abs (Expr_Sym tempMem)) tmpReg, state
+
+    let restoreTempReg state =
+        let tmpReg = Reg state.tempReg.Value
+        movText tmpReg (Abs (Expr_Sym tempMem)), state
 
 
-        member this.exchangeVal (dAddr:addr) (sAddr:addr) =
+    let invert arg state =
+        let addr = addressFromArg arg state
+        "not " + addr.text, state
+
+
+    let signExtend state =
+        "cbw", state
+
+
+    let exchangeVal dArg sArg state =
+        let sAddr = addressFromArg sArg state
+        let dAddr = addressFromArg dArg state
+        let code =
             "xchg " + dAddr.text + ", " + sAddr.text
 
+        let state' =
+            let (|SwappedSrc|) (a1, a2, st) =
+                match a1, a2 with
+                | Reg r1, Reg r2 when st.srcAddress.isUsing r1 ->
+                    swapReg st.srcAddress r2
+                | Reg r1, Reg r2 when st.srcAddress.isUsing r2 ->
+                    swapReg st.srcAddress r1
+                | _ ->
+                    st.srcAddress
+            let (|SwappedDest|) (a1, a2, st) =
+                match a1, a2 with
+                | Reg r1, Reg r2 when st.destAddress.isUsing r1 ->
+                    swapReg st.destAddress r2
+                | Reg r1, Reg r2 when st.destAddress.isUsing r2 ->
+                    swapReg st.destAddress r1
+                | _ ->
+                    st.destAddress
 
-        member this.systemCall expr =
-            "int 7" +!!+ Pseudo.data1 [expr]
+            let newSrc =
+                if sArg = ArgSrc then
+                    dAddr
+                elif dArg = ArgSrc then
+                    sAddr
+                else
+                    match sAddr, dAddr, state with
+                    | SwappedSrc a -> a
+
+            let newDest =
+                if sArg = ArgDest then
+                    dAddr
+                elif dArg = ArgDest then
+                    sAddr
+                else
+                    match sAddr, dAddr, state with
+                    | SwappedDest a -> a
+
+            {state with srcAddress = newSrc;
+                        destAddress = newDest}
+
+        code, state'
 
 
-        member this.clearCarryFlag =
-            "clc"
+    let systemCall expr state =
+        "int 7" +!!+ Pseudo.data1 [expr], state
 
 
-        member this.setCarryFlag =
-            "stc"
+    let clearCarryFlag state =
+        "clc", state
 
 
-        member this.loadFlag =
-            "pushf"
+    let setCarryFlag state =
+        "stc", state
 
 
-        member this.saveFlag =
-            "popf"
+    let loadFlag state =
+        "pushf", state
 
 
-        member this.clearFlagBit dAddr flag =
-            let maskBit = int16 ~~~(flagBit flag)
-            let maskImm = Imm (Expr_Oct maskBit)
-            this.binaryCalc "and" dAddr maskImm
+    let saveFlag state=
+        "popf", state
 
 
-        member this.setFlagBit dAddr flag =
-            let setBit = int16 (flagBit flag)
-            let setImm = Imm (Expr_Oct setBit)
-            this.binaryCalc "or" dAddr setImm
+    let clearFlagBit dArg flag state =
+        let maskBit = int16 ~~~(flagBit flag)
+        let maskImm = Imm (Expr_Oct maskBit)
+        binaryCalc "and" dArg (ArgAddr maskImm) state
 
 
-        member this.shftLeftOrRight (dAddr:addr) =
-            let label1 = uniqName "ash"
-            let label2 = label1 + "e"
+    let setFlagBit dArg flag state =
+        let setBit = int16 (flagBit flag)
+        let setImm = Imm (Expr_Oct setBit)
+        binaryCalc "or" dArg (ArgAddr setImm) state
 
+
+    let shiftLeftOrRight dArg state =
+        let dAddr = addressFromArg dArg state
+        let label1 = uniqName "ash"
+        let label2 = label1 + "e"
+
+        let code =
             "testb cl, #0x20"            +!!+
             "jne " + label1              +!!+  // jne .+11; nop
             "andb cl, #0x1f"             +!!+
@@ -427,13 +545,18 @@ module InstructionAsm =
             "sar " + dAddr.text + ", cl" +!!+
             nameLabel label2
 
+        code, state
 
-        member this.shftLeftOrRight32bit (upper:addr) (lower:addr) =
-            let label1 = uniqName "ashc"
-            let label2 = label1 + "e"
-            let lShiftLabel = uniqName "lsft"
-            let rShiftLabel = uniqName "rsft"
 
+    let shiftLeftOrRight32bit uArg lArg state =
+        let upper = addressFromArg uArg state
+        let lower = addressFromArg lArg state
+        let label1 = uniqName "ashc"
+        let label2 = label1 + "e"
+        let lShiftLabel = uniqName "lsft"
+        let rShiftLabel = uniqName "rsft"
+
+        let code =
             "testb cl, #0x20"            +!!+
             "jne " + label1              +!!+
             "and cx, #0x1f"              +!!+
@@ -452,182 +575,71 @@ module InstructionAsm =
             "loop " + rShiftLabel        +!!+
             nameLabel label2
 
+        code, state
 
-        member this.storePCtoRegAndJmpToDest (reg:addr) (dest:addr) =
-            let label1 = uniqName "jsr"
-            let label2 = label1 + "e"
 
+    let storePCtoRegAndJmpToDest (reg: reg) dArg state =
+        let dAddr = addressFromArg dArg state
+        let label1 = uniqName "jsr"
+        let label2 = label1 + "e"
+
+        let code =
             "call " + label1                  +!!+
             nameLabel label1                  +!!+
             "pop " + reg.text                 +!!+
             "add " + reg.text + ", "
               + "#" + label2 + " - " + label1 +!!+
-            "jmp " + dest.text                +!!+
+            "jmp " + dAddr.text               +!!+
             nameLabel label2
 
+        code, state
 
-        member this.divConditionCheck (dest:addr) src =
-            let label1 = uniqName "div"
-            let label2 = label1 + "e"
-            let destT = dest.text
-            let buf =
-                if src <> Reg utilReg then
-                    Reg utilReg
-                else
-                    Abs (Expr_Sym tempMem)
-            let bufT = buf.text
 
-            movText buf src              +!!+
+    let setLabel (name: string) state =
+        nameLabel name, state
+
+
+    let divConditionCheck (dReg: reg) sArg state =
+        let sAddr = addressFromArg sArg state
+        let label1 = uniqName "div"
+        let label2 = label1 + "e"
+        let destT = dReg.text
+        let buf =
+            if sAddr <> Reg utilReg then
+                Reg utilReg
+            else
+                Abs (Expr_Sym tempMem)
+        let bufT = buf.text
+
+        let code =
+            movText buf sAddr            +!!+
             "xor " + bufT + ", " + destT +!!+
-            movText buf src              +!!+
+            movText buf sAddr            +!!+
             "jns " + label1              +!!+
             "neg " + bufT                +!!+
             nameLabel label1             +!!+
             "sub " + bufT + ", " + destT +!!+
             "xor " + bufT + ", " + destT +!!+
-            "jle " + label2,
-            label2
+            "jle " + label2
+
+        code,
+        {state with postProcess = setLabel label2 :: state.postProcess}
 
 
-        member this.fillWithNFlag (addr:addr) =
-            let label = uniqName "sxt"
+    let fillWithNFlag arg state =
+        let addr = addressFromArg arg state
+        let label = uniqName "sxt"
 
+        let code =
             "and " + addr.text + ", #0"     +!!+
             "jns " + label                  +!!+
             "or " + addr.text + ", #0xffff" +!!+
             nameLabel label
 
+        code, state
 
 
-module WordInstructionAsm =
+    let putRet status =
+        "ret", status
 
-    open InstructionAsm
-
-    let tempMem = tempMem
-
-    let inline (+!!+) i1 i2 = (+!!+) i1 i2
-
-
-    let private asm = instructionAsm (itype = Word)
-
-    let moveRef = asm.moveRef
-
-    let moveVal = asm.moveVal
-
-    let moveRefOrVal = asm.moveRefOrVal
-
-    let moveValToMem = asm.moveValToMem
-
-    let pushVal = asm.pushVal
-
-    let popValTo = asm.popValTo
-
-    let incrementReg = asm.incrementReg
-
-    let binaryCalc = asm.binaryCalc
-
-    let unaryCalc = asm.unaryCalc
-
-    let resolveIncDec = asm.resolveIncDec
-
-    let storeRegVal = asm.storeRegVal
-
-    let restoreRegVal = asm.restoreRegVal
-
-    let invert = asm.invert
-
-    let signExtend = asm.signExtend
-
-    let exchangeVal = asm.exchangeVal
-
-    let systemCall = asm.systemCall
-
-    let clearCarryFlag = asm.clearCarryFlag
-
-    let setCarryFlag = asm.setCarryFlag
-
-    let loadFlag = asm.loadFlag
-
-    let saveFlag = asm.saveFlag
-
-    let clearFlagBit = asm.clearFlagBit
-
-    let setFlagBit = asm.setFlagBit
-
-    let shftLeftOrRight = asm.shftLeftOrRight
-
-    let shftLeftOrRight32bit = asm.shftLeftOrRight32bit
-
-    let storePCtoRegAndJmpToDest = asm.storePCtoRegAndJmpToDest
-
-    let divConditionCheck = asm.divConditionCheck
-
-    let fillWithNFlag = asm.fillWithNFlag
-
-
-
-module ByteInstructionAsm =
-
-    open InstructionAsm
-
-    let tempMem = tempMem
-
-    let inline (+!!+) i1 i2 = (+!!+) i1 i2
-
-
-    let private asm = instructionAsm (itype = Byte)
-
-    let moveRef = asm.moveRef
-
-    let moveVal = asm.moveVal
-
-    let moveRefOrVal = asm.moveRefOrVal
-
-    let moveValToMem = asm.moveValToMem
-
-    let pushVal = asm.pushVal
-
-    let popValTo = asm.popValTo
-
-    let incrementReg = asm.incrementReg
-
-    let binaryCalc = asm.binaryCalc
-
-    let unaryCalc = asm.unaryCalc
-
-    let resolveIncDec = asm.resolveIncDec
-
-    let storeRegVal = asm.storeRegVal
-
-    let restoreRegVal = asm.restoreRegVal
-
-    let invert = asm.invert
-
-    let signExtend = asm.signExtend
-
-    let exchangeVal = asm.exchangeVal
-
-    let systemCall = asm.systemCall
-
-    let clearCarryFlag = asm.clearCarryFlag
-
-    let setCarryFlag = asm.setCarryFlag
-
-    let loadFlag = asm.loadFlag
-
-    let saveFlag = asm.saveFlag
-
-    let clearFlagBit = asm.clearFlagBit
-
-    let setFlagBit = asm.setFlagBit
-
-    let shftLeftOrRight = asm.shftLeftOrRight
-
-    let shftLeftOrRight32bit = asm.shftLeftOrRight32bit
-
-    let storePCtoRegAndJmpToDest = asm.storePCtoRegAndJmpToDest
-
-    let divConditionCheck = asm.divConditionCheck
-
-    let fillWithNFlag = asm.fillWithNFlag
 

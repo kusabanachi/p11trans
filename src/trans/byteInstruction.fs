@@ -1,7 +1,8 @@
 namespace Ack_i86
 
 open Address
-open ByteInstructionAsm
+open InstructionAsm
+open TransStatus
 open Instruction
 
 module ByteInstruction =
@@ -21,43 +22,61 @@ module ByteInstruction =
         let dest = i86Addr dest
         let src = i86Addr src
 
-        if dest.isByteAccessible then
-            let code1, src =
+        let pre, post, tmpReg =
+            if dest.isByteAccessible then
                 if not dest.isMemory && not src.isByteAccessible then
-                    moveRefOrVal utilReg src
+                    [moveRefOrVal utilReg ArgSrc;
+                     binaryCalc code ArgDest ArgSrc],
+                    [],
+                    None
                 elif dest.isMemory && src.isMemory
-                    || not src.isByteAccessible then
-                    moveVal utilReg src
+                        || not src.isByteAccessible then
+                    [moveVal utilReg ArgSrc;
+                     binaryCalc code ArgDest ArgSrc],
+                    [],
+                    None
                 else
-                    "", src
-            let code2 = binaryCalc code dest src
-            code1 +!!+ code2
-        elif not dest.isMemory then
-            let dReg = dest.getRegister
-            let code1, src  =
+                    [binaryCalc code ArgDest ArgSrc],
+                    [],
+                    None
+            elif not dest.isMemory then
+                let dReg = dest.getRegister
                 if src.isByteAccessible
                         && not (srcAddrAffectDestVal (src, dest)) then
-                    "", src
+                    [moveVal utilReg ArgDest;
+                     binaryCalc code ArgDest ArgSrc],
+                    [moveVal dReg ArgDest],
+                    None
                 else
-                    moveValToMem tempMem src
-            let code2, dest = moveVal utilReg dest
-            let code3       = binaryCalc code dest src
-            let code4, _    = moveVal dReg dest
-            code1 +!!+ code2 +!!+ code3 +!!+ code4
-        elif src.isByteAccessible
-                && not src.isMemory
-                && not (destAddrAffectSrcVal (src, dest)) then
-            let code1, dest = moveRef utilReg dest
-            let code2       = binaryCalc code dest src
-            code1 +!!+ code2
-        else
-            let saveReg     = findFreeReg src dest
-            let code1       = storeRegVal saveReg
-            let code2, src  = moveVal saveReg src
-            let code3, dest = moveRef utilReg dest
-            let code4       = binaryCalc code dest src
-            let code5       = restoreRegVal saveReg
-            code1 +!!+ code2 +!!+ code3 +!!+ code4 +!!+ code5
+                    [moveValToMem tempMem ArgSrc;
+                     moveVal utilReg ArgDest;
+                     binaryCalc code ArgDest ArgSrc],
+                    [moveVal dReg ArgDest],
+                    None
+            elif src.isByteAccessible
+                    && not src.isMemory
+                    && not (destAddrAffectSrcVal (src, dest)) then
+                [moveRef utilReg ArgDest;
+                 binaryCalc code ArgDest ArgSrc],
+                [],
+                None
+            else
+                let tmpReg = findFreeReg src dest
+                [storeTempReg;
+                 moveVal tmpReg ArgSrc;
+                 moveRef utilReg ArgDest;
+                 binaryCalc code ArgDest ArgSrc],
+                [restoreTempReg],
+                Some tmpReg
+
+        let status = {iType = Byte;
+                      preProcess = pre;
+                      postProcess = post;
+                      tempReg = tmpReg;
+                      srcAddress = src;
+                      destAddress = dest}
+
+        extractCodeText status
 
 
     let movbType code i_dest i_src =
@@ -66,32 +85,44 @@ module ByteInstruction =
 
         match dest with
         | Reg AX ->
-            let code1, src =
+            let pre =
                 if src.isByteAccessible then
-                    "", src
+                    [binaryCalc code ArgDest ArgSrc;
+                     signExtend]
                 else
-                    moveRefOrVal utilReg src
-            let code2 = binaryCalc code dest src
-            let code3 = signExtend
-            code1 +!!+ code2 +!!+ code3
+                    [moveRefOrVal utilReg ArgSrc;
+                     binaryCalc code ArgDest ArgSrc;
+                     signExtend]
+            let status = {iType = Byte;
+                          preProcess = pre;
+                          postProcess = [];
+                          tempReg = None;
+                          srcAddress = src;
+                          destAddress = dest}
+            extractCodeText status
         | Reg dReg ->
-            let code1, src =
-                if src = Reg dReg then
-                    "", Reg AX
-                elif src.isUsing AX
-                        && (swapReg src dReg).isByteAccessible then
-                    "", swapReg src dReg
-                elif src.isByteAccessible
-                        && not (src.isUsing dReg)
-                        && not (src.isUsing AX) then
-                    "", src
+            let pre1 =
+                if not (src = Reg dReg
+                        || src.isUsing AX
+                             && (swapReg src dReg).isByteAccessible
+                        || src.isByteAccessible
+                             && not (src.isUsing dReg)
+                             && not (src.isUsing AX)) then
+                    [moveRefOrVal utilReg ArgSrc]
                 else
-                    moveRefOrVal utilReg src
-            let code2 = exchangeVal (Reg AX) dest
-            let code3 = binaryCalc code (Reg AX) src
-            let code4 = signExtend
-            let code5 = exchangeVal dest (Reg AX)
-            code1 +!!+ code2 +!!+ code3 +!!+ code4 +!!+ code5
+                    []
+            let pre = pre1 @
+                      [exchangeVal (ArgReg AX) ArgDest;
+                       binaryCalc code ArgDest ArgSrc;
+                       signExtend]
+            let post = [exchangeVal (ArgReg dReg) (ArgReg AX)]
+            let status = {iType = Byte;
+                          preProcess = pre;
+                          postProcess = post;
+                          tempReg = None;
+                          srcAddress = src;
+                          destAddress = dest}
+            extractCodeText status
         | _ ->
             andbType code i_dest i_src
 
@@ -99,11 +130,12 @@ module ByteInstruction =
     let cmpbType code dest src =
         let dest = i86Addr dest
         let src = i86Addr src
-        let binaryCalc' d s =
+
+        let binCalc =
             if code <> "cmpb" then
-                binaryCalc code d s
+                binaryCalc code ArgDest ArgSrc
             else
-                binaryCalc code s d
+                binaryCalc code ArgSrc ArgDest
         let destIsAccessible =
             dest.isByteAccessible
                 && not (dest.isImmediate && code <> "cmpb")
@@ -111,76 +143,103 @@ module ByteInstruction =
             src.isByteAccessible
                 && not (src.isImmediate && code = "cmpb")
 
-        if destIsAccessible then
-            let code1, src =
+        let pre =
+            if destIsAccessible then
                 if not dest.isMemory && not srcIsAccessible then
-                    moveRefOrVal utilReg src
+                    [moveRefOrVal utilReg ArgSrc;
+                     binCalc]
                 elif dest.isMemory && src.isMemory
                         || not srcIsAccessible then
-                    moveVal utilReg src
+                    [moveVal utilReg ArgSrc;
+                     binCalc]
                 else
-                    "", src
-            let code2 = binaryCalc' dest src
-            code1 +!!+ code2
-        elif srcIsAccessible
-                && not (srcAddrAffectDestVal (src, dest))
-                && not (destAddrAffectSrcVal (src, dest)) then
-            let code1, dest =
+                    [binCalc]
+            elif srcIsAccessible
+                    && not (srcAddrAffectDestVal (src, dest))
+                    && not (destAddrAffectSrcVal (src, dest)) then
                 if not src.isMemory then
-                    moveRefOrVal utilReg dest
+                    [moveRefOrVal utilReg ArgDest;
+                     binCalc]
                 else
-                    moveVal utilReg dest
-            let code2       = binaryCalc' dest src
-            code1 +!!+ code2
-        else
-            let code1, src  = moveValToMem tempMem src
-            let code2, dest = moveVal utilReg dest
-            let code3       = binaryCalc' dest src
-            code1 +!!+ code2 +!!+ code3
+                    [moveVal utilReg ArgDest;
+                     binCalc]
+            else
+                [moveValToMem tempMem ArgSrc;
+                 moveVal utilReg ArgDest;
+                 binCalc]
+
+        let status = {iType = Byte;
+                      preProcess = pre;
+                      postProcess = [];
+                      tempReg = None;
+                      srcAddress = src;
+                      destAddress = dest}
+        extractCodeText status
 
 
     let bicbType dest src =
         let dest = i86Addr dest
         let src = i86Addr src
 
-        if dest.isByteAccessible then
-            let code1, src = moveVal utilReg src
-            let code2      = invert src
-            let code3      = binaryCalc "andb" dest src
-            code1 +!!+ code2 +!!+ code3
-        elif not dest.isMemory then
-            let dReg = dest.getRegister
-            let code1, src  = moveValToMem tempMem src
-            let code2       = invert src
-            let code3, dest = moveVal utilReg dest
-            let code4       = binaryCalc "andb" dest src
-            let code5, _    = moveVal dReg dest
-            code1 +!!+ code2 +!!+ code3 +!!+ code4 +!!+ code5
-        else
-            let saveReg = findFreeReg src dest
-            let code1       = storeRegVal saveReg
-            let code2, src  = moveVal saveReg src
-            let code3       = invert src
-            let code4, dest = moveRef utilReg dest
-            let code5       = binaryCalc "andb" dest src
-            let code6       = restoreRegVal saveReg
-            code1 +!!+ code2 +!!+ code3
-              +!!+ code4 +!!+ code5 +!!+ code6
+        let pre, post, tmpReg =
+            if dest.isByteAccessible then
+                [moveVal utilReg ArgSrc;
+                 invert ArgSrc;
+                 binaryCalc "andb" ArgDest ArgSrc],
+                 [],
+                 None
+            elif not dest.isMemory then
+                let dReg = dest.getRegister
+                [moveValToMem tempMem ArgSrc;
+                 invert ArgSrc;
+                 moveVal utilReg ArgDest;
+                 binaryCalc "andb" ArgDest ArgSrc],
+                 [moveVal dReg ArgDest],
+                 None
+            else
+                let tmpReg = findFreeReg src dest
+                [storeTempReg
+                 moveVal tmpReg ArgSrc;
+                 invert ArgSrc;
+                 moveRef utilReg ArgDest;
+                 binaryCalc "andb" ArgDest ArgSrc],
+                 [restoreTempReg],
+                 Some tmpReg
+
+        let status = {iType = Byte;
+                      preProcess = pre;
+                      postProcess = post;
+                      tempReg = tmpReg;
+                      srcAddress = src;
+                      destAddress = dest}
+
+        extractCodeText status
 
 
     let incbType code addr =
         let addr = i86Addr addr
 
-        if addr.isByteAccessible then
-            unaryCalc code addr
-        elif addr.isMemory then
-            let code1, addr = moveRef utilReg addr
-            let code2       = unaryCalc code addr
-            code1 +!!+ code2
-        else
-            let reg = addr.getRegister
-            let code1, addr = moveVal utilReg addr
-            let code2       = unaryCalc code addr
-            let code3, _    = moveVal reg addr
-            code1 +!!+ code2 +!!+ code3
+        let pre, post =
+            if addr.isByteAccessible then
+                [unaryCalc code ArgDest],
+                []
+            elif addr.isMemory then
+                [moveRef utilReg ArgDest;
+                 unaryCalc code ArgDest],
+                []
+            else
+                let reg = addr.getRegister
+                [moveVal utilReg ArgDest;
+                 unaryCalc code ArgDest],
+                [moveVal reg ArgDest]
+
+        let status = {iType = Byte;
+                      preProcess = pre;
+                      postProcess = post;
+                      tempReg = None;
+                      srcAddress = addr;
+                      destAddress = addr}
+
+        extractCodeText status
+
 
