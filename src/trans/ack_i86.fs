@@ -1,6 +1,5 @@
 namespace Ack_i86
 
-open ExpressionType
 open V6as
 open V6as.StatementType
 open Instruction
@@ -14,36 +13,35 @@ module Ack_i86_trans =
 
     let ack_i86_asm pdp11as =
         let singleOp code addr =
-            let immVal num = Addres.Imm (Expr_Oct (int16 num))
             match code with
-            | "clr"  -> addType  "and"   addr (immVal 0)
-            | "clrb" -> andbType "andb"  addr (immVal 0)
-            | "com"  -> addType  "xor"   addr (immVal 0xffff)
-            | "comb" -> andbType "xorb"  addr (immVal 0xff)
-            | "inc"  -> incType  "inc"   addr
-            | "incb" -> incbType "incb"  addr
-            | "dec"  -> incType  "dec"   addr
-            | "decb" -> incbType "decb"  addr
-            | "neg"  -> incType  "neg"   addr
-            | "negb" -> incbType "negb"  addr
-            | "adc"  -> addType  "adc"   addr (immVal 0)
-            | "adcb" -> andbType "adcb"  addr (immVal 0)
-            | "sbc"  -> addType  "sbb"   addr (immVal 0)
-            | "sbcb" -> andbType "sbbb"  addr (immVal 0)
-            | "ror"  -> addType  "rcr"   addr (immVal 1)
-            | "rorb" -> andbType "rcrb"  addr (immVal 1)
-            | "rol"  -> addType  "rcl"   addr (immVal 1)
-            | "rolb" -> andbType "rclb"  addr (immVal 1)
-            | "asr"  -> addType  "sar"   addr (immVal 1)
-            | "asrb" -> andbType "sarb"  addr (immVal 1)
-            | "asl"  -> addType  "sal"   addr (immVal 1)
-            | "aslb" -> andbType "salb"  addr (immVal 1)
-            | "jmp"  -> incType  "jmp"   addr
-            | "swab" -> addType  "rol"   addr (immVal 8)
-            | "tst"  -> cmpType  "test"  addr (immVal 0xffff)
-            | "tstb" -> cmpbType "testb" addr (immVal 0xff)
-            | "rts"  -> rtsType          addr
-            | "sxt"  -> sxtType          addr
+            | "clr"  -> clrCode addr
+            | "clrb" -> clrbCode addr
+            | "com"  -> comCode addr
+            | "comb" -> combCode addr
+            | "inc"  -> incCode addr
+            | "incb" -> incbCode addr
+            | "dec"  -> decCode addr
+            | "decb" -> decbCode addr
+            | "neg"  -> negCode addr
+            | "negb" -> negbCode addr
+            | "adc"  -> adcCode addr
+            | "adcb" -> adcbCode addr
+            | "sbc"  -> sbcCode addr
+            | "sbcb" -> sbcbCode addr
+            | "ror"  -> rorCode addr
+            | "rorb" -> rorbCode addr
+            | "rol"  -> rolCode addr
+            | "rolb" -> rolbCode addr
+            | "asr"  -> asrCode addr
+            | "asrb" -> asrbCode addr
+            | "asl"  -> aslCode addr
+            | "aslb" -> aslbCode addr
+            | "jmp"  -> jmpCode addr
+            | "swab" -> swabCode addr
+            | "tst"  -> tstCode addr
+            | "tstb" -> tstbCode addr
+            | "rts"  -> rtsCode addr
+            | "sxt"  -> sxtCode addr
 
             | "clrf"
             | "negf"
@@ -55,30 +53,30 @@ module Ack_i86_trans =
 
         let doubleOp code dest src =
             match code with
-            | "mov"  -> movType  "mov"   dest src
-            | "movb" -> movbType "movb"  dest src
-            | "cmp"  -> cmpType  "cmp"   dest src
-            | "cmpb" -> cmpbType "cmpb"  dest src
-            | "bit"  -> cmpType  "test"  dest src
-            | "bitb" -> cmpbType "testb" dest src
-            | "bic"  -> bicType          dest src
-            | "bicb" -> bicbType         dest src
-            | "bis"  -> addType  "or"    dest src
-            | "bisb" -> andbType "orb"   dest src
-            | "add"  -> addType  "add"   dest src
-            | "sub"  -> addType  "sub"   dest src
+            | "mov"  -> movCode dest src
+            | "movb" -> movbCode dest src
+            | "cmp"  -> cmpCode dest src
+            | "cmpb" -> cmpbCode dest src
+            | "bit"  -> bitCode dest src
+            | "bitb" -> bitbCode dest src
+            | "bic"  -> bicCode dest src
+            | "bicb" -> bicbCode dest src
+            | "bis"  -> bisCode dest src
+            | "bisb" -> bisbCode dest src
+            | "add"  -> addCode dest src
+            | "sub"  -> subCode dest src
 
-            | "jsr"  -> jsrType          dest src
+            | "jsr"  -> jsrCode dest src
             | "ash"
-            | "als"  -> ashType          dest src
+            | "als"  -> ashCode dest src
             | "ashc"
-            | "alsc" -> ashcType         dest src
+            | "alsc" -> ashcCode dest src
             | "mul"
-            | "mpy"  -> mulType          dest src
+            | "mpy"  -> mulCode dest src
             | "div"
-            | "dvd"  -> divType          dest src
-            | "xor"  -> addType  "xor"   dest src
-            | "sob"  -> sobType          dest src
+            | "dvd"  -> divCode dest src
+            | "xor"  -> xorCode dest src
+            | "sob"  -> sobCode dest src
 
             | "movf"
             | "movif"
@@ -98,48 +96,48 @@ module Ack_i86_trans =
         let exprOp code expr =
             let addr = Addres.Rel expr
             match code with
-            | "br"   -> incType "jmp"  addr
-            | "bne"  -> incType "jne"  addr
-            | "beq"  -> incType "je"   addr
-            | "bge"  -> incType "jge"  addr
-            | "blt"  -> incType "jl"   addr
-            | "bgt"  -> incType "jg"   addr
-            | "ble"  -> incType "jle"  addr
-            | "bpl"  -> incType "jns"  addr
-            | "bmi"  -> incType "js"   addr
-            | "bhi"  -> incType "ja"   addr
-            | "blos" -> incType "jbe"  addr
-            | "bvc"  -> incType "jno"  addr
-            | "bvs"  -> incType "jo"   addr
-            | "bhis" -> incType "jae"  addr
+            | "br"   -> brCode addr
+            | "bne"  -> bneCode addr
+            | "beq"  -> beqCode addr
+            | "bge"  -> bgeCode addr
+            | "blt"  -> bltCode addr
+            | "bgt"  -> bgtCode addr
+            | "ble"  -> bleCode addr
+            | "bpl"  -> bplCode addr
+            | "bmi"  -> bmiCode addr
+            | "bhi"  -> bhiCode addr
+            | "blos" -> blosCode addr
+            | "bvc"  -> bvcCode addr
+            | "bvs"  -> bvsCode addr
+            | "bhis" -> bhisCode addr
             | "bec"
-            | "bcc"  -> incType "jnc"  addr
-            | "blo"  -> incType "jb"   addr
+            | "bcc"  -> becCode addr
+            | "blo"  -> bloCode addr
             | "bcs"
-            | "bes"  -> incType "jc"   addr
+            | "bes"  -> bcsCode addr
 
-            | "jbr"  -> incType "jmp"  addr
-            | "jne"  -> incType "jne"  addr
-            | "jeq"  -> incType "je"   addr
-            | "jge"  -> incType "jge"  addr
-            | "jlt"  -> incType "jl"   addr
-            | "jgt"  -> incType "jg"   addr
-            | "jle"  -> incType "jle"  addr
-            | "jpl"  -> incType "jns"  addr
-            | "jmi"  -> incType "js"   addr
-            | "jhi"  -> incType "ja"   addr
-            | "jlos" -> incType "jbe"  addr
-            | "jvc"  -> incType "jno"  addr
-            | "jvs"  -> incType "jo"   addr
-            | "jhis" -> incType "jae"  addr
-            | "jec"  -> incType "jnc"  addr
-            | "jcc"  -> incType "jnc"  addr
-            | "jlo"  -> incType "jb"   addr
-            | "jcs"  -> incType "jc"   addr
-            | "jes"  -> incType "jc"   addr
+            | "jbr"  -> jbrCode addr
+            | "jne"  -> jneCode addr
+            | "jeq"  -> jeqCode addr
+            | "jge"  -> jgeCode addr
+            | "jlt"  -> jltCode addr
+            | "jgt"  -> jgtCode addr
+            | "jle"  -> jleCode addr
+            | "jpl"  -> jplCode addr
+            | "jmi"  -> jmiCode addr
+            | "jhi"  -> jhiCode addr
+            | "jlos" -> jlosCode addr
+            | "jvc"  -> jvcCode addr
+            | "jvs"  -> jvsCode addr
+            | "jhis" -> jhisCode addr
+            | "jec"
+            | "jcc"  -> jecCode addr
+            | "jlo"  -> jloCode addr
+            | "jcs"
+            | "jes"  -> jcsCode addr
 
-            | "sys"  -> sysType  expr
-            | "mark" -> markType expr
+            | "sys"  -> sysCode expr
+            | "mark" -> markCode expr
             | _ -> sprintf "Not suported opcode : %s" code
 
 

@@ -1,7 +1,6 @@
 namespace Ack_i86
 
 open Address
-open V6as.Expres
 open InstructionAsm
 open TransStatus
 open ExpressionType
@@ -658,4 +657,77 @@ module Instruction =
 
         extractCodeText status
 
+
+
+    let private immVal num = V6as.Addres.Imm (Expr_Oct (int16 num))
+
+    let clrCode addr  = addType "and"  addr (immVal 0)
+    let comCode addr  = addType "xor"  addr (immVal 0xffff)
+    let incCode addr  = incType "inc"  addr
+    let decCode addr  = incType "dec"  addr
+    let negCode addr  = incType "neg"  addr
+    let adcCode addr  = addType "adc"  addr (immVal 0)
+    let sbcCode addr  = addType "sbb"  addr (immVal 0)
+    let rorCode addr  = addType "rcr"  addr (immVal 1)
+    let rolCode addr  = addType "rcl"  addr (immVal 1)
+    let asrCode addr  = addType "sar"  addr (immVal 1)
+    let aslCode addr  = addType "sal"  addr (immVal 1)
+    let jmpCode addr  = incType "jmp"  addr
+    let swabCode addr = addType "rol"  addr (immVal 8)
+    let tstCode addr  = cmpType "test" addr (immVal 0xffff)
+    let rtsCode addr  = rtsType        addr
+    let sxtCode addr  = sxtType        addr
+
+    let movCode  dest src = movType "mov"  dest src
+    let cmpCode  dest src = cmpType "cmp"  dest src
+    let bitCode  dest src = cmpType "test" dest src
+    let bicCode  dest src = bicType        dest src
+    let bisCode  dest src = addType "or"   dest src
+    let addCode  dest src = addType "add"  dest src
+    let subCode  dest src = addType "sub"  dest src
+    let jsrCode  dest src = jsrType        dest src
+    let ashCode  dest src = ashType        dest src
+    let ashcCode dest src = ashcType       dest src
+    let mulCode  dest src = mulType        dest src
+    let divCode  dest src = divType        dest src
+    let xorCode  dest src = addType "xor"  dest src
+    let sobCode  dest src = sobType        dest src
+
+    let brCode addr   = incType "jmp" addr
+    let bneCode addr  = incType "jne" addr
+    let beqCode addr  = incType "je"  addr
+    let bgeCode addr  = incType "jge" addr
+    let bltCode addr  = incType "jl"  addr
+    let bgtCode addr  = incType "jg"  addr
+    let bleCode addr  = incType "jle" addr
+    let bplCode addr  = incType "jns" addr
+    let bmiCode addr  = incType "js"  addr
+    let bhiCode addr  = incType "ja"  addr
+    let blosCode addr = incType "jbe" addr
+    let bvcCode addr  = incType "jno" addr
+    let bvsCode addr  = incType "jo"  addr
+    let bhisCode addr = incType "jae" addr
+    let becCode addr  = incType "jnc" addr
+    let bloCode addr  = incType "jb"  addr
+    let bcsCode addr  = incType "jc"  addr
+    let jbrCode addr  = incType "jmp" addr
+    let jneCode addr  = incType "jne" addr
+    let jeqCode addr  = incType "je"  addr
+    let jgeCode addr  = incType "jge" addr
+    let jltCode addr  = incType "jl"  addr
+    let jgtCode addr  = incType "jg"  addr
+    let jleCode addr  = incType "jle" addr
+    let jplCode addr  = incType "jns" addr
+    let jmiCode addr  = incType "js"  addr
+    let jhiCode addr  = incType "ja"  addr
+    let jlosCode addr = incType "jbe" addr
+    let jvcCode addr  = incType "jno" addr
+    let jvsCode addr  = incType "jo"  addr
+    let jhisCode addr = incType "jae" addr
+    let jecCode addr  = incType "jnc" addr
+    let jloCode addr  = incType "jb"  addr
+    let jcsCode addr  = incType "jc"  addr
+
+    let sysCode expr  = sysType  expr
+    let markCode expr = markType expr
 

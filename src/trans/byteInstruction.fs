@@ -4,6 +4,7 @@ open Address
 open InstructionAsm
 open TransStatus
 open Instruction
+open ExpressionType
 
 module ByteInstruction =
 
@@ -242,4 +243,26 @@ module ByteInstruction =
 
         extractCodeText status
 
+
+
+    let private immVal num = V6as.Addres.Imm (Expr_Oct (int16 num))
+
+    let clrbCode addr = andbType "andb"  addr (immVal 0)
+    let combCode addr = andbType "xorb"  addr (immVal 0xff)
+    let incbCode addr = incbType "incb"  addr
+    let decbCode addr = incbType "decb"  addr
+    let negbCode addr = incbType "negb"  addr
+    let adcbCode addr = andbType "adcb"  addr (immVal 0)
+    let sbcbCode addr = andbType "sbbb"  addr (immVal 0)
+    let rorbCode addr = andbType "rcrb"  addr (immVal 1)
+    let rolbCode addr = andbType "rclb"  addr (immVal 1)
+    let asrbCode addr = andbType "sarb"  addr (immVal 1)
+    let aslbCode addr = andbType "salb"  addr (immVal 1)
+    let tstbCode addr = cmpbType "testb" addr (immVal 0xff)
+
+    let movbCode dest src = movbType "movb"  dest src
+    let cmpbCode dest src = cmpbType "cmpb"  dest src
+    let bitbCode dest src = cmpbType "testb" dest src
+    let bicbCode dest src = bicbType         dest src
+    let bisbCode dest src = andbType "orb"   dest src
 
