@@ -2,7 +2,7 @@ namespace Ack_i86
 
 open Address
 open InstructionAsm
-open TransStatus
+open TransState
 open ExpressionType
 open ConditionCode
 
@@ -67,14 +67,14 @@ module Instruction =
                 [restoreTempReg],
                 Some tmpReg
 
-        let status = {iType = Word;
-                      preProcess = pre;
-                      postProcess = post;
-                      tempReg = tmpReg;
-                      srcAddress = src;
-                      destAddress = dest}
+        let state = {iType = Word;
+                     preProcess = pre;
+                     postProcess = post;
+                     tempReg = tmpReg;
+                     srcAddress = src;
+                     destAddress = dest}
 
-        extractCodeText status
+        extractCodeText state
 
 
     let movType code i_dest i_src =
@@ -82,41 +82,41 @@ module Instruction =
         let src = i86Addr i_src
 
         if dest = DecDfr SP then
-            let status = {iType = Word;
-                          preProcess = [pushVal ArgSrc];
-                          postProcess = [];
-                          tempReg = None;
-                          srcAddress = src;
-                          destAddress = dest}
-            extractCodeText status
+            let state = {iType = Word;
+                         preProcess = [pushVal ArgSrc];
+                         postProcess = [];
+                         tempReg = None;
+                         srcAddress = src;
+                         destAddress = dest}
+            extractCodeText state
         elif src = IncDfr SP && not (dest.isUsing SP) then
-            let status = {iType = Word;
-                          preProcess = [popValTo ArgDest];
-                          postProcess = [];
-                          tempReg = None;
-                          srcAddress = src;
-                          destAddress = dest}
-            extractCodeText status
+            let state = {iType = Word;
+                         preProcess = [popValTo ArgDest];
+                         postProcess = [];
+                         tempReg = None;
+                         srcAddress = src;
+                         destAddress = dest}
+            extractCodeText state
         elif dest = dfr SP && not src.isImmediate then
             if not (src.isUsing SP) then
-                let status = {iType = Word;
-                              preProcess = [popValTo (ArgReg utilReg);
-                                            pushVal ArgSrc];
-                              postProcess = [];
-                              tempReg = None;
-                              srcAddress = src;
-                              destAddress = dest}
-                extractCodeText status
+                let state = {iType = Word;
+                             preProcess = [popValTo (ArgReg utilReg);
+                                           pushVal ArgSrc];
+                             postProcess = [];
+                             tempReg = None;
+                             srcAddress = src;
+                             destAddress = dest}
+                extractCodeText state
             else
-                let status = {iType = Word;
-                              preProcess = [moveVal utilReg ArgSrc;
-                                            popValTo ArgTempMem;
-                                            pushVal ArgSrc];
-                              postProcess = [];
-                              tempReg = None;
-                              srcAddress = src;
-                              destAddress = dest}
-                extractCodeText status
+                let state = {iType = Word;
+                             preProcess = [moveVal utilReg ArgSrc;
+                                           popValTo ArgTempMem;
+                                           pushVal ArgSrc];
+                             postProcess = [];
+                             tempReg = None;
+                             srcAddress = src;
+                             destAddress = dest}
+                extractCodeText state
         elif not dest.isMemory then
             let dReg = dest.getRegister
             let src =
@@ -135,27 +135,27 @@ module Instruction =
                 else
                     [binaryCalc code ArgDest ArgSrc]
 
-            let status = {iType = Word;
-                          preProcess = pre
-                          postProcess = [];
-                          tempReg = None;
-                          srcAddress = src;
-                          destAddress = dest}
-            extractCodeText status
+            let state = {iType = Word;
+                         preProcess = pre
+                         postProcess = [];
+                         tempReg = None;
+                         srcAddress = src;
+                         destAddress = dest}
+            extractCodeText state
         elif dest.isAccessible then
             addType code i_dest i_src
         elif not src.isMemory
                 && not (destAddrAffectSrcVal (src, dest)) then
             addType code i_dest i_src
         elif not (dest.isUsing SP) then
-            let status = {iType = Word;
-                          preProcess = [pushVal ArgSrc;
-                                        popValTo ArgDest];
-                          postProcess = [];
-                          tempReg = None;
-                          srcAddress = src;
-                          destAddress = dest}
-            extractCodeText status
+            let state = {iType = Word;
+                         preProcess = [pushVal ArgSrc;
+                                       popValTo ArgDest];
+                         postProcess = [];
+                         tempReg = None;
+                         srcAddress = src;
+                         destAddress = dest}
+            extractCodeText state
         else
             addType code i_dest i_src
 
@@ -202,14 +202,14 @@ module Instruction =
                  moveVal utilReg ArgDest;
                  binCalc]
 
-        let status = {iType = Word;
-                      preProcess = pre;
-                      postProcess = [];
-                      tempReg = None;
-                      srcAddress = src;
-                      destAddress = dest}
+        let state = {iType = Word;
+                     preProcess = pre;
+                     postProcess = [];
+                     tempReg = None;
+                     srcAddress = src;
+                     destAddress = dest}
 
-        extractCodeText status
+        extractCodeText state
 
 
     let bicType dest src =
@@ -233,14 +233,14 @@ module Instruction =
                 [restoreTempReg],
                 Some tmpReg
 
-        let status = {iType = Word;
-                      preProcess = pre;
-                      postProcess = post;
-                      tempReg = tmpReg;
-                      srcAddress = src;
-                      destAddress = dest}
+        let state = {iType = Word;
+                     preProcess = pre;
+                     postProcess = post;
+                     tempReg = tmpReg;
+                     srcAddress = src;
+                     destAddress = dest}
 
-        extractCodeText status
+        extractCodeText state
 
 
     let incType code addr =
@@ -253,14 +253,14 @@ module Instruction =
             else
                 [unaryCalc code ArgDest]
 
-        let status = {iType = Word;
-                      preProcess = pre
-                      postProcess = [];
-                      tempReg = None;
-                      srcAddress = addr;
-                      destAddress = addr}
+        let state = {iType = Word;
+                     preProcess = pre
+                     postProcess = [];
+                     tempReg = None;
+                     srcAddress = addr;
+                     destAddress = addr}
 
-        extractCodeText status
+        extractCodeText state
 
 
     let mulType dest src =
@@ -357,14 +357,14 @@ module Instruction =
             | _ ->
                 failwithf "Invalid address"
 
-        let status = {iType = Word;
-                      preProcess = pre
-                      postProcess = post
-                      tempReg = None;
-                      srcAddress = src;
-                      destAddress = dest}
+        let state = {iType = Word;
+                     preProcess = pre
+                     postProcess = post
+                     tempReg = None;
+                     srcAddress = src;
+                     destAddress = dest}
 
-        extractCodeText status
+        extractCodeText state
 
 
     let divType dest src =
@@ -420,14 +420,14 @@ module Instruction =
             | _ ->
                 []
 
-        let status = {iType = Word;
-                      preProcess = pre
-                      postProcess = []
-                      tempReg = None;
-                      srcAddress = src;
-                      destAddress = dest}
+        let state = {iType = Word;
+                     preProcess = pre
+                     postProcess = []
+                     tempReg = None;
+                     srcAddress = src;
+                     destAddress = dest}
 
-        extractCodeText status
+        extractCodeText state
 
 
     let ashType dest src =
@@ -448,14 +448,14 @@ module Instruction =
 
         let post = [moveVal CX (ArgReg utilReg)]
 
-        let status = {iType = Word;
-                      preProcess = pre
-                      postProcess = post
-                      tempReg = None;
-                      srcAddress = src;
-                      destAddress = dest}
+        let state = {iType = Word;
+                     preProcess = pre
+                     postProcess = post
+                     tempReg = None;
+                     srcAddress = src;
+                     destAddress = dest}
 
-        extractCodeText status
+        extractCodeText state
 
 
     let ashcType dest src =
@@ -482,25 +482,25 @@ module Instruction =
 
         let post = [moveVal CX (ArgReg utilReg)]
 
-        let status = {iType = Word;
-                      preProcess = pre
-                      postProcess = post
-                      tempReg = None;
-                      srcAddress = src;
-                      destAddress = dest}
+        let state = {iType = Word;
+                     preProcess = pre
+                     postProcess = post
+                     tempReg = None;
+                     srcAddress = src;
+                     destAddress = dest}
 
-        extractCodeText status
+        extractCodeText state
 
 
     let sysType expr =
-        let status = {iType = Word;
-                      preProcess = [systemCall expr];
-                      postProcess = [];
-                      tempReg = None;
-                      srcAddress = Imm expr;
-                      destAddress = Imm expr}
+        let state = {iType = Word;
+                     preProcess = [systemCall expr];
+                     postProcess = [];
+                     tempReg = None;
+                     srcAddress = Imm expr;
+                     destAddress = Imm expr}
 
-        extractCodeText status
+        extractCodeText state
 
 
     let jsrType dest reg =
@@ -519,14 +519,14 @@ module Instruction =
                      pushVal (ArgReg reg);
                      storePCtoRegAndJmpToDest reg ArgDest]
 
-            let status = {iType = Word;
-                          preProcess = pre;
-                          postProcess = [];
-                          tempReg = None;
-                          srcAddress = Reg reg;
-                          destAddress = dest}
+            let state = {iType = Word;
+                         preProcess = pre;
+                         postProcess = [];
+                         tempReg = None;
+                         srcAddress = Reg reg;
+                         destAddress = dest}
 
-            extractCodeText status
+            extractCodeText state
         | _ ->
             failwithf "Invalid address"
 
@@ -545,14 +545,14 @@ module Instruction =
             | _ ->
                 failwithf "Invalid address"
 
-        let status = {iType = Word;
-                      preProcess = pre;
-                      postProcess = [];
-                      tempReg = None;
-                      srcAddress = addr;
-                      destAddress = addr}
+        let state = {iType = Word;
+                     preProcess = pre;
+                     postProcess = [];
+                     tempReg = None;
+                     srcAddress = addr;
+                     destAddress = addr}
 
-        extractCodeText status
+        extractCodeText state
 
 
     let sxtType addr =
@@ -567,14 +567,14 @@ module Instruction =
             else
                 [fillWithNFlag ArgDest]
 
-        let status = {iType = Word;
-                      preProcess = pre;
-                      postProcess = [];
-                      tempReg = None;
-                      srcAddress = addr;
-                      destAddress = addr}
+        let state = {iType = Word;
+                     preProcess = pre;
+                     postProcess = [];
+                     tempReg = None;
+                     srcAddress = addr;
+                     destAddress = addr}
 
-        extractCodeText status
+        extractCodeText state
 
 
     let markType expr =
@@ -587,14 +587,14 @@ module Instruction =
              popValTo (ArgReg BP);
              unaryCalc "jmp" (ArgAddr (dfr utilReg))] // rtsType regR5
 
-        let status = {iType = Word;
-                      preProcess = pre;
-                      postProcess = [];
-                      tempReg = None;
-                      srcAddress = Reg BP;
-                      destAddress = Reg BP}
+        let state = {iType = Word;
+                     preProcess = pre;
+                     postProcess = [];
+                     tempReg = None;
+                     srcAddress = Reg BP;
+                     destAddress = Reg BP}
 
-        extractCodeText status
+        extractCodeText state
 
 
     let sobType expr src =
@@ -608,14 +608,14 @@ module Instruction =
                 [unaryCalc "dec" ArgSrc
                  unaryCalc "jne" ArgDest]
 
-        let status = {iType = Word;
-                      preProcess = pre;
-                      postProcess = [];
-                      tempReg = None;
-                      srcAddress = src;
-                      destAddress = expr}
+        let state = {iType = Word;
+                     preProcess = pre;
+                     postProcess = [];
+                     tempReg = None;
+                     srcAddress = src;
+                     destAddress = expr}
 
-        extractCodeText status
+        extractCodeText state
 
 
     let flagClear flag =
@@ -628,14 +628,14 @@ module Instruction =
                  clearFlagBit (ArgAddr (dfr utilReg)) flag
                  saveFlag]
 
-        let status = {iType = Word;
-                      preProcess = pre;
-                      postProcess = [];
-                      tempReg = None;
-                      srcAddress = Reg SP;
-                      destAddress = Reg SP}
+        let state = {iType = Word;
+                     preProcess = pre;
+                     postProcess = [];
+                     tempReg = None;
+                     srcAddress = Reg SP;
+                     destAddress = Reg SP}
 
-        extractCodeText status
+        extractCodeText state
 
 
     let flagSet flag =
@@ -648,14 +648,14 @@ module Instruction =
                  setFlagBit (ArgAddr (dfr utilReg)) flag
                  saveFlag]
 
-        let status = {iType = Word;
-                      preProcess = pre;
-                      postProcess = [];
-                      tempReg = None;
-                      srcAddress = Reg SP;
-                      destAddress = Reg SP}
+        let state = {iType = Word;
+                     preProcess = pre;
+                     postProcess = [];
+                     tempReg = None;
+                     srcAddress = Reg SP;
+                     destAddress = Reg SP}
 
-        extractCodeText status
+        extractCodeText state
 
 
 

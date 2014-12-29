@@ -1,7 +1,7 @@
 namespace Ack_i86
 
 open Address
-open TransStatus
+open TransState
 open ExpressionType
 open Eos
 open Label
@@ -639,7 +639,7 @@ module InstructionAsm =
         code, state
 
 
-    let putRet status =
-        "ret", status
+    let putRet state =
+        "ret", state
 
 

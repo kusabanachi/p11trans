@@ -26,7 +26,7 @@
         <String>src/trans/express.fs</String>
         <String>src/trans/pseudo.fs</String>
         <String>src/trans/address.fs</String>
-        <String>src/trans/transStatus.fs</String>
+        <String>src/trans/transState.fs</String>
         <String>src/trans/instructionAsm.fs</String>
         <String>src/trans/instruction.fs</String>
         <String>src/trans/byteInstruction.fs</String>
@@ -94,6 +94,6 @@
     <Compile Include="src\v6as\symtab.fs" />
     <Compile Include="src\common\expressionType.fs" />
     <Compile Include="src\common\conditionCodeFlags.fs" />
-    <Compile Include="src\trans\transStatus.fs" />
+    <Compile Include="src\trans\transState.fs" />
   </ItemGroup>
 </Project>

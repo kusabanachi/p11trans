@@ -2,7 +2,7 @@ namespace Ack_i86
 
 open Address
 open InstructionAsm
-open TransStatus
+open TransState
 open Instruction
 open ExpressionType
 
@@ -70,14 +70,14 @@ module ByteInstruction =
                 [restoreTempReg],
                 Some tmpReg
 
-        let status = {iType = Byte;
-                      preProcess = pre;
-                      postProcess = post;
-                      tempReg = tmpReg;
-                      srcAddress = src;
-                      destAddress = dest}
+        let state = {iType = Byte;
+                     preProcess = pre;
+                     postProcess = post;
+                     tempReg = tmpReg;
+                     srcAddress = src;
+                     destAddress = dest}
 
-        extractCodeText status
+        extractCodeText state
 
 
     let movbType code i_dest i_src =
@@ -94,13 +94,13 @@ module ByteInstruction =
                     [moveRefOrVal utilReg ArgSrc;
                      binaryCalc code ArgDest ArgSrc;
                      signExtend]
-            let status = {iType = Byte;
-                          preProcess = pre;
-                          postProcess = [];
-                          tempReg = None;
-                          srcAddress = src;
-                          destAddress = dest}
-            extractCodeText status
+            let state = {iType = Byte;
+                         preProcess = pre;
+                         postProcess = [];
+                         tempReg = None;
+                         srcAddress = src;
+                         destAddress = dest}
+            extractCodeText state
         | Reg dReg ->
             let pre1 =
                 if not (src = Reg dReg
@@ -117,13 +117,13 @@ module ByteInstruction =
                        binaryCalc code ArgDest ArgSrc;
                        signExtend]
             let post = [exchangeVal (ArgReg dReg) (ArgReg AX)]
-            let status = {iType = Byte;
-                          preProcess = pre;
-                          postProcess = post;
-                          tempReg = None;
-                          srcAddress = src;
-                          destAddress = dest}
-            extractCodeText status
+            let state = {iType = Byte;
+                         preProcess = pre;
+                         postProcess = post;
+                         tempReg = None;
+                         srcAddress = src;
+                         destAddress = dest}
+            extractCodeText state
         | _ ->
             andbType code i_dest i_src
 
@@ -169,13 +169,13 @@ module ByteInstruction =
                  moveVal utilReg ArgDest;
                  binCalc]
 
-        let status = {iType = Byte;
-                      preProcess = pre;
-                      postProcess = [];
-                      tempReg = None;
-                      srcAddress = src;
-                      destAddress = dest}
-        extractCodeText status
+        let state = {iType = Byte;
+                     preProcess = pre;
+                     postProcess = [];
+                     tempReg = None;
+                     srcAddress = src;
+                     destAddress = dest}
+        extractCodeText state
 
 
     let bicbType dest src =
@@ -207,14 +207,14 @@ module ByteInstruction =
                  [restoreTempReg],
                  Some tmpReg
 
-        let status = {iType = Byte;
-                      preProcess = pre;
-                      postProcess = post;
-                      tempReg = tmpReg;
-                      srcAddress = src;
-                      destAddress = dest}
+        let state = {iType = Byte;
+                     preProcess = pre;
+                     postProcess = post;
+                     tempReg = tmpReg;
+                     srcAddress = src;
+                     destAddress = dest}
 
-        extractCodeText status
+        extractCodeText state
 
 
     let incbType code addr =
@@ -234,14 +234,14 @@ module ByteInstruction =
                  unaryCalc code ArgDest],
                 [moveVal reg ArgDest]
 
-        let status = {iType = Byte;
-                      preProcess = pre;
-                      postProcess = post;
-                      tempReg = None;
-                      srcAddress = addr;
-                      destAddress = addr}
+        let state = {iType = Byte;
+                     preProcess = pre;
+                     postProcess = post;
+                     tempReg = None;
+                     srcAddress = addr;
+                     destAddress = addr}
 
-        extractCodeText status
+        extractCodeText state
 
 
 

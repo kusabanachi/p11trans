@@ -2,7 +2,7 @@ namespace Ack_i86
 
 open Address
 
-module TransStatus =
+module TransState =
 
     type arg =
         | ArgSrc
@@ -24,15 +24,15 @@ module TransStatus =
     }
 
 
-    let extractCodeText status =
-        let preCodeList, status' =
+    let extractCodeText state =
+        let preCodeList, state' =
             List.fold (fun (codes, s) x -> let (code, s') = x s in code :: codes, s')
-                      ([], status)
-                      status.preProcess
+                      ([], state)
+                      state.preProcess
         let postCodeList, _ =
             List.fold (fun (codes, s) x -> let (code, s') = x s in code :: codes, s')
-                      ([], status')
-                      status'.postProcess
+                      ([], state')
+                      state'.postProcess
         String.concat ";  " (List.rev (postCodeList @ preCodeList))
 
 
