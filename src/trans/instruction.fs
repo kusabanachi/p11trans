@@ -35,23 +35,27 @@ module Instruction =
         | _                          -> false
 
 
-    let addType code dest src =
-        let dest = i86Addr dest
-        let src = i86Addr src
+    let addType code state =
+        let dest = state.destAddress
+        let src = state.srcAddress
 
         let pre, post, tmpReg =
             if dest.isAccessible then
-                let pre =
-                    if not dest.isMemory && not src.isAccessible then
-                        [moveRefOrVal utilReg ArgSrc;
-                         binaryCalc code ArgDest ArgSrc]
-                    elif dest.isMemory && src.isMemory
-                            || destAddrAffectSrcVal (src, dest) then
-                        [moveVal utilReg ArgSrc;
-                         binaryCalc code ArgDest ArgSrc]
-                    else
-                        [binaryCalc code ArgDest ArgSrc]
-                pre, [], None
+                if not dest.isMemory && not src.isAccessible then
+                    [moveRefOrVal utilReg ArgSrc;
+                     binaryCalc code ArgDest ArgSrc],
+                    [],
+                    None
+                elif dest.isMemory && src.isMemory
+                        || destAddrAffectSrcVal (src, dest) then
+                    [moveVal utilReg ArgSrc;
+                     binaryCalc code ArgDest ArgSrc],
+                    [],
+                    None
+                else
+                    [binaryCalc code ArgDest ArgSrc],
+                    [],
+                    None
             elif not src.isMemory
                      && not (destAddrAffectSrcVal (src, dest)) then
                 [moveRef utilReg ArgDest;
@@ -67,59 +71,34 @@ module Instruction =
                 [restoreTempReg],
                 Some tmpReg
 
-        let state = {iType = Word;
-                     preProcess = pre;
-                     postProcess = post;
-                     tempReg = tmpReg;
-                     srcAddress = src;
-                     destAddress = dest}
-
-        extractCodeText state
+        {state with preProcess = state.preProcess @ pre;
+                    postProcess = post @ state.postProcess;
+                    tempReg = tmpReg}
 
 
-    let movType code i_dest i_src =
-        let dest = i86Addr i_dest
-        let src = i86Addr i_src
+    let movType code state =
+        let dest = state.destAddress
+        let src = state.srcAddress
 
         if dest = DecDfr SP then
-            let state = {iType = Word;
-                         preProcess = [pushVal ArgSrc];
-                         postProcess = [];
-                         tempReg = None;
-                         srcAddress = src;
-                         destAddress = dest}
-            extractCodeText state
+            let pre = [pushVal ArgSrc]
+            {state with preProcess = state.preProcess @ pre}
         elif src = IncDfr SP && not (dest.isUsing SP) then
-            let state = {iType = Word;
-                         preProcess = [popValTo ArgDest];
-                         postProcess = [];
-                         tempReg = None;
-                         srcAddress = src;
-                         destAddress = dest}
-            extractCodeText state
+            let pre = [popValTo ArgDest]
+            {state with preProcess = state.preProcess @ pre}
         elif dest = dfr SP && not src.isImmediate then
-            if not (src.isUsing SP) then
-                let state = {iType = Word;
-                             preProcess = [popValTo (ArgReg utilReg);
-                                           pushVal ArgSrc];
-                             postProcess = [];
-                             tempReg = None;
-                             srcAddress = src;
-                             destAddress = dest}
-                extractCodeText state
-            else
-                let state = {iType = Word;
-                             preProcess = [moveVal utilReg ArgSrc;
-                                           popValTo ArgTempMem;
-                                           pushVal ArgSrc];
-                             postProcess = [];
-                             tempReg = None;
-                             srcAddress = src;
-                             destAddress = dest}
-                extractCodeText state
+            let pre =
+                if not (src.isUsing SP) then
+                    [popValTo (ArgReg utilReg);
+                     pushVal ArgSrc];
+                else
+                    [moveVal utilReg ArgSrc;
+                     popValTo ArgTempMem;
+                     pushVal ArgSrc];
+            {state with preProcess = state.preProcess @ pre}
         elif not dest.isMemory then
-            let dReg = dest.getRegister
-            let src =
+            let src' =
+                let dReg = dest.getRegister
                 match src with
                 | IncDfr sReg when sReg = dReg ->
                     dfr sReg
@@ -127,42 +106,30 @@ module Instruction =
                     ddfr sReg
                 | _ ->
                     src
-
             let pre =
-                if not src.isAccessible then
+                if not src'.isAccessible then
                     [moveRefOrVal utilReg ArgSrc;
                      binaryCalc code ArgDest ArgSrc]
                 else
                     [binaryCalc code ArgDest ArgSrc]
-
-            let state = {iType = Word;
-                         preProcess = pre
-                         postProcess = [];
-                         tempReg = None;
-                         srcAddress = src;
-                         destAddress = dest}
-            extractCodeText state
+            {state with preProcess = state.preProcess @ pre;
+                        srcAddress = src'}
         elif dest.isAccessible then
-            addType code i_dest i_src
+            addType code state
         elif not src.isMemory
                 && not (destAddrAffectSrcVal (src, dest)) then
-            addType code i_dest i_src
+            addType code state
         elif not (dest.isUsing SP) then
-            let state = {iType = Word;
-                         preProcess = [pushVal ArgSrc;
-                                       popValTo ArgDest];
-                         postProcess = [];
-                         tempReg = None;
-                         srcAddress = src;
-                         destAddress = dest}
-            extractCodeText state
+            let pre = [pushVal ArgSrc;
+                       popValTo ArgDest];
+            {state with preProcess = state.preProcess @ pre}
         else
-            addType code i_dest i_src
+            addType code state
 
 
-    let cmpType code dest src =
-        let dest = i86Addr dest
-        let src = i86Addr src
+    let cmpType code state =
+        let dest = state.destAddress
+        let src = state.srcAddress
 
         let binCalc =
             if code <> "cmp" then
@@ -202,19 +169,12 @@ module Instruction =
                  moveVal utilReg ArgDest;
                  binCalc]
 
-        let state = {iType = Word;
-                     preProcess = pre;
-                     postProcess = [];
-                     tempReg = None;
-                     srcAddress = src;
-                     destAddress = dest}
-
-        extractCodeText state
+        {state with preProcess = state.preProcess @ pre}
 
 
-    let bicType dest src =
-        let dest = i86Addr dest
-        let src = i86Addr src
+    let bicType state =
+        let dest = state.destAddress
+        let src = state.srcAddress
 
         let pre, post, tmpReg =
             if dest.isAccessible then
@@ -233,18 +193,13 @@ module Instruction =
                 [restoreTempReg],
                 Some tmpReg
 
-        let state = {iType = Word;
-                     preProcess = pre;
-                     postProcess = post;
-                     tempReg = tmpReg;
-                     srcAddress = src;
-                     destAddress = dest}
-
-        extractCodeText state
+        {state with preProcess = state.preProcess @ pre;
+                    postProcess = post @ state.postProcess;
+                    tempReg = tmpReg}
 
 
-    let incType code addr =
-        let addr = i86Addr addr
+    let incType code state =
+        let addr = state.destAddress
 
         let pre =
             if not addr.isAccessible then
@@ -253,19 +208,12 @@ module Instruction =
             else
                 [unaryCalc code ArgDest]
 
-        let state = {iType = Word;
-                     preProcess = pre
-                     postProcess = [];
-                     tempReg = None;
-                     srcAddress = addr;
-                     destAddress = addr}
-
-        extractCodeText state
+        {state with preProcess = state.preProcess @ pre}
 
 
-    let mulType dest src =
-        let dest = i86Addr dest
-        let src = i86Addr src
+    let mulType state =
+        let dest = state.destAddress
+        let src = state.srcAddress
 
         let pre, post =
             match dest with
@@ -357,19 +305,13 @@ module Instruction =
             | _ ->
                 failwithf "Invalid address"
 
-        let state = {iType = Word;
-                     preProcess = pre
-                     postProcess = post
-                     tempReg = None;
-                     srcAddress = src;
-                     destAddress = dest}
-
-        extractCodeText state
+        {state with preProcess = state.preProcess @ pre;
+                    postProcess = post @ state.postProcess}
 
 
-    let divType dest src =
-        let dest = i86Addr dest
-        let src = i86Addr src
+    let divType state =
+        let dest = state.destAddress
+        let src = state.srcAddress
 
         let conditionCheck =
             let dReg = dest.getRegister
@@ -420,19 +362,12 @@ module Instruction =
             | _ ->
                 []
 
-        let state = {iType = Word;
-                     preProcess = pre
-                     postProcess = []
-                     tempReg = None;
-                     srcAddress = src;
-                     destAddress = dest}
-
-        extractCodeText state
+        {state with preProcess = state.preProcess @ pre}
 
 
-    let ashType dest src =
-        let dest = i86Addr dest
-        let src = i86Addr src
+    let ashType state =
+        let dest = state.destAddress
+        let src = state.srcAddress
 
         let pre =
             if src <> Reg CX then
@@ -448,19 +383,13 @@ module Instruction =
 
         let post = [moveVal CX (ArgReg utilReg)]
 
-        let state = {iType = Word;
-                     preProcess = pre
-                     postProcess = post
-                     tempReg = None;
-                     srcAddress = src;
-                     destAddress = dest}
-
-        extractCodeText state
+        {state with preProcess = state.preProcess @ pre;
+                    postProcess = post @ state.postProcess}
 
 
-    let ashcType dest src =
-        let dest = i86Addr dest
-        let src = i86Addr src
+    let ashcType state =
+        let dest = state.destAddress
+        let src = state.srcAddress
 
         let pre =
             let nextR =
@@ -482,33 +411,21 @@ module Instruction =
 
         let post = [moveVal CX (ArgReg utilReg)]
 
-        let state = {iType = Word;
-                     preProcess = pre
-                     postProcess = post
-                     tempReg = None;
-                     srcAddress = src;
-                     destAddress = dest}
-
-        extractCodeText state
+        {state with preProcess = state.preProcess @ pre;
+                    postProcess = post @ state.postProcess}
 
 
-    let sysType expr =
-        let state = {iType = Word;
-                     preProcess = [systemCall expr];
-                     postProcess = [];
-                     tempReg = None;
-                     srcAddress = Imm expr;
-                     destAddress = Imm expr}
-
-        extractCodeText state
+    let sysType expr state =
+        let pre = [systemCall expr]
+        {state with preProcess = state.preProcess @ pre}
 
 
-    let jsrType dest reg =
-        match i86Addr reg with
+    let jsrType state =
+        match state.srcAddress with
         | Reg IP ->
-            incType "call" dest
+            incType "call" state
         | Reg reg ->
-            let dest = i86Addr dest
+            let dest = state.destAddress
             let pre =
                 if not dest.isAccessible then
                     [moveRef utilReg ArgDest;
@@ -519,20 +436,13 @@ module Instruction =
                      pushVal (ArgReg reg);
                      storePCtoRegAndJmpToDest reg ArgDest]
 
-            let state = {iType = Word;
-                         preProcess = pre;
-                         postProcess = [];
-                         tempReg = None;
-                         srcAddress = Reg reg;
-                         destAddress = dest}
-
-            extractCodeText state
+            {state with preProcess = state.preProcess @ pre}
         | _ ->
             failwithf "Invalid address"
 
 
-    let rtsType addr =
-        let addr = i86Addr addr
+    let rtsType state =
+        let addr = state.destAddress
 
         let pre =
             match addr with
@@ -545,18 +455,11 @@ module Instruction =
             | _ ->
                 failwithf "Invalid address"
 
-        let state = {iType = Word;
-                     preProcess = pre;
-                     postProcess = [];
-                     tempReg = None;
-                     srcAddress = addr;
-                     destAddress = addr}
-
-        extractCodeText state
+        {state with preProcess = state.preProcess @ pre}
 
 
-    let sxtType addr =
-        let addr = i86Addr addr
+    let sxtType state =
+        let addr = state.destAddress
 
         let pre =
             if not addr.isAccessible
@@ -567,39 +470,18 @@ module Instruction =
             else
                 [fillWithNFlag ArgDest]
 
-        let state = {iType = Word;
-                     preProcess = pre;
-                     postProcess = [];
-                     tempReg = None;
-                     srcAddress = addr;
-                     destAddress = addr}
-
-        extractCodeText state
+        {state with preProcess = state.preProcess @ pre}
 
 
-    let markType expr =
+    let markType expr state =
         let twofoldExpr = Expr_Op ('*', expr, Expr_Oct 2s)
-        let regR5 = V6as.Addres.Reg V6as.Addres.R5
 
-        let pre =
-            [binaryCalc "add" (ArgReg SP) (ArgAddr (Imm twofoldExpr));
-             moveVal utilReg (ArgReg BP);
-             popValTo (ArgReg BP);
-             unaryCalc "jmp" (ArgAddr (dfr utilReg))] // rtsType regR5
-
-        let state = {iType = Word;
-                     preProcess = pre;
-                     postProcess = [];
-                     tempReg = None;
-                     srcAddress = Reg BP;
-                     destAddress = Reg BP}
-
-        extractCodeText state
+        let pre = [binaryCalc "add" (ArgReg SP) (ArgAddr (Imm twofoldExpr))]
+        rtsType {state with preProcess = state.preProcess @ pre}
 
 
-    let sobType expr src =
-        let src = i86Addr src
-        let expr = i86Addr expr
+    let sobType state =
+        let src = state.srcAddress
 
         let pre =
             if src = Reg CX then
@@ -608,17 +490,10 @@ module Instruction =
                 [unaryCalc "dec" ArgSrc
                  unaryCalc "jne" ArgDest]
 
-        let state = {iType = Word;
-                     preProcess = pre;
-                     postProcess = [];
-                     tempReg = None;
-                     srcAddress = src;
-                     destAddress = expr}
-
-        extractCodeText state
+        {state with preProcess = state.preProcess @ pre}
 
 
-    let flagClear flag =
+    let flagClearType flag state =
         let pre =
             if flag = condFlag.Carry then
                 [clearCarryFlag]
@@ -628,17 +503,10 @@ module Instruction =
                  clearFlagBit (ArgAddr (dfr utilReg)) flag
                  saveFlag]
 
-        let state = {iType = Word;
-                     preProcess = pre;
-                     postProcess = [];
-                     tempReg = None;
-                     srcAddress = Reg SP;
-                     destAddress = Reg SP}
-
-        extractCodeText state
+        {state with preProcess = state.preProcess @ pre}
 
 
-    let flagSet flag =
+    let flagSetType flag state =
         let pre =
             if flag = condFlag.Carry then
                 [setCarryFlag]
@@ -648,86 +516,248 @@ module Instruction =
                  setFlagBit (ArgAddr (dfr utilReg)) flag
                  saveFlag]
 
-        let state = {iType = Word;
-                     preProcess = pre;
-                     postProcess = [];
-                     tempReg = None;
-                     srcAddress = Reg SP;
-                     destAddress = Reg SP}
+        {state with preProcess = state.preProcess @ pre}
 
-        extractCodeText state
 
+
+
+    let private initState dest src =
+        let dest' = i86Addr dest
+        let src' = i86Addr src
+        {iType = Word;
+         preProcess = [];
+         postProcess = [];
+         tempReg = None;
+         srcAddress = src';
+         destAddress = dest'}
 
 
     let private immVal num = V6as.Addres.Imm (Expr_Oct (int16 num))
 
-    let clrCode addr  = addType "and"  addr (immVal 0)
-    let comCode addr  = addType "xor"  addr (immVal 0xffff)
-    let incCode addr  = incType "inc"  addr
-    let decCode addr  = incType "dec"  addr
-    let negCode addr  = incType "neg"  addr
-    let adcCode addr  = addType "adc"  addr (immVal 0)
-    let sbcCode addr  = addType "sbb"  addr (immVal 0)
-    let rorCode addr  = addType "rcr"  addr (immVal 1)
-    let rolCode addr  = addType "rcl"  addr (immVal 1)
-    let asrCode addr  = addType "sar"  addr (immVal 1)
-    let aslCode addr  = addType "sal"  addr (immVal 1)
-    let jmpCode addr  = incType "jmp"  addr
-    let swabCode addr = addType "rol"  addr (immVal 8)
-    let tstCode addr  = cmpType "test" addr (immVal 0xffff)
-    let rtsCode addr  = rtsType        addr
-    let sxtCode addr  = sxtType        addr
+    let clrCode addr =
+        let src = immVal 0
+        addType "and" (initState addr src)
+        |> extractCodeText
+    let comCode addr =
+        let src = immVal 0xffff
+        addType "xor" (initState addr src)
+        |> extractCodeText
+    let incCode addr =
+        incType "inc" (initState addr addr)
+        |> extractCodeText
+    let decCode addr =
+        incType "dec" (initState addr addr)
+        |> extractCodeText
+    let negCode addr =
+        incType "neg" (initState addr addr)
+        |> extractCodeText
+    let adcCode addr =
+        let src = immVal 0
+        addType "adc" (initState addr src)
+        |> extractCodeText
+    let sbcCode addr =
+        let src = immVal 0
+        addType "sbb" (initState addr src)
+        |> extractCodeText
+    let rorCode addr =
+        let src = immVal 1
+        addType "rcr" (initState addr src)
+        |> extractCodeText
+    let rolCode addr =
+        let src = immVal 1
+        addType "rcl" (initState addr src)
+        |> extractCodeText
+    let asrCode addr =
+        let src = immVal 1
+        addType "sar" (initState addr src)
+        |> extractCodeText
+    let aslCode addr =
+        let src = immVal 1
+        addType "sal" (initState addr src)
+        |> extractCodeText
+    let jmpCode addr =
+        incType "jmp" (initState addr addr)
+        |> extractCodeText
+    let swabCode addr =
+        let src = immVal 8
+        addType "rol" (initState addr src)
+        |> extractCodeText
+    let tstCode addr =
+        let src = immVal 0xffff
+        cmpType "test" (initState addr src)
+        |> extractCodeText
+    let rtsCode addr =
+        rtsType (initState addr addr)
+        |> extractCodeText
+    let sxtCode addr =
+        sxtType (initState addr addr)
+        |> extractCodeText
 
-    let movCode  dest src = movType "mov"  dest src
-    let cmpCode  dest src = cmpType "cmp"  dest src
-    let bitCode  dest src = cmpType "test" dest src
-    let bicCode  dest src = bicType        dest src
-    let bisCode  dest src = addType "or"   dest src
-    let addCode  dest src = addType "add"  dest src
-    let subCode  dest src = addType "sub"  dest src
-    let jsrCode  dest src = jsrType        dest src
-    let ashCode  dest src = ashType        dest src
-    let ashcCode dest src = ashcType       dest src
-    let mulCode  dest src = mulType        dest src
-    let divCode  dest src = divType        dest src
-    let xorCode  dest src = addType "xor"  dest src
-    let sobCode  dest src = sobType        dest src
+    let movCode dest src =
+        movType "mov" (initState dest src)
+        |> extractCodeText
+    let cmpCode dest src =
+        cmpType "cmp" (initState dest src)
+        |> extractCodeText
+    let bitCode dest src =
+        cmpType "test" (initState dest src)
+        |> extractCodeText
+    let bicCode dest src =
+        bicType (initState dest src)
+        |> extractCodeText
+    let bisCode dest src =
+        addType "or" (initState dest src)
+        |> extractCodeText
+    let addCode dest src =
+        addType "add" (initState dest src)
+        |> extractCodeText
+    let subCode dest src =
+        addType "sub" (initState dest src)
+        |> extractCodeText
+    let jsrCode dest src =
+        jsrType (initState dest src)
+        |> extractCodeText
+    let ashCode dest src =
+        ashType (initState dest src)
+        |> extractCodeText
+    let ashcCode dest src =
+        ashcType (initState dest src)
+        |> extractCodeText
+    let mulCode dest src =
+        mulType (initState dest src)
+        |> extractCodeText
+    let divCode dest src =
+        divType (initState dest src)
+        |> extractCodeText
+    let xorCode dest src =
+        addType "xor" (initState dest src)
+        |> extractCodeText
+    let sobCode dest src =
+        sobType (initState dest src)
+        |> extractCodeText
 
-    let brCode addr   = incType "jmp" addr
-    let bneCode addr  = incType "jne" addr
-    let beqCode addr  = incType "je"  addr
-    let bgeCode addr  = incType "jge" addr
-    let bltCode addr  = incType "jl"  addr
-    let bgtCode addr  = incType "jg"  addr
-    let bleCode addr  = incType "jle" addr
-    let bplCode addr  = incType "jns" addr
-    let bmiCode addr  = incType "js"  addr
-    let bhiCode addr  = incType "ja"  addr
-    let blosCode addr = incType "jbe" addr
-    let bvcCode addr  = incType "jno" addr
-    let bvsCode addr  = incType "jo"  addr
-    let bhisCode addr = incType "jae" addr
-    let becCode addr  = incType "jnc" addr
-    let bloCode addr  = incType "jb"  addr
-    let bcsCode addr  = incType "jc"  addr
-    let jbrCode addr  = incType "jmp" addr
-    let jneCode addr  = incType "jne" addr
-    let jeqCode addr  = incType "je"  addr
-    let jgeCode addr  = incType "jge" addr
-    let jltCode addr  = incType "jl"  addr
-    let jgtCode addr  = incType "jg"  addr
-    let jleCode addr  = incType "jle" addr
-    let jplCode addr  = incType "jns" addr
-    let jmiCode addr  = incType "js"  addr
-    let jhiCode addr  = incType "ja"  addr
-    let jlosCode addr = incType "jbe" addr
-    let jvcCode addr  = incType "jno" addr
-    let jvsCode addr  = incType "jo"  addr
-    let jhisCode addr = incType "jae" addr
-    let jecCode addr  = incType "jnc" addr
-    let jloCode addr  = incType "jb"  addr
-    let jcsCode addr  = incType "jc"  addr
+    let brCode addr  =
+        incType "jmp" (initState addr addr)
+        |> extractCodeText
+    let bneCode addr =
+        incType "jne" (initState addr addr)
+        |> extractCodeText
+    let beqCode addr =
+        incType "je" (initState addr addr)
+        |> extractCodeText
+    let bgeCode addr =
+        incType "jge" (initState addr addr)
+        |> extractCodeText
+    let bltCode addr =
+        incType "jl" (initState addr addr)
+        |> extractCodeText
+    let bgtCode addr =
+        incType "jg" (initState addr addr)
+        |> extractCodeText
+    let bleCode addr =
+        incType "jle" (initState addr addr)
+        |> extractCodeText
+    let bplCode addr =
+        incType "jns" (initState addr addr)
+        |> extractCodeText
+    let bmiCode addr =
+        incType "js" (initState addr addr)
+        |> extractCodeText
+    let bhiCode addr =
+        incType "ja" (initState addr addr)
+        |> extractCodeText
+    let blosCode addr =
+        incType "jbe" (initState addr addr)
+        |> extractCodeText
+    let bvcCode addr =
+        incType "jno" (initState addr addr)
+        |> extractCodeText
+    let bvsCode addr =
+        incType "jo" (initState addr addr)
+        |> extractCodeText
+    let bhisCode addr =
+        incType "jae" (initState addr addr)
+        |> extractCodeText
+    let becCode addr =
+        incType "jnc" (initState addr addr)
+        |> extractCodeText
+    let bloCode addr =
+        incType "jb" (initState addr addr)
+        |> extractCodeText
+    let bcsCode addr =
+        incType "jc" (initState addr addr)
+        |> extractCodeText
+    let jbrCode addr =
+        incType "jmp" (initState addr addr)
+        |> extractCodeText
+    let jneCode addr =
+        incType "jne" (initState addr addr)
+        |> extractCodeText
+    let jeqCode addr =
+        incType "je" (initState addr addr)
+        |> extractCodeText
+    let jgeCode addr =
+        incType "jge" (initState addr addr)
+        |> extractCodeText
+    let jltCode addr =
+        incType "jl" (initState addr addr)
+        |> extractCodeText
+    let jgtCode addr =
+        incType "jg" (initState addr addr)
+        |> extractCodeText
+    let jleCode addr =
+        incType "jle" (initState addr addr)
+        |> extractCodeText
+    let jplCode addr =
+        incType "jns" (initState addr addr)
+        |> extractCodeText
+    let jmiCode addr =
+        incType "js" (initState addr addr)
+        |> extractCodeText
+    let jhiCode addr =
+        incType "ja" (initState addr addr)
+        |> extractCodeText
+    let jlosCode addr =
+        incType "jbe" (initState addr addr)
+        |> extractCodeText
+    let jvcCode addr =
+        incType "jno" (initState addr addr)
+        |> extractCodeText
+    let jvsCode addr =
+        incType "jo" (initState addr addr)
+        |> extractCodeText
+    let jhisCode addr =
+        incType "jae" (initState addr addr)
+        |> extractCodeText
+    let jecCode addr =
+        incType "jnc" (initState addr addr)
+        |> extractCodeText
+    let jloCode addr =
+        incType "jb" (initState addr addr)
+        |> extractCodeText
+    let jcsCode addr =
+        incType "jc" (initState addr addr)
+        |> extractCodeText
 
-    let sysCode expr  = sysType  expr
-    let markCode expr = markType expr
+    let sysCode expr =
+        sysType expr {iType = Word; preProcess = [];
+                      postProcess = []; tempReg = None;
+                      srcAddress = Imm expr; destAddress = Imm expr}
+        |> extractCodeText
+    let markCode expr =
+        markType expr {iType = Word; preProcess = [];
+                       postProcess = []; tempReg = None;
+                       srcAddress = Reg BP; destAddress = Reg BP}
+        |> extractCodeText
+
+    let flagClear flag =
+        flagClearType flag {iType = Word; preProcess = [];
+                            postProcess = []; tempReg = None;
+                            srcAddress = Reg SP; destAddress = Reg SP}
+        |> extractCodeText
+    let flagSet flag =
+        flagSetType flag {iType = Word; preProcess = [];
+                          postProcess = []; tempReg = None;
+                          srcAddress = Reg SP; destAddress = Reg SP}
+        |> extractCodeText
 

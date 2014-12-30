@@ -19,9 +19,9 @@ module ByteInstruction =
             DX
 
 
-    let andbType code dest src =
-        let dest = i86Addr dest
-        let src = i86Addr src
+    let andbType code state =
+        let dest = state.destAddress
+        let src = state.srcAddress
 
         let pre, post, tmpReg =
             if dest.isByteAccessible then
@@ -70,19 +70,14 @@ module ByteInstruction =
                 [restoreTempReg],
                 Some tmpReg
 
-        let state = {iType = Byte;
-                     preProcess = pre;
-                     postProcess = post;
-                     tempReg = tmpReg;
-                     srcAddress = src;
-                     destAddress = dest}
-
-        extractCodeText state
+        {state with preProcess = state.preProcess @ pre;
+                    postProcess = post @ state.postProcess;
+                    tempReg = tmpReg}
 
 
-    let movbType code i_dest i_src =
-        let dest = i86Addr i_dest
-        let src = i86Addr i_src
+    let movbType code state =
+        let dest = state.destAddress
+        let src = state.srcAddress
 
         match dest with
         | Reg AX ->
@@ -94,13 +89,7 @@ module ByteInstruction =
                     [moveRefOrVal utilReg ArgSrc;
                      binaryCalc code ArgDest ArgSrc;
                      signExtend]
-            let state = {iType = Byte;
-                         preProcess = pre;
-                         postProcess = [];
-                         tempReg = None;
-                         srcAddress = src;
-                         destAddress = dest}
-            extractCodeText state
+            {state with preProcess = state.preProcess @ pre}
         | Reg dReg ->
             let pre1 =
                 if not (src = Reg dReg
@@ -117,20 +106,15 @@ module ByteInstruction =
                        binaryCalc code ArgDest ArgSrc;
                        signExtend]
             let post = [exchangeVal (ArgReg dReg) (ArgReg AX)]
-            let state = {iType = Byte;
-                         preProcess = pre;
-                         postProcess = post;
-                         tempReg = None;
-                         srcAddress = src;
-                         destAddress = dest}
-            extractCodeText state
+            {state with preProcess = state.preProcess @ pre;
+                        postProcess = post @ state.postProcess}
         | _ ->
-            andbType code i_dest i_src
+            andbType code state
 
 
-    let cmpbType code dest src =
-        let dest = i86Addr dest
-        let src = i86Addr src
+    let cmpbType code state =
+        let dest = state.destAddress
+        let src = state.srcAddress
 
         let binCalc =
             if code <> "cmpb" then
@@ -169,18 +153,12 @@ module ByteInstruction =
                  moveVal utilReg ArgDest;
                  binCalc]
 
-        let state = {iType = Byte;
-                     preProcess = pre;
-                     postProcess = [];
-                     tempReg = None;
-                     srcAddress = src;
-                     destAddress = dest}
-        extractCodeText state
+        {state with preProcess = state.preProcess @ pre}
 
 
-    let bicbType dest src =
-        let dest = i86Addr dest
-        let src = i86Addr src
+    let bicbType state =
+        let dest = state.destAddress
+        let src = state.srcAddress
 
         let pre, post, tmpReg =
             if dest.isByteAccessible then
@@ -207,18 +185,13 @@ module ByteInstruction =
                  [restoreTempReg],
                  Some tmpReg
 
-        let state = {iType = Byte;
-                     preProcess = pre;
-                     postProcess = post;
-                     tempReg = tmpReg;
-                     srcAddress = src;
-                     destAddress = dest}
-
-        extractCodeText state
+        {state with preProcess = state.preProcess @ pre;
+                    postProcess = post @ state.postProcess;
+                    tempReg = tmpReg}
 
 
-    let incbType code addr =
-        let addr = i86Addr addr
+    let incbType code state =
+        let addr = state.destAddress
 
         let pre, post =
             if addr.isByteAccessible then
@@ -234,35 +207,84 @@ module ByteInstruction =
                  unaryCalc code ArgDest],
                 [moveVal reg ArgDest]
 
-        let state = {iType = Byte;
-                     preProcess = pre;
-                     postProcess = post;
-                     tempReg = None;
-                     srcAddress = addr;
-                     destAddress = addr}
+        {state with preProcess = state.preProcess @ pre;
+                    postProcess = post @ state.postProcess}
 
-        extractCodeText state
 
+
+
+    let private initState dest src =
+        let dest' = i86Addr dest
+        let src' = i86Addr src
+        {iType = Byte;
+         preProcess = [];
+         postProcess = [];
+         tempReg = None;
+         srcAddress = src';
+         destAddress = dest'}
 
 
     let private immVal num = V6as.Addres.Imm (Expr_Oct (int16 num))
 
-    let clrbCode addr = andbType "andb"  addr (immVal 0)
-    let combCode addr = andbType "xorb"  addr (immVal 0xff)
-    let incbCode addr = incbType "incb"  addr
-    let decbCode addr = incbType "decb"  addr
-    let negbCode addr = incbType "negb"  addr
-    let adcbCode addr = andbType "adcb"  addr (immVal 0)
-    let sbcbCode addr = andbType "sbbb"  addr (immVal 0)
-    let rorbCode addr = andbType "rcrb"  addr (immVal 1)
-    let rolbCode addr = andbType "rclb"  addr (immVal 1)
-    let asrbCode addr = andbType "sarb"  addr (immVal 1)
-    let aslbCode addr = andbType "salb"  addr (immVal 1)
-    let tstbCode addr = cmpbType "testb" addr (immVal 0xff)
+    let clrbCode addr =
+        let src = immVal 0
+        andbType "andb" (initState addr src)
+        |> extractCodeText
+    let combCode addr =
+        let src = immVal 0xff
+        andbType "xorb" (initState addr src)
+        |> extractCodeText
+    let incbCode addr =
+        incbType "incb" (initState addr addr)
+        |> extractCodeText
+    let decbCode addr =
+        incbType "decb" (initState addr addr)
+        |> extractCodeText
+    let negbCode addr =
+        incbType "negb" (initState addr addr)
+        |> extractCodeText
+    let adcbCode addr =
+        let src = immVal 0
+        andbType "adcb" (initState addr src)
+        |> extractCodeText
+    let sbcbCode addr =
+        let src = immVal 0
+        andbType "sbbb" (initState addr src)
+        |> extractCodeText
+    let rorbCode addr =
+        let src = immVal 1
+        andbType "rcrb" (initState addr src)
+        |> extractCodeText
+    let rolbCode addr =
+        let src = immVal 1
+        andbType "rclb" (initState addr src)
+        |> extractCodeText
+    let asrbCode addr =
+        let src = immVal 1
+        andbType "sarb" (initState addr src)
+        |> extractCodeText
+    let aslbCode addr =
+        let src = immVal 1
+        andbType "salb" (initState addr src)
+        |> extractCodeText
+    let tstbCode addr =
+        let src = immVal 0xff
+        cmpbType "testb" (initState addr src)
+        |> extractCodeText
 
-    let movbCode dest src = movbType "movb"  dest src
-    let cmpbCode dest src = cmpbType "cmpb"  dest src
-    let bitbCode dest src = cmpbType "testb" dest src
-    let bicbCode dest src = bicbType         dest src
-    let bisbCode dest src = andbType "orb"   dest src
+    let movbCode dest src =
+        movbType "movb" (initState dest src)
+        |> extractCodeText
+    let cmpbCode dest src =
+        cmpbType "cmpb" (initState dest src)
+        |> extractCodeText
+    let bitbCode dest src =
+        cmpbType "testb" (initState dest src)
+        |> extractCodeText
+    let bicbCode dest src =
+        bicbType (initState dest src)
+        |> extractCodeText
+    let bisbCode dest src =
+        andbType "orb" (initState dest src)
+        |> extractCodeText
 
