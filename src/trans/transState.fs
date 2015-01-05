@@ -18,8 +18,10 @@ module TransState =
          iType: instructionType
          srcAddress: addr
          destAddress: addr
+         destValue: addr
          tempReg: reg option
          preProcess: (transState -> string * transState) list;
+         midProcess: (transState -> string * transState) list;
          postProcess: (transState -> string * transState) list;
     }
 
@@ -29,10 +31,14 @@ module TransState =
             List.fold (fun (codes, s) x -> let (code, s') = x s in code :: codes, s')
                       ([], state)
                       state.preProcess
-        let postCodeList, _ =
+        let midCodeList, state'' =
             List.fold (fun (codes, s) x -> let (code, s') = x s in code :: codes, s')
                       ([], state')
-                      state'.postProcess
-        String.concat ";  " (List.rev (postCodeList @ preCodeList))
+                      state'.midProcess
+        let postCodeList, _ =
+            List.fold (fun (codes, s) x -> let (code, s') = x s in code :: codes, s')
+                      ([], state'')
+                      state''.postProcess
+        String.concat ";  " (List.rev (postCodeList @ midCodeList @ preCodeList))
 
 

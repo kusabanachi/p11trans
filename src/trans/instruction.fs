@@ -525,11 +525,13 @@ module Instruction =
         let dest' = i86Addr dest
         let src' = i86Addr src
         {iType = Word;
-         preProcess = [];
-         postProcess = [];
-         tempReg = None;
          srcAddress = src';
-         destAddress = dest'}
+         destAddress = dest';
+         destValue = dest';
+         tempReg = None;
+         preProcess = [];
+         midProcess = [];
+         postProcess = []}
 
 
     let private immVal num = V6as.Addres.Imm (Expr_Oct (int16 num))
@@ -594,7 +596,10 @@ module Instruction =
         |> extractCodeText
 
     let movCode dest src =
-        movType "mov" (initState dest src)
+        let state =
+            {initState dest src with
+               midProcess = [updateFlagsWithoutCarry ArgDest]}
+        movType "mov" state
         |> extractCodeText
     let cmpCode dest src =
         cmpType "cmp" (initState dest src)
@@ -740,24 +745,32 @@ module Instruction =
         |> extractCodeText
 
     let sysCode expr =
-        sysType expr {iType = Word; preProcess = [];
-                      postProcess = []; tempReg = None;
-                      srcAddress = Imm expr; destAddress = Imm expr}
+        sysType expr {iType = Word;
+                      srcAddress = Imm expr; destAddress = Imm expr;
+                      destValue = Imm expr; tempReg = None;
+                      preProcess = []; midProcess = [];
+                      postProcess = []}
         |> extractCodeText
     let markCode expr =
-        markType expr {iType = Word; preProcess = [];
-                       postProcess = []; tempReg = None;
-                       srcAddress = Reg BP; destAddress = Reg BP}
+        markType expr {iType = Word;
+                       srcAddress = Reg BP; destAddress = Reg BP;
+                       destValue = Reg BP; tempReg = None;
+                       preProcess = []; midProcess = [];
+                       postProcess = []}
         |> extractCodeText
 
     let flagClear flag =
-        flagClearType flag {iType = Word; preProcess = [];
-                            postProcess = []; tempReg = None;
-                            srcAddress = Reg SP; destAddress = Reg SP}
+        flagClearType flag {iType = Word;
+                            srcAddress = Reg SP; destAddress = Reg SP;
+                            destValue = Reg SP; tempReg = None;
+                            preProcess = []; midProcess = [];
+                            postProcess = []}
         |> extractCodeText
     let flagSet flag =
-        flagSetType flag {iType = Word; preProcess = [];
-                          postProcess = []; tempReg = None;
-                          srcAddress = Reg SP; destAddress = Reg SP}
+        flagSetType flag {iType = Word;
+                          srcAddress = Reg SP; destAddress = Reg SP;
+                          destValue = Reg SP; tempReg = None;
+                          preProcess = []; midProcess = [];
+                          postProcess = []}
         |> extractCodeText
 

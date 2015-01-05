@@ -4,11 +4,10 @@ open System
 
 module Label =
 
-    let mutable private _uniqNum = 999
+    let mutable private _uniqNum = 0
     let uniqName (prefix:string) =
-        let num: int32 = _uniqNum
-        _uniqNum <- _uniqNum - 1
-        sprintf "%s__%03d" prefix num
+        _uniqNum <- _uniqNum + 1
+        sprintf "%s__%03d" prefix _uniqNum
 
     let nameLabel (name: string) =
         let labelName =

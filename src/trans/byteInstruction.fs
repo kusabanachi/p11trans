@@ -217,11 +217,13 @@ module ByteInstruction =
         let dest' = i86Addr dest
         let src' = i86Addr src
         {iType = Byte;
-         preProcess = [];
-         postProcess = [];
-         tempReg = None;
          srcAddress = src';
-         destAddress = dest'}
+         destAddress = dest';
+         destValue = dest';
+         tempReg = None;
+         preProcess = [];
+         midProcess = [];
+         postProcess = []}
 
 
     let private immVal num = V6as.Addres.Imm (Expr_Oct (int16 num))

@@ -155,7 +155,8 @@ module InstructionAsm =
         let state' =
             match sArg with
             | ArgSrc  -> {state with srcAddress = ref}
-            | ArgDest -> {state with destAddress = ref}
+            | ArgDest -> {state with destAddress = ref;
+                                     destValue = ref}
             | _       -> state
 
         code, state'
@@ -186,7 +187,8 @@ module InstructionAsm =
         let state' =
             match sArg with
             | ArgSrc  -> {state with srcAddress = Reg dReg}
-            | ArgDest -> {state with destAddress = Reg dReg}
+            | ArgDest -> {state with destAddress = Reg dReg;
+                                     destValue = Reg dReg}
             | _       -> state
 
         code, state'
@@ -230,7 +232,8 @@ module InstructionAsm =
         let state' =
             match sArg with
             | ArgSrc  -> {state with srcAddress = destMem}
-            | ArgDest -> {state with destAddress = destMem}
+            | ArgDest -> {state with destAddress = destMem;
+                                     destValue = destMem}
             | _       -> state
 
         code, state'
@@ -240,51 +243,75 @@ module InstructionAsm =
         let sAddr = addressFromArg sArg state
         let pushText (a:addr) = "push " + a.text
 
-        let code =
+        let code, latestSrc =
             match sAddr with
             | IncDfr sReg ->
                 let incNum = incDfrNum sAddr state
                 if sReg.isMemoryAccessible then
                     pushText (dfr sReg)
-                      +!!+ incText sReg sReg incNum
+                      +!!+ incText sReg sReg incNum,
+                    idfr sReg -incNum
                 else
                     movText (Reg utilReg) (Reg sReg)
                       +!!+ incText sReg utilReg incNum
-                      +!!+ pushText (dfr utilReg)
+                      +!!+ pushText (dfr utilReg),
+                    dfr utilReg
             | DecDfr sReg ->
                 let decNum = -(incDfrNum sAddr state)
                 if sReg.isMemoryAccessible then
                     incText sReg sReg decNum
-                      +!!+ pushText (dfr sReg)
+                      +!!+ pushText (dfr sReg),
+                    dfr sReg
                 else
                     movText (Reg utilReg) (Reg sReg)
                       +!!+ incText sReg utilReg decNum
-                      +!!+ pushText (idfr utilReg decNum)
+                      +!!+ pushText (idfr utilReg decNum),
+                    idfr utilReg decNum
             | Dfr (sReg, expr) ->
                 if sReg.isMemoryAccessible then
-                    pushText sAddr
+                    pushText sAddr,
+                    sAddr
                 else
                     movText (Reg utilReg) (Reg sReg)
-                      +!!+ pushText (Dfr (utilReg, expr))
+                      +!!+ pushText (Dfr (utilReg, expr)),
+                    Dfr (utilReg, expr)
             | IncDDfr _
             | DecDDfr _
             | DDfr    _
             | RelDfr  _ ->
                 moveReferredVal utilReg sAddr state
-                  +!!+ pushText (dfr utilReg)
+                  +!!+ pushText (dfr utilReg),
+                dfr utilReg
             | Reg _
             | Rel _
             | Abs _ ->
-                pushText sAddr
+                pushText sAddr,
+                sAddr
             | Imm _ ->
                 movText (Reg utilReg) sAddr
-                  +!!+ pushText (Reg utilReg)
+                  +!!+ pushText (Reg utilReg),
+                Reg utilReg
 
         let state' =
-            match sArg with
-            | ArgSrc  -> {state with srcAddress = dfr SP}
-            | ArgDest -> {state with destAddress = dfr SP}
-            | _       -> state
+            let src' =
+                if sArg = ArgSrc
+                        || state.srcAddress = DecDfr SP then
+                    dfr SP
+                else
+                    state.srcAddress
+
+            let dest', destVal' =
+                if sArg = ArgDest
+                        || state.destAddress = DecDfr SP then
+                    dfr SP,
+                    latestSrc
+                else
+                    state.destAddress,
+                    state.destValue
+
+            {state with srcAddress = src';
+                        destAddress = dest';
+                        destValue = destVal'}
 
         code, state'
 
@@ -293,46 +320,76 @@ module InstructionAsm =
         let dAddr = addressFromArg dArg state
         let popText (a:addr) = "pop " + a.text
 
-        let code =
+        let code, latestDest =
             match dAddr with
             | IncDfr dReg ->
                 let incNum = incDfrNum dAddr state
                 if dReg.isMemoryAccessible then
                     popText (dfr dReg)
-                      +!!+ incText dReg dReg incNum
+                      +!!+ incText dReg dReg incNum,
+                    idfr dReg -incNum
                 else
                     movText (Reg utilReg) (Reg dReg)
                       +!!+ incText dReg utilReg incNum
-                      +!!+ popText (dfr utilReg)
+                      +!!+ popText (dfr utilReg),
+                    dfr utilReg
             | DecDfr dReg ->
                 let decNum = -(incDfrNum dAddr state)
                 if dReg.isMemoryAccessible then
                     incText dReg dReg decNum
-                      +!!+ popText (dfr dReg)
+                      +!!+ popText (dfr dReg),
+                    dfr dReg
                 else
                     movText (Reg utilReg) (Reg dReg)
                       +!!+ incText dReg utilReg decNum
-                      +!!+ popText (idfr utilReg decNum)
+                      +!!+ popText (idfr utilReg decNum),
+                    idfr utilReg decNum
             | Dfr (dReg, expr) ->
                 if dReg.isMemoryAccessible then
-                    popText dAddr
+                    popText dAddr,
+                    dAddr
                 else
                     movText (Reg utilReg) (Reg dReg)
-                      +!!+ popText (Dfr (utilReg, expr))
+                      +!!+ popText (Dfr (utilReg, expr)),
+                    Dfr (utilReg, expr)
             | IncDDfr _
             | DecDDfr _
             | DDfr    _
             | RelDfr  _ ->
                 moveReferredVal utilReg dAddr state
-                  +!!+ popText (dfr utilReg)
+                  +!!+ popText (dfr utilReg),
+                dfr utilReg
             | Reg _
             | Rel _
             | Abs _ ->
-                popText dAddr
+                popText dAddr,
+                dAddr
             | _ ->
                 failwithf "Invalid address: pop to %A" dAddr
 
-        code, state
+        let state' =
+            let src' =
+                if state.srcAddress = IncDfr SP then
+                    dAddr
+                else
+                    state.srcAddress
+
+            let dest', destVal' =
+                if dArg = ArgDest then
+                    state.destAddress,
+                    latestDest
+                elif state.destAddress = dfr SP then
+                    DecDfr SP,
+                    state.destValue
+                else
+                    state.destAddress,
+                    state.destValue
+
+            {state with srcAddress = src';
+                        destAddress = dest';
+                        destValue = destVal'}
+
+        code, state'
 
 
     let incrementReg (reg: reg) num state =
@@ -360,23 +417,28 @@ module InstructionAsm =
         | IncDfr sReg ->
             let incNum = incDfrNum sAddr state
             codeText dAddr (dfr sReg),
-            {state with postProcess = incrementReg sReg incNum :: state.postProcess}
+
+            {state with postProcess = incrementReg sReg incNum :: state.postProcess;
+                        srcAddress = dfr sReg}
         | DecDfr sReg ->
             let decNum = -(incDfrNum sAddr state)
             incText sReg sReg decNum
               +!!+ codeText dAddr (dfr sReg),
-            state
+            {state with srcAddress = dfr sReg}
         | _ ->
             match dAddr with
             | IncDfr dReg ->
                 let incNum = incDfrNum dAddr state
                 codeText (dfr dReg) sAddr,
-                {state with postProcess = incrementReg dReg incNum :: state.postProcess}
+                {state with postProcess = incrementReg dReg incNum :: state.postProcess;
+                            destAddress = dfr dReg;
+                            destValue = dfr dReg}
             | DecDfr dReg ->
                 let decNum = -(incDfrNum dAddr state)
                 incText dReg dReg decNum
                   +!!+ codeText (dfr dReg) sAddr,
-                state
+                {state with destAddress = dfr dReg;
+                            destValue = dfr dReg}
             | _ ->
                 codeText dAddr sAddr, state
 
@@ -394,12 +456,13 @@ module InstructionAsm =
         | IncDfr reg ->
             let incNum = incDfrNum addr state
             codeText (dfr reg),
-            {state with postProcess = incrementReg reg incNum :: state.postProcess}
+            {state with postProcess = incrementReg reg incNum :: state.postProcess;
+                        srcAddress = dfr reg}
         | DecDfr reg ->
             let decNum = -(incDfrNum addr state)
             incText reg reg decNum
               +!!+ codeText (dfr reg),
-            state
+            {state with srcAddress = dfr reg}
         | _ ->
             codeText addr, state
 
@@ -424,7 +487,8 @@ module InstructionAsm =
         let state' =
             match arg with
             | ArgSrc  -> {state with srcAddress = addr'}
-            | ArgDest -> {state with destAddress = addr'}
+            | ArgDest -> {state with destAddress = addr';
+                                     destValue = addr'}
             | _       -> state
 
         code, state'
@@ -472,7 +536,7 @@ module InstructionAsm =
                 | _ ->
                     st.destAddress
 
-            let newSrc =
+            let src' =
                 if sArg = ArgSrc then
                     dAddr
                 elif dArg = ArgSrc then
@@ -481,7 +545,7 @@ module InstructionAsm =
                     match sAddr, dAddr, state with
                     | SwappedSrc a -> a
 
-            let newDest =
+            let dest' =
                 if sArg = ArgDest then
                     dAddr
                 elif dArg = ArgDest then
@@ -490,8 +554,9 @@ module InstructionAsm =
                     match sAddr, dAddr, state with
                     | SwappedDest a -> a
 
-            {state with srcAddress = newSrc;
-                        destAddress = newDest}
+            {state with srcAddress = src';
+                        destAddress = dest';
+                        destValue = dest'}
 
         code, state'
 
@@ -642,4 +707,38 @@ module InstructionAsm =
     let putRet state =
         "ret", state
 
+
+    let updateFlagsWithoutCarry arg state =
+        let addr = addressFromArg arg state
+        let label1 = uniqName "flag"
+        let label2 = label1 + "e"
+        let ArgLabel1 = ArgAddr (Abs (Expr_Sym label1))
+        let ArgLabel2 = ArgAddr (Abs (Expr_Sym label2))
+
+        let testDest state =
+            let destVal = ArgAddr state.destValue
+            match state.iType with
+            | Word ->
+                let testImm = Imm (Expr_Oct 0xffffs)
+                binaryCalc "test" destVal (ArgAddr testImm) state
+            | Byte ->
+                let testImm = Imm (Expr_Oct 0xffs)
+                binaryCalc "testb" destVal (ArgAddr testImm) state
+
+        let processes = [unaryCalc "jc" ArgLabel1;
+                        testDest;
+                        clearCarryFlag;
+                        unaryCalc "jmp" ArgLabel2;
+                        setLabel label1;
+                        testDest;
+                        setCarryFlag;
+                        setLabel label2]
+
+        let codeList, state' =
+            List.fold (fun (codes, s) x -> let (code, s') = x s
+                                           code :: codes, s')
+                      ([], state)
+                      processes
+
+        String.concat ";  " (List.rev codeList), state'
 
